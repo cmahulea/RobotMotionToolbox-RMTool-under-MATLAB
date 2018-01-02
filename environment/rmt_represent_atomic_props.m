@@ -27,36 +27,30 @@
 function [at_pr_h] = rmt_represent_atomic_props(C,propositions)
 %atomic propositions are unions (sets) of cells from partition
 
+dummy_cells = setdiff(1:length(C),cell2mat(propositions)); %handles to cells that are not atomic propositions
 
 %represent cells
 for i=1:length(C)
     fill(C{i}(1,:),C{i}(2,:),'w','FaceAlpha',0);
+    %write cell numbers to cells that are not atomic propositions
+    if ~isempty(intersect(dummy_cells,i))
+        centr=mean(C{i},2)';
+        text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k');
+    end
 end
-%write cell numbers
- for i=1:length(C)
-     centr=mean(C{i},2)';
-     text(centr(1),centr(2),sprintf('p_{%d}',i),'HorizontalAlignment','center','Color','k');
- end
 
 at_pr_h=cell(1,length(propositions));   %handles for each atomic prop
 %represent atomic propositions
 colors=['r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c'];
-
-%To BE REMOVED!!!!!!!!
-%colors = ['k','k','k','k','k','k','k','k','k','k','b','b','b','b','b','b','b','b','b','b'];
-%================================
 
 for i=1:length(propositions)
     at_pr_h{i}=zeros(1,length(propositions{i}));
     for j=1:length(propositions{i})
         cell_ind=propositions{i}(j);    %index of current cell
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
-%         fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'EdgeColor',colors(i));
-        
-         centr=mean(C{cell_ind},2)';
-        % text(centr(1),centr(2),sprintf('\\Pi_{%d}',i),'HorizontalAlignment','center','Color','k','BackgroundColor',[.7 .7 .7]);
+        centr=mean(C{cell_ind},2)';
+        text(centr(1),centr(2),sprintf('c_{%d}(p_{%d})',cell_ind,i),'HorizontalAlignment','center','Color','k');
     end
 end
 set(gca,'Box','on');
 set(gca,'XTick',0:2:16,'YTick',0:2:10);
-% set(gca,'XTick',[],'YTick',[]);

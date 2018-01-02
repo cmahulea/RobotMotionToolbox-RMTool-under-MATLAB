@@ -34,7 +34,7 @@ function ret = rmt(action,~)
 %  ini:  figure and controls
 
 
-if nargin<1,
+if nargin<1
     action='ini';
 end;
 
@@ -629,8 +629,6 @@ switch action
             fid = fopen(fullfile(pathname2, filename2),'r');
             fprintf(fileID,'%s',sprintf('ltl2buchi=%s\n',fullfile(pathname, filename)));
             fclose(fileID);
-%            fid = fopen('RMTconfig.txt','r');
-%            fid=fileID;
         end
         fis = textscan(fid,'%s','delimiter','=');
         runLTL2BA = '';
@@ -771,9 +769,6 @@ switch action
         else
             set(findobj(gcf,'Tag','boolean'),'Value',0);
         end
-        
-        
-        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         %               RUN ENVIRONMENT
@@ -1406,19 +1401,6 @@ switch action
                     end
                     message = sprintf('%s%d',message,temp(length(temp)));
                 end
-                %                Runs{:}
-                %                     data.rob_plot.line_color{1}='r';
-                %                     data.rob_plot.line_color{2}='r';
-                %                     data.rob_plot.line_color{3}='r';
-                %                     data.rob_plot.line_color{4}='r';
-                %                     data.rob_plot.line_color{5}='r';
-                %                     data.rob_plot.line_color{6}='r';
-                %                     data.rob_plot.line_color{7}='r';
-                %                     data.rob_plot.line_color{8}='r';
-                %                     data.rob_plot.line_color{9}='r';
-                %                     data.rob_plot.line_color{10}='r';
-                
-                
                 for r=1:length(rob_traj)    %plot trajectories of robots
                     plot(rob_traj{r}(1,1),rob_traj{r}(2,1),data.rob_plot.line_color{r},...
                         'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r});
@@ -1585,7 +1567,6 @@ switch action
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case 'run_control'
-        data = get(gcf,'UserData');
         sampling_period = eval(get(findobj(gcf,'Tag','sampling'),'String'));
         max_ang_vel = eval(get(findobj(gcf,'Tag','angvel'),'String'));
         max_linear_vel = eval(get(findobj(gcf,'Tag','linvel'),'String'));
@@ -1629,11 +1610,6 @@ switch action
                 data.frame_limits(3) data.frame_limits(4)];
             pi_tuning = data.pi_tuning;
             [array_time, array_alpha, array_v, array_pos] = rmt_pi_controller(input_variables,ref_trajectory,pi_tuning,data.obstacles,data.Nobstacles);
-            %array_time = var_output(:,1);
-            %array_alpha = var_output(:,2)';
-            %array_v = var_output(:,3);
-            %array_pos = [var_output(:,1), var_output(:,2), var_output(:,3)];
-            array_pos = array_pos;
         end
         
         %drawing the result
@@ -1654,7 +1630,6 @@ switch action
             ymax = ymax + 0.1;
         end
         set(data.handle_ori,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
-        %set(data.handle_ori,'XGrid','on','YGrid','on');
         
         %velocities
         plot(data.handle_vel,array_time,array_v,'Color','k','LineWidth',2);

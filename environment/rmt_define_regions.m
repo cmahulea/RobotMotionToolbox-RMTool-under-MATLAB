@@ -45,7 +45,7 @@ grid on
 for i=1:reg_no   %i = object number
     j=1; %j = no. of vertexes for current object
     but=1;
-    while but==1
+    while (but==1 || j<4)
         [x,y,but]=ginput(1);
         plot(x,y,'.k')
         objects{i}(:,j)=[x;y];
