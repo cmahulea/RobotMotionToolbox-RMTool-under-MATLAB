@@ -106,6 +106,7 @@ if isempty(path)
 end
 if length(path)==1  %particular case (start & goal in the same cell)
     trajectory=[[x_st;y_st] , [x_fin;y_fin]];
+    distance = norm(trajectory(:,1)-trajectory(:,2));
     return
 end
 

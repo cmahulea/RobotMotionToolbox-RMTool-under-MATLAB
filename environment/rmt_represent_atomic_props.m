@@ -29,19 +29,21 @@ function [at_pr_h] = rmt_represent_atomic_props(C,propositions)
 
 dummy_cells = setdiff(1:length(C),cell2mat(propositions)); %handles to cells that are not atomic propositions
 
+at_pr_h=cell(1,length(propositions));   %handles for each atomic prop
+text_cells_h = zeros(1,length(C));
 %represent cells
 for i=1:length(C)
     fill(C{i}(1,:),C{i}(2,:),'w','FaceAlpha',0);
     %write cell numbers to cells that are not atomic propositions
     if ~isempty(intersect(dummy_cells,i))
         centr=mean(C{i},2)';
-        text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k');
+        text_cells_h(i) = text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k');
     end
 end
 
-at_pr_h=cell(1,length(propositions));   %handles for each atomic prop
 %represent atomic propositions
-colors=['r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c'];
+data = get(gcf,'UserData');
+colors=data.reg_plot.color;
 
 for i=1:length(propositions)
     at_pr_h{i}=zeros(1,length(propositions{i}));
@@ -49,8 +51,24 @@ for i=1:length(propositions)
         cell_ind=propositions{i}(j);    %index of current cell
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
         centr=mean(C{cell_ind},2)';
-        text(centr(1),centr(2),sprintf('c_{%d}(p_{%d})',cell_ind,i),'HorizontalAlignment','center','Color','k');
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('c_{%d}',cell_ind),'HorizontalAlignment','center','Color','k');
     end
 end
+
+message = sprintf('REGIONS OF INTEREST:');
+for i = 1 : length(propositions)
+    temp = sprintf('p%d (%s) is p%d=\\{',i,data.reg_plot.color_full{i},i);
+    for j = 1 : length(propositions{i})-1
+        temp = sprintf('%sc_{%d}, ',temp,propositions{i}(j));
+    end
+    temp = sprintf('%sc_{%d}\\}',temp,propositions{i}(length(propositions{i})));       
+    message = sprintf('%s\n%s',message,temp);
+end
+set(data.handle_text,'String',message,'Position',[0.35    0.054    0.63    0.2477],...
+    'FitBoxToText','on');
+
+data.reg_plot.at_pr_h = at_pr_h;
+data.reg_plot.text_cells_h = text_cells_h;
+set(gcf,'UserData',data);
 set(gca,'Box','on');
 set(gca,'XTick',0:2:16,'YTick',0:2:10);
