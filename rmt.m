@@ -1174,7 +1174,7 @@ switch action
                 % Control of regions of interest in the LTL Formula
                 if ((choice2 == 1) || ~isfield(data,'B'))
                     regionFormula=strfind(data.formula, 'p');
-                    if(data.Nobstacles ~= size(regionFormula,2))
+                    if(data.Nobstacles < size(regionFormula,2))
                         uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
                         prompt = {'New LTL Formula:'};
                         dlg_title = 'Robot Motion Toolbox';
