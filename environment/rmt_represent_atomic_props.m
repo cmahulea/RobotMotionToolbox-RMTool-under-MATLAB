@@ -57,15 +57,16 @@ end
 
 message = sprintf('REGIONS OF INTEREST:');
 for i = 1 : length(propositions)
-    temp = sprintf('p%d (%s) is p%d=\\{',i,data.reg_plot.color_full{i},i);
+    temp = sprintf('p%d (%s) is composed by \\{',i,data.reg_plot.color_full{i});
     for j = 1 : length(propositions{i})-1
         temp = sprintf('%sc_{%d}, ',temp,propositions{i}(j));
     end
     temp = sprintf('%sc_{%d}\\}',temp,propositions{i}(length(propositions{i})));       
     message = sprintf('%s\n%s',message,temp);
 end
+set(data.handle_text,'FitBoxToText','on');
 set(data.handle_text,'String',message,'Position',[0.35    0.054    0.63    0.2477],...
-    'FitBoxToText','on');
+    'FitBoxToText','off');
 
 data.reg_plot.at_pr_h = at_pr_h;
 data.reg_plot.text_cells_h = text_cells_h;

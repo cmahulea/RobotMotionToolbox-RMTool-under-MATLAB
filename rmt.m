@@ -178,6 +178,9 @@ switch action
         uimenu(b,'Label','&Workspace','Callback',strcat(thisfile,'(''save_paths_workspace'')'));
         uimenu(b,'Label','&Figure window','Callback',strcat(thisfile,'(''save_paths_figure'')'),'Separator','on');
         
+        a = uimenu('Label','Export to workspace');
+        uimenu(a,'Label','&Environment','Callback',strcat(thisfile,'(''save_work_env'')'));
+
         a = uimenu('Label','Help');
         uimenu(a,'Label','&About RMTool','Callback',strcat(thisfile,'(''help_menu'')'));
         
@@ -1476,7 +1479,7 @@ switch action
                 end
                 for i=1:data.Nobstacles
                     aux = data.obstacles{i};
-                    [as bs] = size(data.obstacles{1});
+                    [as, bs] = size(data.obstacles{1});
                     if(as > bs)
                         aux = aux';
                     end
@@ -2248,5 +2251,14 @@ switch action
         end
         
         set(gcf,'UserData',data);%to save data
-        
+    case 'save_work_env'
+        data = get(gcf,'UserData');
+        checkLabels = {'Save set of discrete states to variable named:' ...
+            'Save regions of interest to variable named:'...
+            'Save adjacency matrix to variable named:'...
+            };
+        varNames = {'Q', 'Pi','Adj'};
+        items = {data.T.Q, data.T.props, data.T.adj};
+        export2wsdlg(checkLabels, varNames, items, 'Save Simulation Results to Workspace');
+
 end;    % switch
