@@ -2257,8 +2257,8 @@ switch action
             'Save regions of interest to variable named:'...
             'Save adjacency matrix to variable named:'...
             };
-        varNames = {'Q', 'Pi','Adj'};
+        varNames = {'C', 'O','Adj'};
         items = {data.T.Q, data.T.props, data.T.adj};
-        export2wsdlg(checkLabels, varNames, items, 'Save Simulation Results to Workspace');
+        export2wsdlg(checkLabels, varNames, items, 'Save Environment Information to Workspace');
 
 end;    % switch

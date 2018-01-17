@@ -57,7 +57,7 @@ end
 
 message = sprintf('REGIONS OF INTEREST:');
 for i = 1 : length(propositions)
-    temp = sprintf('p%d (%s) is composed by \\{',i,data.reg_plot.color_full{i});
+    temp = sprintf('- %s region is O_{%d} = \\{',data.reg_plot.color_full{i},i);
     for j = 1 : length(propositions{i})-1
         temp = sprintf('%sc_{%d}, ',temp,propositions{i}(j));
     end
