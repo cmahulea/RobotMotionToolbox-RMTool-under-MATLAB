@@ -75,7 +75,7 @@ switch action
         data.intermediateMarkings = 10;
         data.obstacles=[];
         data.Nobstacles=0;
-        data.formula='(F p1) & G !(p2 | p3)';
+        data.formula='(F u1) & G !(u2 | u3)';
         data.rob_plot.line={'-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.'};
         data.rob_plot.line_color={'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k'};
         data.rob_plot.line_width={2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
@@ -165,7 +165,10 @@ switch action
         
         a = uimenu('Label','Setup');
         uimenu(a,'Label','&Environment limits','Callback',strcat(thisfile,'(''environment_limits'')'));
-        uimenu(a,'Label','&Robot initial and final position','Callback',strcat(thisfile,'(''robot_initial'')'));
+        uimenu(a,'Label','&Robots initial and final positions','Callback',strcat(thisfile,'(''robot_initial'')'),...
+            'Separator','on');
+        uimenu(a,'Label','&Add a Robot','Callback',strcat(thisfile,'(''add_robot'')'));
+        uimenu(a,'Label','Re&move Robots','Callback',strcat(thisfile,'(''remove_robot'')'));
         uimenu(a,'Label','&Number of intermediate markings (PN planning)','Callback',strcat(thisfile,'(''change_k'')'), 'Separator','on');
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
@@ -180,6 +183,7 @@ switch action
         
         a = uimenu('Label','Export to workspace');
         uimenu(a,'Label','&Environment','Callback',strcat(thisfile,'(''save_work_env'')'));
+        uimenu(a,'Label','&Petri net','Callback',strcat(thisfile,'(''save_work_pn'')'));
 
         a = uimenu('Label','Help');
         uimenu(a,'Label','&About RMTool','Callback',strcat(thisfile,'(''help_menu'')'));
@@ -281,7 +285,7 @@ switch action
             'Position',[0.05    0.093    0.11    0.029], ...
             'CallBack',strcat(thisfile,'(''ltl_formula_changed'')'), ...
             'Tag', 'ltlformula', ...
-            'String','(F p1) & G !(p2 | p3)',...
+            'String','(F u1) & G !(u2 | u3)',...
             'Visible','on');
         %edittext  BOOLEAN
         uicontrol( ...
@@ -747,6 +751,11 @@ switch action
             for i = 1 : 6
                 set(data.handles_control(i),'Visible','on');
             end
+            data = get(gcf,'UserData');
+            if (isfield(data,'T'))
+                data = rmfield(data,'T');
+                set(gcf,'UserData',data);
+            end
         else
             set(findobj(gcf,'Tag','reach'),'Value',0);
         end
@@ -898,18 +907,22 @@ switch action
                     end
                 end
             end
-            %T.R0 contains the information about the position of initial marking (ex. the initial marking is present
+            %T.RO contains the information about the position of initial marking (ex. the initial marking is present
             %in region P5 e P11),
             %instead T.M0 contains the  initial marking, in which region
             %the inserted robot is present.
             T.m0=zeros(length(T.Q),1);    %initial marking (for PN)
-            T.R0 = RO;
+            T.RO = RO;
             for i=T.Q
                 T.m0(i)=sum(ismember(RO,i));  %number of robots initially in state i
             end
             Tr = rmt_quotient_T(T); % quotient of partition T, with fewer states
             %(based on collapsing states with same observables in same connected component
             % with same obs)
+            orient = [];
+            for i = 1 : length(initial_points)
+                orient(i) = 0;
+            end
             data.Nobstacles = reg_no;
             data.obstacles = objects;
             data.T=T;
@@ -918,7 +931,7 @@ switch action
             data.RO = RO;
             data.initial=initial_points;
             data.final=final_points;
-            data.orientation=data.orientation;
+            data.orientation=orient;
             set(gcf,'UserData',data);
             set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
             return;
@@ -937,6 +950,9 @@ switch action
                 num_lines = 1;
                 defaultans = {'3'};
                 input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
+                if isempty(input_user)
+                    return;
+                end
                 obs_no = char(input_user(1));
                 if isempty(obs_no)
                     return;
@@ -948,11 +964,6 @@ switch action
                     rmt('run_environment');
                     return;
                 end
-                %if ((obs_no <= 0) || (obs_no >= 6) || (obs_no ~= round(obs_no)))
-                %    uiwait(errordlg(sprintf('\nNumber of obstacles should be a natural number between 1 and 5!'),'Robot Motion Toolbox','modal'));
-                %    rmt('run_environment');
-                %    return;
-                %end
                 data = get(gcf,'UserData');
                 limits = data.frame_limits;
                 %we clean the workspace figure
@@ -978,7 +989,7 @@ switch action
                 data.obstacles = objects;
                 data.initial=initial_point;
                 data.final=final_point;
-                data.orientation=data.orientation;
+                data.orientation = data.orientation(1);
                 set(gcf,'UserData',data);
                 set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
                 
@@ -1028,7 +1039,7 @@ switch action
                 data.obstacles = obstacles;
                 data.initial=initial_point;
                 data.final=final_point;
-                data.orientation=data.orientation;
+                data.orientation = data.orientation(1);
                 set(gcf,'UserData',data);
                 set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
             case 3 %Voronoi
@@ -1084,7 +1095,7 @@ switch action
                     poly_obstacles(a-1) = {X1{a}};
                 end
                 data.obstacles = poly_obstacles;
-                data.orientation=data.orientation;
+                data.orientation= data.orientation(1);
                 set(gcf,'UserData',data);
                 set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
             case 4 %manual points
@@ -1176,14 +1187,14 @@ switch action
                 
                 % Control of regions of interest in the LTL Formula
                 if ((choice2 == 1) || ~isfield(data,'B'))
-                    regionFormula=strfind(data.formula, 'p');
+                    regionFormula=strfind(data.formula, 'u');
                     if(data.Nobstacles < size(regionFormula,2))
                         uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
                         prompt = {'New LTL Formula:'};
                         dlg_title = 'Robot Motion Toolbox';
                         num_lines = 1;
                         defaultans = {''};
-                        %defaultans = {'(F p1) & G !(p2 | p3)'};
+                        %defaultans = {'(F u1) & G !(u2 | u3)'};
                         input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
                         data.formula= char(input_user(1));   % Reading of region's numbers from input interface
                         B = rmt_create_buchi(data.formula, Tg.Obs);
@@ -1271,7 +1282,7 @@ switch action
                     end
                     
                     % Construction of the Petri net
-                    [Pre,Post] = rmt_construct_PN(data.Tr);
+                    [Pre,Post] = rmt_construct_PN(data.Tr.adj);
                     m0=data.Tr.m0;
                     message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
                     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
@@ -1283,7 +1294,7 @@ switch action
                 else
                     reduced = 0;
                     tic;
-                    [Pre,Post] = rmt_construct_PN(data.T);
+                    [Pre,Post] = rmt_construct_PN(data.T.adj);
                     m0=data.T.m0;
                     tic;
                     [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.T.props,data.intermediateMarkings,data.formula);
@@ -1377,7 +1388,7 @@ switch action
                     message = sprintf('%s\n=======================================================',message);
                     message = sprintf('%s\nProject the solution to the initial transition system',message);
                     message = sprintf('%s\n=======================================================\n',message);
-                    [Pre,Post] = rmt_construct_PN(data.T);
+                    [Pre,Post] = rmt_construct_PN(data.T.adj);
                     m0 = data.T.m0;
                     steps = 1;
                     message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
@@ -1396,7 +1407,7 @@ switch action
                                 TT.adj(temp(j),:)=0;
                                 TT.adj(:,temp(j))=0;
                             end
-                            [Pre_new,Post_new] = rmt_construct_PN(TT);
+                            [Pre_new,Post_new] = rmt_construct_PN(TT.adj);
                             Aeq = [eye(size(Pre_new,1)) -Post_new+Pre_new]; %state equation: m = m0 + C \sigma
                             beq = m0;
                             %add constraints on the intermediate final marking
@@ -1501,12 +1512,12 @@ switch action
                         axes(data.handle_env);
                         rmt_plot_environment(obstaclesCD,data.frame_limits,C);
                         for k = 1 : length(data.initial)
-                            temp = data.initial{k};
-                            plot(temp(1),temp(2),'pw','Markersize',13, 'Color', 'k');
+                            plot(data.initial{k}(1),data.initial{k}(2),'pw',...
+                                'Markersize',13, 'Color', 'k');
                         end
                         for k = 1 : length(data.final)
-                            temp = data.final{k};
-                            plot(temp(1),temp(2),'pw','Markersize',13, 'Color', 'b');
+                            plot(data.final{k}(1),data.final{k}(2),'pw',...
+                                'Markersize',13, 'Color', 'b');
                         end
                         set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
                         grid on;
@@ -1809,31 +1820,197 @@ switch action
         data.frame_limits = temp;
         set(data.handle_env,'xlim',[temp(1) temp(2)],'ylim',[temp(3) temp(4)],'XGrid','on','YGrid','on');
         set(gcf,'UserData',data);
-    case 'robot_initial'
+    case 'robot_initial' 
         data = get(gcf,'UserData');
-        answer = inputdlg({...
-            sprintf('Initial point:'),...
-            sprintf('Final point:'),...
-            sprintf('Initial orientation (deg):')},'Robot Motion Toolbox',...
-            [1,1,1],{mat2sr(data.initial,3),mat2str(data.final,3),...
-            num2str(data.orientation,3)});
+        mission_task = get(findobj(gcf,'Tag','reach'),'Value'); %mission_task=1 - reachability tasks; 0 - ltl tasks
+
+        for i = 1 :length(data.initial)
+            str{i} = sprintf('Robot %d located at [%s,%s]',i,...
+                mat2str(data.initial{i}(1),3),mat2str(data.initial{i}(2),3));
+        end
+        [Selection,ok] = listdlg('PromptString','Select the robot to move:',...
+            'SelectionMode','single',...
+            'ListString',str);
+        if (ok == 0)
+            return;
+        end           
+        if (mission_task == 1) %%consider also the final destination
+            answer = inputdlg({...
+                sprintf('Initial point:'),...
+                sprintf('Final point:'),...
+                sprintf('Initial orientation (deg):')},'Robot Motion Toolbox',...
+                [1;1;1],{mat2str(data.initial{Selection},3),mat2str(data.final{Selection},3),...
+                num2str(data.orientation(Selection),3)});
+        else %only initial points
+            answer = inputdlg({...
+                sprintf('Initial point:'),...
+                sprintf('Initial orientation (deg):')},'Robot Motion Toolbox',...
+                [1;1],{mat2str(data.initial{Selection},3),...
+                num2str(data.orientation(Selection),3)});
+        end
         try
             initial = eval(answer{1});
-            final = eval(answer{2});
-            ini_ori = eval(answer{3});
+            if (mission_task == 1)
+                final = eval(answer{2});
+                ini_ori = eval(answer{3});
+            else
+                ini_ori = eval(answer{2});
+            end
         catch
             uiwait(errordlg('Error introducing data!','Robot Motion Toolbox','modal'));
             return;
         end
-        if (length(initial) ~= 2 || length(final) ~= 2 )
+        if (length(initial) ~= 2 )
             uiwait(errordlg('Error introducing data!','Robot Motion Toolbox','modal'));
             return;
         end
-        data.initial = initial;
-        data.final = final;
-        data.orientation = ini_ori;
+        if (mission_task == 1)
+            if (length(final) ~= 2)
+                uiwait(errordlg('Error introducing data!','Robot Motion Toolbox','modal'));
+                return;
+            end
+        end
+        %%check if inside any region of interest /obstacles
+        for i=1:length(data.obstacles)
+            if inpolygon(initial(1),initial(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
+                uiwait(errordlg('Initial point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
+                return;
+            end
+            if (mission_task == 1)
+                if inpolygon(final(1),final(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
+                    uiwait(errordlg('Final point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
+                    return;
+                end
+            end
+        end
+        if isfield(data,'T')
+            for j=1:length(data.T.Vert)   %indices of starting cell
+                if inpolygon(initial(1),initial(2),data.T.Vert{j}(1,:),data.T.Vert{j}(2,:))
+                    data.RO(Selection) = j;
+                    data.T.RO(Selection) = j;
+                    break;
+                end
+            end
+        end
+        data.initial{Selection} = initial;
+        if (mission_task == 1)
+            data.final{Selection} = final;
+        end
+        data.orientation(Selection) = ini_ori;
         set(gcf,'UserData',data);
-        %rmt('run_path_planning');
+        mission_task = get(findobj(gcf,'Tag','reach'),'Value'); 
+        %mission_task=1 - reachability tasks; 0 - ltl tasks
+        if (mission_task == 1)  %%update the graphical representation 
+            cla(data.handle_env);
+            for i = 1 : length(data.obstacles)
+                fill(data.obstacles{i}(1,:),data.obstacles{i}(2,:),...
+                    'b-','FaceAlpha',0.5); %or functia patch (similara cu fill)
+            end
+            plot(data.initial{1}(1),data.initial{1}(2),'or','LineWidth',3);
+            plot(data.final{1}(1),data.final{1}(2),'xk','LineWidth',3);
+        else
+            cla(data.handle_env);
+            rmt_plot_environment(data.obstacles,data.frame_limits,data.T.Vert);
+            rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props
+            for r=1:length(data.RO)
+                plot(data.initial{r}(1),data.initial{r}(2),'Color',data.rob_plot.line_color{r},...
+                    'LineStyle',data.rob_plot.line{r},...
+                    'LineWidth',data.rob_plot.line_width{r},...
+                    'Marker',data.rob_plot.marker{r},...
+                    'MarkerFaceColor',data.rob_plot.face_color{r});
+            end
+        end 
+
+    case 'add_robot'
+        IsReach = get(findobj(gcf,'Tag','reach'),'Value');
+        if (IsReach == 1)
+            uiwait(errordlg('This option is only for multi-robot systems!',...
+                'Robot Motion Toolbox','modal'));
+            return;
+        end
+        uiwait(msgbox(sprintf('\nChoose the initial point of the new robot with right click.\n'),'Robot Motion Toolbox','modal'));
+        data = get(gcf,'UserData');
+        point_ok = 0;
+        while(point_ok == 0)
+            but=1;
+            while but==1
+                [x,y,but]=ginput(1);
+            end
+            in = 0;
+            for(ii=1:data.Nobstacles)
+                in = in + inpolygon(x,y,data.obstacles{ii}(1,:),data.obstacles{ii}(2,:));
+            end
+            if(in>0)
+                uiwait(msgbox(sprintf('\nInvalid point!\n'),'Robot Motion Toolbox','modal'));
+            else
+                point_ok = 1;
+            end
+        end
+        plot(x,y,'or','LineWidth',3);
+        data.initial{length(data.initial)+1} = [x,y];
+        for j=1:length(data.T.Vert)   %indices of starting cell
+            if inpolygon(x,y,data.T.Vert{j}(1,:),data.T.Vert{j}(2,:))
+                data.RO = [data.RO j];
+                data.T.RO = [data.T.RO j];
+                break;
+            end
+        end
+        data.T.m0(j) = data.T.m0(j) + 1;  %number of robots initially in state i
+        data.orientation=[data.orientation 0];
+        set(gcf,'UserData',data);
+        %update the plots
+        cla(data.handle_env);
+        rmt_plot_environment(data.obstacles,data.frame_limits,data.T.Vert);
+        rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props
+        for r=1:length(data.RO)
+            plot(data.initial{r}(1),data.initial{r}(2),'Color',data.rob_plot.line_color{r},...
+                'LineStyle',data.rob_plot.line{r},...
+                'LineWidth',data.rob_plot.line_width{r},...
+                'Marker',data.rob_plot.marker{r},...
+                'MarkerFaceColor',data.rob_plot.face_color{r});
+        end
+    case 'remove_robot' 
+        IsReach = get(findobj(gcf,'Tag','reach'),'Value');
+        if (IsReach == 1)
+            uiwait(errordlg('This option is only for multi-robot systems!',...
+                'Robot Motion Toolbox','modal'));
+            return;
+        end
+        data = get(gcf,'UserData');
+        for i = 1 :length(data.initial)
+            str{i} = sprintf('Robot %d located at [%s,%s]',i,...
+                mat2str(data.initial{i}(1),3),mat2str(data.initial{i}(2),3));
+        end
+        [Selection,ok] = listdlg('PromptString','Select the robots to remove:',...
+            'SelectionMode','multiple',...
+            'ListString',str);
+        if (ok == 0)
+            return;
+        end
+        if (length(Selection) == length(data.RO))
+            uiwait(errordlg('Not possible to remove all robots!',...
+                'Robot Motion Toolbox','modal'));
+            return;
+        end
+        for i = length(Selection):-1:1
+            data.initial(Selection(i))=[];
+            data.RO(Selection(i))=[];
+            data.T.RO(Selection(i)) = [];
+            data.T.m0(Selection(i)) = data.T.m0(Selection(i)) - 1;
+            data.orientation(Selection(i)) =[];
+        end
+        set(gcf,'UserData',data);
+        %update the plots
+        cla(data.handle_env);
+        rmt_plot_environment(data.obstacles,data.frame_limits,data.T.Vert);
+        rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props
+        for r=1:length(data.RO)
+            plot(data.initial{r}(1),data.initial{r}(2),'Color',data.rob_plot.line_color{r},...
+                'LineStyle',data.rob_plot.line{r},...
+                'LineWidth',data.rob_plot.line_width{r},...
+                'Marker',data.rob_plot.marker{r},...
+                'MarkerFaceColor',data.rob_plot.face_color{r});
+        end
         
     case 'PI_tuning'
         data = get(gcf,'UserData');
@@ -2010,7 +2187,7 @@ switch action
             data.Tr = rmt_quotient_T(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
         end
         
-        [Pre,Post] = rmt_construct_PN(data.Tr);
+        [Pre,Post] = rmt_construct_PN(data.Tr.adj);
         m0=data.Tr.m0;
         message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
         uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
@@ -2159,7 +2336,7 @@ switch action
         message = sprintf('%s\n=======================================================',message);
         message = sprintf('%s\nProject the solution to the initial transition system',message);
         message = sprintf('%s\n=======================================================\n',message);
-        [Pre,Post] = rmt_construct_PN(data.T);
+        [Pre,Post] = rmt_construct_PN(data.T.adj);
         m0 = data.T.m0;
         steps = 1;
         message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
@@ -2178,7 +2355,7 @@ switch action
                     TT.adj(temp(j),:)=0;
                     TT.adj(:,temp(j))=0;
                 end
-                [Pre_new,Post_new] = rmt_construct_PN(TT);
+                [Pre_new,Post_new] = rmt_construct_PN(TT.adj);
                 Aeq = [eye(size(Pre_new,1)) -Post_new+Pre_new]; %state equation: m = m0 + C \sigma
                 beq = m0;
                 %add constraints on the intermediate final marking
@@ -2253,6 +2430,10 @@ switch action
         set(gcf,'UserData',data);%to save data
     case 'save_work_env'
         data = get(gcf,'UserData');
+        if ~isfield(data,'T')
+            uiwait(errordlg(sprintf('\nCreate a partition first'),'Robot Motion Toolbox','modal'));
+            return;
+        end
         checkLabels = {'Save set of discrete states to variable named:' ...
             'Save regions of interest to variable named:'...
             'Save adjacency matrix to variable named:'...
@@ -2260,5 +2441,18 @@ switch action
         varNames = {'C', 'O','Adj'};
         items = {data.T.Q, data.T.props, data.T.adj};
         export2wsdlg(checkLabels, varNames, items, 'Save Environment Information to Workspace');
-
+    case 'save_work_pn'
+        data = get(gcf,'UserData');
+        if ~isfield(data,'T')
+            uiwait(errordlg(sprintf('\nCreate a partition first'),'Robot Motion Toolbox','modal'));
+            return;
+        end
+        checkLabels = {'Save Pre matrix to variable named:' ...
+            'Save Post matrix to variable named:'...
+            'Save m0 to variable named:'...
+            };
+        varNames = {'Pre', 'Post','m0'};
+        [Pre,Post] = rmt_construct_PN(data.T.adj);
+        items = {Pre, Post, data.T.m0};
+        export2wsdlg(checkLabels, varNames, items, 'Save Petri Net model to Workspace');
 end;    % switch

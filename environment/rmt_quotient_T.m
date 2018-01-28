@@ -87,6 +87,6 @@ end
 if isfield(T, 'm0') %initial states -> construct initial marking for PN of Tr
     Tr.m0=zeros(length(Tr.Q),1);    %put different than 0 where robots are initially
     for i=Tr.Q
-        Tr.m0(i)=sum(ismember(T.R0,Tr.Cells{i}));  %number of robots initially in reduced state i
+        Tr.m0(i)=sum(ismember(T.RO,Tr.Cells{i}));  %number of robots initially in reduced state i
     end
 end

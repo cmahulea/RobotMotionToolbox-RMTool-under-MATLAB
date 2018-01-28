@@ -24,17 +24,16 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [Pre,Post] = rmt_construct_PN(T)
+function [Pre,Post] = rmt_construct_PN(Adj)
 % Construction of the Petri net
 % This function returns Pre and Post matrixes relative to the created system
-% T parameter represents a structure containing collapsing states based on observations;
-% each observation of T is a conjunction of one or more propositions, and the index of last observation is free space
+% Adj parameter represents the adjancecy matrix 
 
-Post= zeros(size(T.adj,1),[]);
-Pre = zeros(size(T.adj,1),[]);
+Post= zeros(size(Adj,1),[]);
+Pre = zeros(size(Adj,1),[]);
 
-for i = 1 : size(T.adj,1)
-    temp = setdiff(find(T.adj(i,:)),i);
+for i = 1 : size(Adj,1)
+    temp = setdiff(find(Adj(i,:)),i);
     for j = 1 : length(temp)
         % add a transition from place i to temp(j)
         % fprintf(1,'Add a transition from place p%d to p%d\n',i, temp(j));

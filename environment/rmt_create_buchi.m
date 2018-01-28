@@ -153,7 +153,7 @@ for i=1:states_no
         prop=row{j}(1 : (findstr(row{j},' -> ')-1)); %delimitate proposition (expression) involving atomic propositions
                                                      %prop is only of kind "[!]pi & [!]pj & [!]pk" ([!] - ! appears or not)
 
-        atom_pr=regexp(prop,'([!p]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
+        atom_pr=regexp(prop,'([!u]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
         atom_pr=[atom_pr{:}];
         labels=1:size(Obs,1);  %will store indices of observables (alphabet elements) that enable the current transition
                      %start with all labels, and at each step keep (intersect with) those "accepted" by the current atomic prop
