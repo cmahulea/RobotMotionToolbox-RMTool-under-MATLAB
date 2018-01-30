@@ -23,7 +23,7 @@
 %   Last modification December 29, 2015.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
-
+%%
 
 function rmt_plot_environment(objects,env_bounds,varargin)
 
