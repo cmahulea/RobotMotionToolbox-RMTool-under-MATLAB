@@ -17,7 +17,7 @@
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %% ============================================================================
-%   MOBILE ROBOT TOOLBOX
+%   MOBILE ROBOT TOO LBOX
 %   Graphical User Interface
 %   First version released on September, 2014. k
 %   Last modification December 29, 2015.
