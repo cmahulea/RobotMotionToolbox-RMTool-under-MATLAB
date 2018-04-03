@@ -20,35 +20,16 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on September, 2014. 
-%   Last modification February 14, 2018.
+%   Last modification December 29, 2015.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [objects,varargout] = rmt_define_regions(env_bounds,reg_no,varargin)
+function [objects,initial_point,final_point] = rmt_define_regions(handle_axes,reg_no,robot_no,define_final,x_min,x_max,y_min,y_max)
 % This function lets the user to define regions via mouse clicks
 % input arguments (2 or 5): env_bounds,reg_no,[handle_axes,robot_no,define_final]
 % output arguments (1 or 3): objects,[initial_point,final_point]
-% env_bounds=[x_min,x_max,y_min,y_max];
 
-switch nargin
-    case 2
-        robot_no = 0;
-        if nargout ~=1
-            fprintf('\nIncorrect number of output arguments for function "rmt_define_regions" (should be 1)!\n');
-            return;
-        end
-    case 5
-        handle_axes=varargin{1};
-        robot_no = varargin{2};
-        define_final = varargin{3};
-        if nargout ~=3
-            fprintf('\nIncorrect number of output arguments for function "rmt_define_regions" (should be 3)!\n');
-            return;
-        end
-    otherwise
-        fprintf('\nIncorrect number of input arguments for function "rmt_define_regions" (should be 2 or 5)!\n');
-        return;
-end
+env_bounds=[x_min,x_max,y_min,y_max];
 
 if (robot_no == 1)
     uiwait(msgbox(sprintf('\nFor defining a region:\n\t - left-click = pick a vertex\n\t - right-click = pick last vertex\n\nRegions should be convex and non-overlapping\n'),...
@@ -58,11 +39,7 @@ else
         'Robot Motion Toolbox','modal'));
 end
 
-try
-    axes(handle_axes);
-catch
-    figure();
-end
+axes(handle_axes);
 axis(env_bounds);
 hold on
 grid on
@@ -85,45 +62,18 @@ for i=1:reg_no   %i = object number
     fill(objects{i}(1,:),objects{i}(2,:),'b-','FaceAlpha',0.5); %or functia patch (similara cu fill)
 end
 
-if nargin == 5
-    if (define_final==1)
-        uiwait(msgbox(sprintf('\nChoose the initial and goal points with right click.\n'),'Robot Motion Toolbox','modal'));
-    else
-        uiwait(msgbox(sprintf('\nChoose the initial points of the robots with right click.\n'),'Robot Motion Toolbox','modal'));
-    end
+if (define_final==1)
+    uiwait(msgbox(sprintf('\nChoose the initial and goal points with right click.\n'),'Robot Motion Toolbox','modal'));
+else
+    uiwait(msgbox(sprintf('\nChoose the initial points of the robots with right click.\n'),'Robot Motion Toolbox','modal'));
+end
 
-    initial_point={};
-    final_point = {};
-    
-    for k = 1:robot_no
-        if (define_final==1)
-            for i=1:2
-                point_ok = 0;
-                while(point_ok == 0)
-                    but=1;
-                    while but==1
-                        [x,y,but]=ginput(1);
-                    end
-                    in = 0;
-                    for(ii=1:reg_no)
-                        in = in + inpolygon(x,y,objects{ii}(1,:),objects{ii}(2,:));
-                    end
-                    if(in>0)
-                        uiwait(msgbox(sprintf('\nInvalid point!\n'),'Robot Motion Toolbox','modal'));
-                    else
-                        point_ok = 1;
-                    end
-                end
-                %plot(x,y,'ob')
-                if i == 1
-                    plot(x,y,'or','LineWidth',3);
-                    initial_point{k} = [x,y];
-                else
-                    plot(x,y,'xk','LineWidth',3);
-                    final_point{k} = [x,y];
-                end
-            end
-        else
+initial_point={};
+final_point = {};
+
+for k = 1:robot_no
+    if (define_final==1)
+        for i=1:2
             point_ok = 0;
             while(point_ok == 0)
                 but=1;
@@ -140,12 +90,34 @@ if nargin == 5
                     point_ok = 1;
                 end
             end
-            plot(x,y,'or','LineWidth',3);
-            initial_point{k} = [x,y];
+            %plot(x,y,'ob')
+            if i == 1
+                plot(x,y,'or','LineWidth',3);
+                initial_point{k} = [x,y];
+            else
+                plot(x,y,'xk','LineWidth',3);
+                final_point{k} = [x,y];
+            end
         end
+    else
+        point_ok = 0;
+        while(point_ok == 0)
+            but=1;
+            while but==1
+                [x,y,but]=ginput(1);
+            end
+            in = 0;
+            for(ii=1:reg_no)
+                in = in + inpolygon(x,y,objects{ii}(1,:),objects{ii}(2,:));
+            end
+            if(in>0)
+                uiwait(msgbox(sprintf('\nInvalid point!\n'),'Robot Motion Toolbox','modal'));
+            else
+                point_ok = 1;
+            end
+        end
+        plot(x,y,'or','LineWidth',3);
+        initial_point{k} = [x,y];
     end
-    
-    varargout(1)={initial_point};
-    varargout(2)={final_point};
 end
 end

@@ -54,6 +54,7 @@ for i=1:size(temp_obs,1)  %modify observables (keep at most one occurence of sam
     if length(obs)<N_p %pad with zeros until number of propositions
         obs((end+1):N_p)=0;
     end
+    
     temp_obs(i,:)=obs;
 end
 temp_obs=unique(temp_obs,'rows');   %again remove identical rows (there may appear new repetitions, due to keeping only unique elements on each row and padding with zeros)

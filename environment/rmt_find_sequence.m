@@ -25,6 +25,9 @@
 % ============================================================================
 
 function [ret,Run_cells] = rmt_find_sequence(m0, vector, Pre, Post,steps, Run_cells)
+% Function that returns the number of places crossed to reach the end point 
+% and the carrier containing the places where the brands are present. 
+% Both structures also have another information: the number of net's state.
 ret = sprintf(' Step %d:',steps);
 places = rmt_marking2places(m0);
 % Run_cells = [Run_cells , places]; %initial are already in Run_cells from previous step
