@@ -49,18 +49,21 @@ N_p = min(N_r,length(propositions));
 temp_cell=mat2cell( repmat(temp_obs,N_r,1) , ones(1,N_r) , length(temp_obs) );  %duplicate observables of transition systems
 temp_obs=rmt_cartesian_product(temp_cell{:});  %possible observables, on rows (more robots can have the same observables, that's why we use carth product); observables will be labeled with indices of rows (in T.obs)
 temp_obs=unique(sort(temp_obs,2),'rows');   %sort rows and remove identical ones (they would have the same observable)
+
 for i=1:size(temp_obs,1)  %modify observables (keep at most one occurence of same prop on each row, and pad with zeros until length 
     obs=unique(temp_obs(i,:));    %keep unique elements on each row, and pad wih zeros
-    if length(obs)<N_p %pad with zeros until number of propositions
-        obs((end+1):N_p)=0;
-    end
-    
+    if length(obs)<size(temp_obs,2) %pad with zeros until number of propositions
+        obs((end+1):size(temp_obs,2))=0;
+    end  
     temp_obs(i,:)=obs;
 end
+
 temp_obs=unique(temp_obs,'rows');   %again remove identical rows (there may appear new repetitions, due to keeping only unique elements on each row and padding with zeros)
 %until now temp_obs has 2^n-1 lines (-1 for the empty set); add a line for the dummy prop (we shouldn't add dummy to other satisfied props, only on a single line)
 % temp_obs(end+1,:)=[N_p+1 , zeros(1,N_p-1)]; %dummy has index (N_p+1), and pad with zeros after it
-temp_obs(end+1,:)=[ind_dummy , zeros(1,N_p-1)]; %dummy has index "ind_dummy", and pad with zeros after it
+%temp_obs(end+1,:)=[ind_dummy , zeros(1,N_p-1)]; %dummy has index "ind_dummy", and pad with zeros after it
+temp_obs(end+1,:)=[ind_dummy]; %dummy has index "ind_dummy", and pad with zeros after it
+
 % AGGIUNTA DELLA REGIONE FITTIZIA AI DUE ROBOT 
 % colonne robot, righe regioni di interesse + 1 che rappresenta la regione
 % fittizia
