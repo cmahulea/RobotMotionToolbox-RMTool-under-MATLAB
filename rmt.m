@@ -75,7 +75,7 @@ switch action
         data.intermediateMarkings = 10;
         data.obstacles=[];
         data.Nobstacles=0;
-        data.formula='(F u1) & G !(u2 | u3)';
+        data.formula='(F y1) & G !(y2 | y3)';
         data.rob_plot.line={'-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.'};
         data.rob_plot.line_color={'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k'};
         data.rob_plot.line_width={2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
@@ -285,7 +285,7 @@ switch action
             'Position',[0.05    0.093    0.11    0.029], ...
             'CallBack',strcat(thisfile,'(''ltl_formula_changed'')'), ...
             'Tag', 'ltlformula', ...
-            'String','(F u1) & G !(u2 | u3)',...
+            'String','(F y1) & G !(y2 | y3)',...
             'Visible','on');
         %edittext  BOOLEAN
         uicontrol( ...
@@ -1194,7 +1194,7 @@ switch action
                         dlg_title = 'Robot Motion Toolbox';
                         num_lines = 1;
                         defaultans = {''};
-                        %defaultans = {'(F u1) & G !(u2 | u3)'};
+                        %defaultans = {'(F y1) & G !(y2 | y3)'};
                         input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
                         data.formula= char(input_user(1));   % Reading of region's numbers from input interface
                         B = rmt_create_buchi(data.formula, Tg.Obs);

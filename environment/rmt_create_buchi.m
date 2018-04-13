@@ -28,15 +28,16 @@
 % ============================================================================
 
 function B = rmt_create_buchi(formula, Obs)
-%Convert LTL formula to a Buchi automaton
+%Convert LTL formula to a Buchi automaton -> version April 2018
 
 %inputs:
 %alphabet of Buchi is Obs (matrix) - observable set of transition system used, a row of Obs is an observable (can be a tuple of some elements)
 %formula: string containing LTL formula (all its atomic proposition are in alphabet from which alphabet_set was created) (use spaces in formula)
-%atomic propositions are of form p0...0x, where x is an integer; true, false
+%atomic propositions are of form y0...0x, where x is an integer; true, false
+% USE "y" for denoting propositions (outputs of system)
 %Boolean operators: ! - negation; & - and; | - or; -> - implication; <-> - equivalence;
 %Temporal operators: U - until; R - release; F - eventually; G - always; X - next
-%example of formula: (F p1) & G !(p2 | p3)
+%example of formula: (F y1) & G !(y2 | y3)
 
 %output: cell aray containing Buchi automaton accepting exactly the infinite strings satisfying LTL formula
 
@@ -50,9 +51,25 @@ formula=regexprep(formula, 'R', 'V');
 formula=regexprep(formula, 'F', '<>');
 formula=regexprep(formula, 'G', '[]');
 
-data = get(gcf,'UserData');
-runLTL2BA = data.ltl2ba;
 temp = computer;
+try
+    data = get(gcf,'UserData');
+    runLTL2BA = data.ltl2ba;
+catch
+    if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
+        [~, WindowsVersion] = system('ver');
+        if isempty(strfind(WindowsVersion,'Version 10')) %different than Windows 10 (7 or before)
+            runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
+        else %Windows 10
+            runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
+        end
+    elseif strcmpi(temp,'GLNXA64')
+        runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2bal'];
+    elseif strcmpi(temp,'MACI64')
+        runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba'];
+    end
+    fprintf('\n Note: rmt_create_buchi is trying the default path for ltl2ba (subfolder aux_toolboxex -> ltl2ba)...\n');
+end
 
 if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
     [s,r]=dos([runLTL2BA ' -d -f "' formula '"']); %sintax for calling ltl2ba.exe (located in subdir .\ltl2ba); use full description result (-d)
@@ -64,120 +81,150 @@ elseif strcmpi(temp,'MACI64')
 end
 
 if s~=0 %error
-    message = sprintf('LTL to Buchi not corrected installed.\nRemove RMTconfig.txt file and run again the toolbox\nIt will be automatically created!');
+    message = sprintf('ERROR when converting LTL to Buchi. Posible causes:\n (1) LTL to Buchi not corrected installed -> Remove RMTconfig.txt file and run again the toolbox; file will be automatically created.\n (2)Antivirus may have stopped ltl2ba -> temporarily disable antivirus.\n');
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    B=[];
     return
 end
 
 %s=0, conversion successfull
-% sig=1:size(Obs,1);  %sigmas: numeric labels for observables (integers) (# of rows of matrix Obs)
 
-str1=[char(10), 'Buchi automaton after simplification' char(10)];    %first string for match (char(10) - line feed)
-%str2=[char(10), char(10), 'never {'];    %second string for match (end of interesting "zone" from what ltl2ba returns)
-str2=[char(10), 'never {'];    %second string for match (end of interesting "zone" from what ltl2ba returns)
-
+%isolate text part which we will parse for creating B
+str1=[char(10), 'never {'];    %first string for match (start of interesting "zone" from what ltl2ba returns); char(10) - newline -> ASCII table https://www.techonthenet.com/ascii/chart.php
+%str1=[char(10), char(10), 'never {'];
+str2=[char(10), '}'];    %second string for match (end of interesting "zone" from what ltl2ba returns)
 %remove from beginning until line contained by str1 (including it), and from beginning of str2 to end 
-r_temp=r(findstr(r,str2):end);  %used below, if there are no accepting states
-r([1:(findstr(r,str1)+length(str1)-1) , findstr(r,str2):end])=[];
+ind1=strfind(r,str1);
+ind2=strfind(r,str2);
+ind2(ind2 <= ind1(end))=[];
+r_temp=r(ind1(end):end);  %used below, if there are no accepting states
+r([1:ind1(end) , (ind2(1)+1):end])=[]; %leave last newline, will be usefull below in finding "row"
 
-
-% we have a string like: "state x
-%                         p1 -> state_label
-%                         . . .
-%                         state accept_**
-%                         . . .
-%                         "
+% we have a string like: "never { /* <>(p1||p3) && <>(p2&&!p1) */
+%                             T0_init:
+%                             	  if
+%                             	  :: (1) -> goto T0_init
+%                                 :: (!p1 && p2) -> goto T0_S2
+%                                 fi;
+%                             T0_S2:
+%                                 if
+%                                 . . .
+%                             accept_all:
+%                                 skip
+%                            "
 % we want to create a cell B containing the Buchi automaton (see help on Characters and Strings, Regular Expressions)
 
-% states_no=length(findstr(r,'state'));  %number of states in Buchi aut
-% B.S=1:states_no;
-if ~isempty(regexp(r,'empty automaton', 'once' ))
+if ~isempty(regexp(r_temp,'empty automaton', 'once' ))
     fprintf('\nERROR - empty Buchi automaton (maybe LTL formula has logical inconsistencies)\n');
+    B=[];
     return
 end
-if isempty(regexp(r_temp,'accept', 'once' ))
+if isempty(regexp(r,'accept', 'once' ))
     fprintf('\nERROR - no accepting state in Buchi automaton (maybe LTL formula has logical inconsistencies)\n');
+    B=[];
     return
 end
 
-[S_names s_ind e_ind]=regexp(r, 'state (\S*)', 'tokens', 'start', 'end'); %S_names is a cell containing sub-cells with state names
-                %s_ind, e_ind contain start&end indices for expressions (useful for delimiting parts of r corresponding to a certain state)
-S_names=[S_names{:}];   %get rid of sub-cells (S_names is a cell array of strings)
-states_no=length(S_names);  %number of states in Buchi aut
-B.S=1:states_no;    %numeric indices for states conteining in S_names
-B.S0=find( cellfun( 'isempty', regexp(S_names,'init') ) == 0 );    %find indices of state(s) containing word 'init' (initial st.)
-
-%final(accepting) states:
-if states_no==1
-    B.F=1;  %if there is only one state it may not contain string "accept", however it is accepting if the above tests were passed
-elseif states_no < 1000 %for number of states less than about 1000, find accepting states as follows (to not skip some)
-    S_names_temp=regexp(r_temp,'(\w*):\n','tokens');
-    S_names_temp=[S_names_temp{:}]; %same order as in S_names
-    B.F=[];
-    %find accepting states in r_temp (otherwise might miss one, if it's also initial)
-    ind_fin=regexp(r_temp,[char(10) 'accept']);  %beginning positions of accept_statename
-    for i=1:length(ind_fin)
-        str_fin=r_temp(ind_fin(i):end); %look from current point on
-        str_fin=str_fin(2 : (regexp(str_fin,':','once')-1));    %first char was new line, don't need it
-        fin=strmatch(str_fin, S_names_temp, 'exact');
-        B.F=[B.F fin]; %mette l'indice dove c'è scritto accept in B.F
-    end
-else    %for more than ~1000 states, some states (e.g. initial) wrongly include 'accept' in string 'r_temp', but they doesn't in S_names
-    B.F=find( cellfun( 'isempty', regexp(S_names,'accept') ) == 0 );    %find indices of state(s) containing word 'accept' (accepting states)
+ind1=strfind(r,char(10)); %remove first line (with "never...")
+r(1:ind1(1))=[];
+%remove lines with "if", with "fi;", some tabs and unusefull sequences:
+ind=strfind(r,[char(9), 'if', char(10)]); %after some states (char(9) is tab)
+for i=length(ind):-1:1  %go backwards, because otherwise would affect following instances
+    r(ind(i):ind(i)+3)=[];
 end
-%find transitions (search succesors for each state and atomic proposition)
-B.trans=cell(states_no,states_no);  %trans(i,k) gives the indices of elements from alphabet_set (with "or" between them) for which s_i -> s_k
+ind=strfind(r,[char(9), 'fi;', char(10)]); %after some states (char(9) is tab)
+for i=length(ind):-1:1
+    r(ind(i):ind(i)+4)=[];
+end
+ind=strfind(r,[char(9), ':: ']); %remove (tabs followed by :: ) that appear after some states (char(9) is tab)
+for i=length(ind):-1:1
+    r(ind(i):ind(i)+3)=[];
+end
+r(strfind(r,char(9)))=[]; %remove all remaining tabs
+ind=strfind(r,'goto '); %remove "goto " (is indicated and preceeded anyway by "->"
+for i=length(ind):-1:1
+    r(ind(i):ind(i)+4)=[];
+end
+
+
+%Buchi states and their names allocated by ltl2ba
+[S_names, s_ind, e_ind]=regexp(r,'(\w*):\n','tokens'); %state names (any string followed by ":" and immediately after "\n"
+S_names=[S_names{:}]; %get rid of sub-cells (S_names is a cell array of strings)
+
+states_no=length(S_names);  %number of states in Buchi aut
+B.S=1:states_no;    %numeric indices for states
+
+%initial and final(accepting) states:
+B.S0=find( cellfun( 'isempty', regexp(S_names,'init') ) == 0 );    %find indices of state(s) containing word 'init' (initial st.)
+B.F=find( cellfun( 'isempty', regexp(S_names,'accept') ) == 0 );    %find indices of state(s) containing word 'accept' (accepting states)
+
+%find transitions (search succesors for each state and atomic proposition) 
+B.trans=cell(states_no,states_no);  %trans(i,next_state) gives the indices of elements from Obs that enable transition s_i -> s_{next_state}
 for i=1:states_no
     if i~=states_no
-        str=r((e_ind(i)+2): (s_ind(i+1)-1));   %select string containing transitions of current state (p1 -> . . .)
+        str=r((e_ind(i)+1): (s_ind(i+1)-1));   %select string containing transitions of current state (y1 -> . . .); r(e_ind(i)) is newline
     else    %last state in string r
-        str=r((e_ind(i)+2): end);
+        str=r((e_ind(i)+1): end);
     end
-
+    
+    % rows=regexp(r,'.*','match','dotexceptnewline'); %cell array with rows of text
+    % %dot (.) matches every character, including the newline. Exclude newline characters from the match using the 'dotexceptnewline' option.
     row=regexp(str,'([^\n]*)\n','tokens');  %token: ([^\n] - any character different than new line), (* - any number of such characters)
     row=[row{:}]; %cell with rows for current state (i) (each row contains one state)
     for j=1:length(row)
-        % k=find( cellfun( 'isempty', regexp(row{j}, S_names) ) == 0 ); %index of state in which s_i transit (on current row)
-        %k should be an integer (could be vector, if there are states like T0_S1, T0_S11, but this happens for unusually large formulas
-        %in order to avoid this, use the following line (instead the above commented one):
-        k=strmatch(row{j}((findstr(row{j},' -> ')+4) : end), S_names, 'exact'); %find string with state name and find index for exact matching in possible names
-
-       %ONLY {& (and), ! (not), 1 (any=True)} can appear on each row with respect to propositions (|| (OR) operator results in 2 rows)
-       %if 1 appears, it is the first element and there is no atomic proposition on current row
-        if row{j}(1)==1
-            B.trans{i,k}=1:size(Obs,1);   %for all observables there is transition s_i -> s_k
-            continue
+        if strcmp(row{j},'skip')    %self-loop for all inputs
+            B.trans{i,i}=1:size(Obs,1);   %for all observables there is loop s_i -> s_i
+            B.trans{i,i}=B.trans{i,i}(:);   %force column vector (or "B.trans{i,i}=reshape(B.trans{i,i},[],1)")
+            continue; %end current tests for this row, continue with next row or next state
         end
-
-       %1 does not appear on current row
-        prop=row{j}(1 : (findstr(row{j},' -> ')-1)); %delimitate proposition (expression) involving atomic propositions
-                                                     %prop is only of kind "[!]pi & [!]pj & [!]pk" ([!] - ! appears or not)
-
-        atom_pr=regexp(prop,'([!u]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
-        atom_pr=[atom_pr{:}];
-        labels=1:size(Obs,1);  %will store indices of observables (alphabet elements) that enable the current transition
-                     %start with all labels, and at each step keep (intersect with) those "accepted" by the current atomic prop
-                     %(if atomic prop is not negated, observables should contain it and vice-cersa)
         
-        for ap=1:length(atom_pr) %for each atomic prop, modify vector "labels"
-            if isempty(findstr(atom_pr{ap},'!'))   %same as (atom_pr{ap}(1)~='!') %current atomic prop is not negated, so we keep ALL subsets that contain it
-                            %use intersections because atomic propositions (possibly negated) are linked only by & (AND) operator
-                ap_num=str2double(atom_pr{ap}(2:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate 'p' from beginning)
-                labels_temp=find(sum(ap_num==Obs,2));    %indices of rows from Obs (observables) containing current atomic proposition
-                labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)
-
-            else    %same as (atom_pr{ap}(1)=='!') %negated, find all subsets NOT containing the current atomic proposition
-                ap_num=str2double(atom_pr{ap}(3:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate '!p' from beginning)
-                labels_temp=find(sum(ap_num==Obs,2)==0);    %indices of rows from Obs (observables) NOT containing current atomic proposition
-                labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)                
+        % next_state=strmatch(row{j}((strfind(row{j},' -> ')+4) : end), S_names, 'exact'); %find string with state name and find index for exact matching in possible names
+        next_state=find(strcmp(row{j}((strfind(row{j},' -> ')+4) : end), S_names)); %find string with state name and find index for exact matching in possible names
+                
+        %row{j} is in Disjunctive Normal Form (DNF); isolate terms in disjunction
+        dnf_expr=row{j}(1 : (strfind(row{j},' -> ')-1));   %DNF expression
+        conj_props=regexp([dnf_expr,' ||'],'([^|]*) ||','tokens');  %conjunction props (at least one, since apending ' ||' at end of dnf_expr
+        conj_props=[conj_props{:}];
+        
+        for k=1:length(conj_props)
+            prop=conj_props{k}; %current proposition (term from DNF)
+            prop(strfind(prop,' '))=[]; %remove all spaces
+            prop(strfind(prop,'('))=[]; %remove all paranthesis
+            prop(strfind(prop,')'))=[]; %remove all paranthesis
+            
+            %ONLY {& (and), ! (not), 1 (any=True)} can appear on each row with respect to propositions (|| (OR) operator results in 2 rows)
+            %if 1 appears, it is the first element and there is no atomic proposition on current row
+            if prop(1)==1
+                B.trans{i,next_state}=1:size(Obs,1);   %for all observables there is transition s_i -> s_{next_state}
+                B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
+                continue
             end
+
+            %current row does not start with 1; prop is only of kind "[!]yi&&[!]yj&&[!]yk" ([!] - ! appears or not)
+
+            atom_pr=regexp(prop,'([!y]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
+            atom_pr=[atom_pr{:}];
+            labels=1:size(Obs,1);  %will store indices of observables (alphabet elements) that enable the current transition
+                         %start with all labels, and at each step keep (intersect with) those "accepted" by the current atomic prop
+                         %(if atomic prop is not negated, observables should contain it and vice-cersa)
+        
+            for ap=1:length(atom_pr) %for each atomic prop, modify vector "labels"
+                if isempty(strfind(atom_pr{ap},'!'))   %same as (atom_pr{ap}(1)~='!') %current atomic prop is not negated, so we keep ALL subsets that contain it
+                                %use intersections because atomic propositions (possibly negated) are linked only by & (AND) operator
+                    ap_num=str2double(atom_pr{ap}(2:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate 'y' from beginning)
+                    labels_temp=find(sum(ap_num==Obs,2));    %indices of rows from Obs (observables) containing current atomic proposition
+                    labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)
+
+                else    %same as (atom_pr{ap}(1)=='!') %negated, find all subsets NOT containing the current atomic proposition
+                    ap_num=str2double(atom_pr{ap}(3:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate '!y' from beginning)
+                    labels_temp=find(sum(ap_num==Obs,2)==0);    %indices of rows from Obs (observables) NOT containing current atomic proposition
+                    labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)
+                end
+            end
+
+            B.trans{i,next_state}=union(B.trans{i,next_state},labels);    %add current labels to current transitions (transition s_i -> s_{next_state} can be captured by more rows
+                                                         %(equivalent with OR operator between propositions)
+            B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
         end
-
-        B.trans{i,k}=union(B.trans{i,k},labels);    %add current labels to current transitions (transition s_i -> s_k can be captured by more rows
-                                                    %(equivalent with OR operator between propositions)
     end
-end
-
-if isempty(B.F) %no final state detected (because it is only one initial state and ltl2ba names it only "init" in description of simplified autmaton)
-    B.F=B.S0;
 end
