@@ -71,18 +71,29 @@ grid on
 for i=1:reg_no   %i = object number
     j=1; %j = no. of vertexes for current object
     but=1;
-    while (but==1 || j<4)
+    non_convex=1;
+    while (but==1 || j<4 || non_convex)
         [x,y,but]=ginput(1);
+        if x<env_bounds(1) || x>env_bounds(2) || y<env_bounds(3) || y>env_bounds(4)
+            continue;   %if outside environment, read current point again
+        end
         plot(x,y,'.k')
         objects{i}(:,j)=[x;y];
         j=j+1;
+        if but~=1 && j>=3   %want to finish current object
+           try %try to create convex obstacle
+               k=convhull(objects{i}(1,:),objects{i}(2,:));
+               objects{i}=objects{i}(:,k(1:length(k)-1));
+               non_convex=0;    %convex shape, if above successfull
+           catch %non-convex shape, yet -> continue reading points
+               continue;
+           end
+        end
     end
     
-    %creating convex obstacles & drawing them
-    k=convhull(objects{i}(1,:),objects{i}(2,:));
-    objects{i}=objects{i}(:,k(1:length(k)-1));
-    pause(0.3)
-    fill(objects{i}(1,:),objects{i}(2,:),'b-','FaceAlpha',0.5); %or functia patch (similara cu fill)
+    %draw current convex obstacle
+    fill(objects{i}(1,:),objects{i}(2,:),'b-','FaceAlpha',0.5);
+    pause(0.3);
 end
 
 if nargin == 5
