@@ -25,7 +25,7 @@
 % ============================================================================
 
 
-function [short_traj , traj_length] = optimize_traj_norm_one(com_F,path_cells,start_p,goal_p,safe_dist)
+function [short_traj , traj_length] = rmt_optimize_traj_norm_one(com_F,path_cells,start_p,goal_p,safe_dist)
 %% formulate LP for minimizing sum of norm 1 from all trajectory segments
 
 n_lam=length(path_cells)-1; %number of segments crossed (lambda's to find)

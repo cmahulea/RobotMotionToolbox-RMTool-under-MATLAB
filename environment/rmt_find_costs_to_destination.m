@@ -25,7 +25,7 @@
 % ============================================================================
 
 
-function [path, cost] = rmt_find_path(adj,s,d)
+function [dist] = rmt_find_costs_to_destination(adj,s)
 %find the path with minimum cost (shortest path) in a graph, from a source node s to a node (d), and the corresponding cost
 %the graph is known through an adjacency matrix, where adj(i,j)=cost for going from i to j; exception if adj(i,j)==0 - see below
 %Dijkstra's algorithm is used (since it finds minimal costs for all nodes in graph), with the following small modification:
@@ -61,14 +61,3 @@ while sum(visited)~=n
     end
 end
 
-%we have minimum distances from s to all nodes in graph
-%find the desired path (s -> d) by starting from d and following predecessors
-if dist(d)~=Inf %there exists a path s -> d
-    path=[d]; %put destination node in path and start going through predecessors ("backward" search), until s is reached
-    while path(1)~=s    %find all nodes between s and d(i), until s is reached (because we know that there is a path s->d)
-        path=[predec(path(1)) path];  %add a predecesor in path, in front of the others; s will be on first position in path
-    end
-else
-    path=[]; %there is no path s -> d
-end
-cost=dist(d);    %cost of the path

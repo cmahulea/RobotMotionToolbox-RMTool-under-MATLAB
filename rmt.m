@@ -100,6 +100,9 @@ switch action
             'magenta','black','red','blue','green','cyan','magenta','black','red',...
             'blue','green','cyan','magenta','black','red','blue','green','cyan',...
             'magenta','black','red','blue','green','cyan','magenta','black'};
+        data.waypointsMPC.N = 2;
+        data.waypointsMPC.safe_dist = 0.1;
+        data.waypointsMPC.intermPoints = 1;
 
         
         set(gcf,'UserData',data);
@@ -397,7 +400,7 @@ switch action
             'ListboxTop',0, ...
             'Position',[0.0303    0.56    0.2628    0.0952], ...
             'Tag', 'waypoints', ...
-            'String','Middle points|Norm 1|Norm 2|Norm Inf.'); % |variable step saving data');
+            'String','Middle points|Norm 1|Norm 2|Norm Inf.|MPC'); % |variable step saving data');
         
         %Max linear velocity
         uicontrol( ...
@@ -1510,7 +1513,7 @@ switch action
                         end
                         cla(data.handle_env);
                         axes(data.handle_env);
-                        rmt_plot_environment(obstaclesCD,data.frame_limits,C);
+                        rmt_plot_environment(obstaclesCD,data.frame_limits,C,'c');
                         for k = 1 : length(data.initial)
                             plot(data.initial{k}(1),data.initial{k}(2),'pw',...
                                 'Markersize',13, 'Color', 'k');
@@ -1564,6 +1567,27 @@ switch action
                             data.trajectory = traj_norm_inf;
                             plot(traj_norm_inf(1,:),traj_norm_inf(2,:),'r','LineWidth',2);
                             message = sprintf('Travelled distance via Norm-Inf.: %g.\n',dist_norm_inf);
+                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 5)  %MPC @@@@
+                            data = get(gcf,'UserData');
+                            prompt = {'Safety distance:','N:','Number of intermediate points on common edges:'};
+                            dlg_title = 'Robot Motion Toolbox';
+                            num_lines = 1;
+                            defaultans = {num2str(data.waypointsMPC.safe_dist),num2str(data.waypointsMPC.N),...
+                                num2str(data.waypointsMPC.intermPoints)};
+                            input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
+                            data.waypointsMPC.safe_dist = str2num(char(input_user(1)));   %should be smaller than half of shortest traversed segment
+                            data.waypointsMPC.N = str2num(char(input_user(2))); % Receding horizon
+                            data.waypointsMPC.intermPoints = str2num(char(input_user(3)));                           
+                            set(gcf,'UserData',data);
+                           
+                            [traj, travel_dist] = rmt_optimize_traj_mpc(C,adj,com_F,...
+                                data.waypointsMPC.safe_dist,data.waypointsMPC.intermPoints,...
+                                data.waypointsMPC.N, temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
+                            for i = 1 : size(traj,2)-1
+                                plot([traj(1,i) traj(1,i+1)],[traj(2,i) traj(2,i+1)],'r');
+                            end
+                            message = sprintf('Travelled distance via MPC: %g.\n',travel_dist);
                             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
                         end
                         set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
