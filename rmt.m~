@@ -101,7 +101,7 @@ switch action
             'blue','green','cyan','magenta','black','red','blue','green','cyan',...
             'magenta','black','red','blue','green','cyan','magenta','black'};
         data.waypointsMPC.N = 2;
-        data.waypointsMPC.safe_dist = 0.5;
+        data.waypointsMPC.safe_dist = 0.1;
         data.waypointsMPC.intermPoints = 1;
 
         
@@ -1588,15 +1588,14 @@ switch action
                             data.waypointsMPC.N = str2num(char(input_user(2))); % Receding horizon
                             data.waypointsMPC.intermPoints = str2num(char(input_user(3)));                           
                             set(gcf,'UserData',data);
-                            tic;
+                           
                             [traj, travel_dist] = rmt_optimize_traj_mpc(C,adj,com_F,...
                                 data.waypointsMPC.safe_dist,data.waypointsMPC.intermPoints,...
                                 data.waypointsMPC.N, temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
                             for i = 1 : size(traj,2)-1
                                 plot([traj(1,i) traj(1,i+1)],[traj(2,i) traj(2,i+1)],'r');
                             end
-                            message = sprintf('Travelled distance via MPC: %.2f.\n\nTime to compute the trajectory: %.2f',...
-                                travel_dist,toc);
+                            message = sprintf('Travelled distance via MPC: %g.\n',travel_dist);
                             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
                         end
                         set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
