@@ -150,9 +150,13 @@ while 1
     
     %%add a new state corresponding to the final destination
     adj_points = [adj_points zeros(size(adj_points,1),1); zeros(1,size(adj_points,1)) 0];
+    Cells(1,size(Cells,2)+1)=destination_cell;
+    Cells(2,size(Cells,2))=destination_cell;
+    Edges(1,size(Edges,2)+1) = x_fin;
+    Edges(2,size(Edges,2)) = y_fin;
     
     %add the terminal cost to the destination
-    for i = 1 : size(Cells,2)
+    for i = 1 : size(Cells,2)-1
         adj_points(i,size(adj_points,2)) = min( dist(Cells(1,i)) + norm(Edges(:,i)-mean(C{Cells(1,i)},2)), ...
             dist(Cells(2,i)) + norm(Edges(:,i)-mean(C{Cells(2,i)},2)));
         adj_points(size(adj_points,2),i) = adj_points(i,size(adj_points,2));
