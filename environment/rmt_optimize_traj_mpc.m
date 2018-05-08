@@ -157,8 +157,8 @@ while 1
     
     %add the terminal cost to the destination
     for i = 1 : size(Cells,2)-1
-        adj_points(i,size(adj_points,2)) = 1000*min( dist(Cells(1,i)) + norm(Edges(:,i)-mean(C{Cells(1,i)},2)), ...
-            dist(Cells(2,i)) + norm(Edges(:,i)-mean(C{Cells(2,i)},2)));
+         adj_points(i,size(adj_points,2)) = 1000*min( dist(Cells(1,i)) + norm(Edges(:,i)-mean(C{Cells(1,i)},2)), ...
+             dist(Cells(2,i)) + norm(Edges(:,i)-mean(C{Cells(2,i)},2)));
         adj_points(size(adj_points,2),i) = adj_points(i,size(adj_points,2));
     end
     

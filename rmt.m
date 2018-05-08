@@ -1524,6 +1524,54 @@ switch action
                         end
                         set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
                         grid on;
+                        %assign weight on the arcs if MPC is not chosen
+                        if (get(findobj(gcf,'Tag','waypoints'),'Value') ~= 5)
+                            prompt = 'Cost weights of each edge (ci,cj):';
+                            dlg_title = 'Robot Motion Toolbox';
+                            str = {'1','norm(centr(c_i)-centr(c_j))','norm(centr(c_i)-mid(c_i,c_j))',...
+                                'sum(c_h, c_h~=c_j, norm(mid(c_h,c_i)?mid(c_i,c_j))/(number of neighbors of c1 - 1)'};
+                            [s,~] = listdlg('PromptString',prompt,'Name',dlg_title,'SelectionMode','single','ListString',str);
+                            switch s
+                                case 2 %distance between the centroids
+                                    for i = 1 : size(adj,1)-1
+                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
+                                        for j = i+1 : size(adj,1)
+                                            if (adj(i,j)~=0)
+                                                adj(i,j) = norm(mean(C{i},2)-mean(C{j},2));
+                                                adj(j,i) = adj(i,j);
+                                            end
+                                        end
+                                    end
+                                case 3 %cost(ci,cj) = norm(centr(ci)-mid(ci,cj))
+                                    for i = 1 : size(adj,1)
+                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
+                                        for j = 1 : size(adj,1)
+                                            if ((j ~=i) && (adj(i,j)~=0))
+                                                temp = com_F{i,j};
+                                                adj(i,j) = norm(mean(C{i},2)-norm(temp(:,1)-temp(:,2)));
+                                            end
+                                        end
+                                    end
+                                case 4 %cost(ci,cj) = sum(c_h, c_h~=c_j, norm(mid(c_h,c_i)?mid(c_i,c_j))/(number of neighbors of c1 - 1)
+                                    for i = 1 : size(adj,1)
+                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
+                                        for j = 1 : size(adj,1)
+                                            if ((j ~=i) && (adj(i,j)~=0))
+                                                temp = setdiff(find(adj(:,i)),[i,j]);
+                                                adj(i,j) = 0;
+                                                for k = 1 : length(temp)
+                                                    temp2 = com_F{temp(k),i};
+                                                    temp3 = com_F{j,i};
+                                                    adj(i,j) = adj(i,j)+...
+                                                        norm( norm(temp2(:,1) - temp2(:,2))...
+                                                        - norm(norm(temp3(:,1) - temp3(:,2))));
+                                                end
+                                                adj(i,j) = adj(i,j) / length(temp);
+                                            end
+                                        end
+                                    end
+                            end
+                        end
                         temp1 = data.initial{1};
                         temp2 = data.final{1};
                         if (get(findobj(gcf,'Tag','waypoints'),'Value') == 1) %middle points
@@ -1576,7 +1624,7 @@ switch action
                             message = sprintf('Travelled distance via Norm-Inf.: %.2f.\n\nTime to compute the trajectory: %.2f',...
                                 dist_norm_inf,toc);
                             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 5)  %MPC @@@@
+                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 5)  %MPC 
                             data = get(gcf,'UserData');
                             prompt = {'Safety distance:','N:','Number of intermediate points on common edges:'};
                             dlg_title = 'Robot Motion Toolbox';
