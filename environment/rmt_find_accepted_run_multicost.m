@@ -1,6 +1,6 @@
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
-%    Copyright (C) 2016 RMTool developing team. For people, details and citing 
+%    Copyright (C) 2016 RMTool developing team. For people, details and citing
 %    information, please see: http://webdiis.unizar.es/RMTool/index.html.
 %
 %    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on September, 2014. 
+%   First version released on September, 2014.
 %   Last modification December 29, 2015.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
@@ -28,7 +28,7 @@ function [run_T,run_B,run_P,path_T,path_B,cost_optim] = rmt_find_accepted_run_mu
 %use multiple costs for finding best accepted run
 %varargin specifies costs, in order they should be used (their importancs), as a cell of strings (e.g. varargin{1} can be string 'prob', varargin{2} 'move', etc)
 %each varargin is a string with a name of a field of automaton P
-            
+
 run_T = [];
 run_B = [];
 run_P = [];
@@ -55,6 +55,7 @@ run_P=cell(1,length(P.S0)); %initialize with empty runs for each initial state o
 r_cost=Inf(length(P.S0),n_c+1); %costs of prefix+suffix for each run, on rows (last values on row for number of transitions)
 for i=1:length(P.S0)    %find shortest run for P (if possible) for each initial state (P can have more initial states-same no. as Buchi; T has only one dummy init state, see autom_prod): find prefix and sufix for P
     [prefix, p_cost, adj_mat] = rmt_find_paths_multicost(P.S0(i), P.F, cost_mat{:});   %find paths from each initial state of P to all final states - modified Dijkstra for multiple costs
+    
     %store also adjacency matrix (with zeros and ones)
     empt=find( cellfun('isempty',prefix)); %indices of empty prefixes (with at least one infinite cost function)
     prefix(empt)=[];    %remove empty prefixes and their corresponding costs
@@ -74,14 +75,14 @@ for i=1:length(P.S0)    %find shortest run for P (if possible) for each initial 
                 
             else
                 neigh=find( adj_mat(:, prefix{j}(end) ));    %states which can transit in final state of current prefix
-                                                        %(we cannot use Dijkstra algorithm blindly from fs to fs, because we would get path fs, even if fs has no loop)
+                %(we cannot use Dijkstra algorithm blindly from fs to fs, because we would get path fs, even if fs has no loop)
                 if ~isempty(neigh)   %there is at least a state transiting in fs of current prefix
                     [suffix, s_cost] = rmt_find_paths_multicost(prefix{j}(end), neigh, cost_mat{:});    %paths to each neighbor which can transit in fs
                     for k=1:n_c %update costs, by adding costs from neighbors to the current final state
                         s_cost(:,k)=s_cost(:,k)+cost_mat{k}(neigh,prefix{j}(end));
                     end
                     s_cost(:,end)=s_cost(:,end)+adj_mat(neigh,prefix{j}(end));
-
+                    
                     empt=find( cellfun('isempty',suffix)); %eliminate empty suffixes and their costs
                     suffix(empt)=[];
                     s_cost(empt,:)=[];

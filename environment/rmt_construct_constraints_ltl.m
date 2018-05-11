@@ -25,11 +25,9 @@
 % ============================================================================
 
 function [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig, nplaces_observ, k, final)
-
-
 trans_model = [zeros(1,length(m0)) ones(1,ntrans_orig) zeros(1,size(Pre,2)-ntrans_orig)];
 trans_Buchi = [zeros(1,length(m0)) zeros(1,ntrans_orig) ones(1,size(Pre,2)-ntrans_orig)];
-marking_final = zeros(1,length(m0));
+marking_final = sparse(zeros(1,length(m0)));
 marking_final(final)=1;
 
 %the variables are: [m_i sigma_i ], i = 1,...,k
@@ -46,11 +44,9 @@ b = m0;
 Aeq = [Aeq; trans_Buchi];
 beq = [beq;0];
 
-
-
 for i = 2 : k
     Aeq = [Aeq zeros(size(Aeq,1),nplaces+ntrans)]; %add nplaces+ntrans columns to Aeq
-    Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add teh state equation
+   Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add the state equation
     beq = [beq;zeros(nplaces,1)];
     if (i/2 == round(i/2)) %fire only transitions of the Buchi automaton
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model

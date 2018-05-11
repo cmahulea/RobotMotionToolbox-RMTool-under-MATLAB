@@ -45,7 +45,7 @@ message = sprintf('%s\n\t%s',message,'Temporal operators: U - until; R - release
 %message = sprintf('%s\n%s',message,'---example of formula: (F p1) & G !(p2 | p3)');
 %message
 
-formula = inputdlg(message,'Robot Motion Toolbox',1,{'(F p1) & G !(p2 | p3)'});
+formula = inputdlg(message,'Robot Motion Toolbox',1,{'(F u1) & G !(u2 | u3)'});
 if isempty(formula)
     return;
 end
