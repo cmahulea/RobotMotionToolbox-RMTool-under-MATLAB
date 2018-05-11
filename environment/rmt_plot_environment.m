@@ -85,33 +85,30 @@ switch nargin
     case 4 %arguments C (cells) and adjacency - plot adjacency graph and cell decomposition
         C=varargin{1};
         %adj=varargin{2};
-		cell_id=varargin{2};
+        cell_id=varargin{2};
         %represent cells:
         for i=1:length(C)
             fill(C{i}(1,:),C{i}(2,:),'w','EdgeColor',[.8 .8 .8],'FaceAlpha',0.5);
         end
-		
-		if ~isempty(cell_id) %write cell number
+        
+        if ~isempty(cell_id) %write cell number
             for i=1:length(C)
                 centr=mean(C{i},2)';
                 text(centr(1),centr(2),sprintf('%s_{%d}',cell_id,i),'HorizontalAlignment','center','Color','k','FontSize',10,'FontAngle','italic','FontName','TimesNewRoman');
             end
         end
-%         set(gca,'Box','on');%,'XTick',[],'YTick',[]);
-
-%       centr=zeros(length(C),2);   %store centroids
-%       for i=1:length(C)
-%           centr(i,:)=mean(C{i},2)';
-%      end
-%       gplot(adj,centr,':b');  %represent adjacency graph
-
+        set(gca,'Box','on');%,'XTick',[],'YTick',[]);
+        
+        centr=zeros(length(C),2);   %store centroids
+        for i=1:length(C)
+            centr(i,:)=mean(C{i},2)';
+        end
+        
         %write cell number
-%       for i=1:length(C)
-            %comment by ramon 
-text(centr(i,1),centr(i,2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k','FontSize',10,'FontAngle','italic','FontName','TimesNewRoman');
-            %text(centr(1),centr(2),sprintf('s_{%d}',i),'HorizontalAlignment','center','Color','k','BackgroundColor',[.7 .7 .7]);
- %       end
-  %      set(gca,'Box','on');%,'XTick',[],'YTick',[]);
+        for i=1:length(C)
+            text(centr(i,1),centr(i,2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k','FontSize',10,'FontAngle','italic','FontName','TimesNewRoman');
+        end
+        set(gca,'Box','on');%,'XTick',[],'YTick',[]);
         
        case 5 %arguments C (cells), cell_name, and adjacency - plot adjacency graph and cell decomposition
         C=varargin{1};
