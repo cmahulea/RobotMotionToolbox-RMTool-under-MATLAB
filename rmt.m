@@ -1022,7 +1022,8 @@ switch action
                 cla(data.handle_ang);
                 set(data.handle_ang,'XGrid','on','YGrid','on','Visible','off');
                 
-                [objects,initial_point,final_point] = rmt_define_regions(data.handle_env,obs_no,1,1,limits(1),limits(2),limits(3),limits(4));
+                [objects,initial_point,final_point] = rmt_define_regions([limits(1),limits(2),limits(3),limits(4)],obs_no, data.handle_env,1,1);
+
                 
                 set(data.handle_ori,'Visible','on','xlim',[0 20],'ylim',[-180 180],'XGrid','on','YGrid','on');
                 set(data.handle_vel,'Visible','on','xlim',[0 20],'ylim',[0 10],'XGrid','on','YGrid','on');

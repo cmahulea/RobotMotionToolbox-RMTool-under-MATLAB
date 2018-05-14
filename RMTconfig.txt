@@ -1,1 +1,0 @@
-ltl2buchi=C:\Users\wilar\Desktop\ltl2ba_exe\Debug\ltl2ba.exe
