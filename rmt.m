@@ -19,7 +19,7 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on September, 2014. k
+%   First version released on September, 2014. 
 %   Last modification February 14, 2018.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
@@ -178,8 +178,8 @@ switch action
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
         uimenu(a,'Label','&Change LTL formula','Callback',strcat(thisfile,'(''menu_change_ltl_formula'')'), 'Separator','on');
         a = uimenu(a,'Label','&MILP solver', 'Separator','on');
-        uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
-        uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on');
+        data.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
+        data.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
         
         a = uimenu('Label','Simulation');
         uimenu(a,'Label','&Load environment','Callback',strcat(thisfile,'(''load_env'')'));
@@ -647,15 +647,21 @@ switch action
             'Position',[0.87    0.005   0.1349    0.0235], ...
             'String','Time [s]');
         set(gcf,'UserData',data);
+        data.cplex_variable='true';
+        set(data.menuGlpk,'Checked','off');
+        set(data.menuCplex,'Checked','on');
         %check if CPLEX is installed
         try
             [~,~,~] = cplexmilp(1,-1,-1);
         catch
-            message = sprintf('Cannot find CPLEX. It is required for solving the optimization problems.');
+            message = sprintf('Cannot find CPLEX. Select Glpk for solving the optimization problems.');
+            data.cplex_variable='false';
+            set(data.menuGlpk,'Checked','on');
+            set(data.menuCplex,'Checked','off');
             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
         end
-        data = get(gcf,'UserData');
-        data.cplex_variable='false';
+        
+        
         
         %check the ltl2ba if it is corrected installed
         fid = fopen('RMTconfig.txt','r');
@@ -2415,7 +2421,7 @@ switch action
         file = char(file);
         path1 = char(path1);
         file2=fullfile(path1,file);
-        if contains(file,'.rmt')
+        if ~isempty(strfind(file,'.rmt')) 
             delete(gcf);
             hgload(file2);
         end
@@ -2718,7 +2724,7 @@ switch action
         path1 = char(path1);
         file2=fullfile(path1,file);
         warning off;
-        if contains(file,'.env')
+        if ~isempty(strfind(file,'.env')) 
             eval(sprintf('load ''%s'' ''-mat''',file2));
             if ~exist('data','var')
                 h = errordlg('Error loading from file','Robot Motion Toolbox');
@@ -3089,12 +3095,16 @@ switch action
     case 'menu_cplex'
         data = get(gcf,'UserData');
         data.cplex_variable= 'true';
+        set(data.menuGlpk,'Checked','off');
+        set(data.menuCplex,'Checked','on');
         set(gcf,'UserData',data);%to save data
         
         %% Part of Menu 'Setup' GLPK
     case 'menu_glpk'
         data = get(gcf,'UserData');
         data.cplex_variable= 'false';
+        set(data.menuGlpk,'Checked','on');
+        set(data.menuCplex,'Checked','off');
         set(gcf,'UserData',data);%to save data
         
         

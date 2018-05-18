@@ -99,7 +99,6 @@ end
 dist = rmt_find_costs_to_destination(adj,destination_cell);
 
 % add the safety distance on each vertex
-
 for i = 1 : size(com_F,1)-1
     for j = i+1 : size(com_F,1)
         if ~isempty(com_F{i,j})
@@ -115,11 +114,9 @@ for i = 1 : size(com_F,1)-1
     end
 end
 
-
 Edges = [x_st ; y_st];
 trajectory = [x_st ; y_st];
 Cells = [start_cell ; start_cell];
-fprintf(1,sprintf('\n Iteration 1'));
 
 while 1
     temp = old_adj^N;
@@ -175,11 +172,8 @@ while 1
         end
         return;
     end
-    
     Edges = trajectory(:,size(trajectory,2));
     Cells = Cells(:,path2(2));
-    
-    fprintf(1,sprintf('\n Iteration %d',size(trajectory,2)));
     
 end
 %x_st; y_st
