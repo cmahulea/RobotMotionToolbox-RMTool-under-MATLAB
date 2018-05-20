@@ -32,8 +32,8 @@ function [A,b] = rmt_formula2constraints(F, A,b,nr_props)
 
 % formula is a string of characters
 % connectives: & - conjunction, | - disjunction, ! - negation
-% literals: small or caps letters (a-z, A-Z) (small letters will mean requirement in final state, caps along trajectory)
-%example of formula: 'A&(b|!c)&(!C|!D)&(!a)'
+% literals: small or caps letters "y" and "Y" with number of prop. (e.g. y1, y2, Y1, ...) -small letters will mean requirement in final state, caps along trajectory
+%example of formula: 'Y1&(y2|!y3)&(!Y3|!Y4)&(!y1)'   ( old version was with 'A&(b|!c)&(!C|!D)&(!a)' )
 
 % fprintf('\nInput Boolean formula in Conjunctive Normal Form;\n\tUse & , | , ! for conjunction, disjunction and negation, respectively;\n');
 % fprintf('\tUse letters for atomic propositions; upper case letter means restriction along trajectory, lower case restriction in final state.\n');
@@ -42,6 +42,11 @@ function [A,b] = rmt_formula2constraints(F, A,b,nr_props)
 
 F=strrep(F,' ',''); %remove spaces
 F=strrep(F,'''',''); %remove apostrophes (if there are at beginning/end)
+
+if ~isempty(setdiff(unique(F),'!&|()Yy0123456789'))
+    uiwait(errordlg(sprintf('Boolean formula should contain y1, y2, ..., Y1, ... as atomic propositions, and characters !, &, |, (, )'), 'Robot Motion Toolbox','modal'));
+    return;
+end
 
 % [D,F]=strtok(F,'&');    %D is current disjunction, F is remainder (F now begins with "&")
 
@@ -56,65 +61,62 @@ b_r=-ones(length(D),1); %corresponding for b (AX<=b); all b begin with value -1 
 for i=1:length(D)   %current disjunction is string D{i}
     D{i}=strrep(D{i},'(',''); %remove paranthesis (may be only at first and last positions)
     D{i}=strrep(D{i},')','');
-    disj=textscan(D{i},'%s','delimiter','|');  %elements of currrent disjunction (each is literal or negated literal, because F is in CNF)
-    disj=disj{1};
+    prop=textscan(D{i},'%s','delimiter','|');  %elements/propositions of currrent disjunction (each is literal or negated literal, because F is in CNF)
+    prop=prop{1};
     %find restrictions in current disjunction:
 %     fprintf('\nDisjunction %d:\n',i);
     %in restrictions we will modify A_r(i,:) and b_r(i)
-    for j=1:length(disj)    %current literal is disj{j}
-        if length(disj{j})>2 || isempty(disj{j})    %tests for something wrong in input form
-            uiwait(errordlg(sprintf('Please input formula in CNF (conjunction of disjunctions, where negation can precede at most once a literal.\n"%s"',disj{j}),...
-                'Robot Motion Toolbox','modal'));
-            return;
-        elseif length(disj{j})==2 && ~(disj{j}(1)=='!' && isletter(disj{j}(2)))
-            uiwait(errordlg(sprintf('No letter or negation in disjunction "%s"',disj{j}),...
-                'Robot Motion Toolbox','modal'));
-            return;
-        elseif length(disj{j})==1 && ~isletter(disj{j}(1))
-            uiwait(errordlg(sprintf('No letter in disjunction "%s"',disj{j}),...
+    for j=1:length(prop)    %current atomic prop is disj{j}
+        %prop should be of kind "[!]yi" ([!] - ! appears or not)
+        atom_pr=regexp(prop{j},'([!yY]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
+        atom_pr=[atom_pr{:}];
+
+        if length(atom_pr)~=1    %tests for something wrong in input form - there should be only one prop. here
+            uiwait(errordlg(sprintf('Please input formula in CNF, with atomic props denoted by ''y1, y2, Y1, ...'', and negation can precede at most once a literal.\n"%s"',prop{j}),...
                 'Robot Motion Toolbox','modal'));
             return;
         end
+        atom_pr=atom_pr{1}; %string
         
         %find restrinction in part (literal) j of disjunction D{i}:
-        if length(disj{j})==1   %non-negated letter (atomic proposition
-            if isstrprop(disj{j}(1),'lower')    %lower case letter -> final state restriction
-                prop_ind=disj{j}(1)-'a'+1;  %index of proposition
+        if (atom_pr(1)~='!')   %same as isempty(strfind(atom_pr,'!')) %current atomic prop is not negated
+            if isstrprop(atom_pr(1),'lower')    %lower case letter -> final state restriction
+                prop_ind=str2double(atom_pr(2:end));  %index of proposition
 %                 fprintf('\tAtomic prop. %d should be TRUE in final state\n',prop_ind);
                 %modify constraint (last nr_props columns are for final state restrictions):
                 A_r(i,nr_props+prop_ind)=-1;    %-1*x_i ... <=-1
                 %no modification in b for non-negated prop.
                 
-            elseif isstrprop(disj{j}(1),'upper')    %upper case letter -> restriction along trajectory
-                prop_ind=disj{j}(1)-'A'+1;  %index of proposition
+            elseif isstrprop(atom_pr(1),'upper')    %upper case letter -> restriction along trajectory
+                prop_ind=str2double(atom_pr(2:end));  %index of proposition
 %                 fprintf('\tAtomic prop. %d should be TRUE along traj.\n',prop_ind);
                 %modify constraint (first nr_props columns are for trajectory restrictions):
                 A_r(i,prop_ind)=-1;    %-1*X_i ... <=-1
                 %no modification in b for non-negated prop.
                 
             else
-                uiwait(errordlg(sprintf('No letter in disjunction "%s"',disj{j}),...
+                uiwait(errordlg(sprintf('Something wrong in disjunction "%s"',prop{j}),...
                     'Robot Motion Toolbox','modal'));
                 return;
             end
             
-        else % length(disj{j})==2 && disj{j}(1)=='!'  %negation
-            if isstrprop(disj{j}(2),'lower')    %lower case letter -> final state restriction
-                prop_ind=disj{j}(2)-'a'+1;  %index of proposition
+        else  %negation
+            if isstrprop(atom_pr(2),'lower')    %lower case letter -> final state restriction
+                prop_ind=str2double(atom_pr(3:end));  %index of proposition
 %                 fprintf('\tAtomic prop. %d should be FALSE in final state\n',prop_ind);
                 %modify constraint (final state restrictions):
                 A_r(i,nr_props+prop_ind)=1;    %1*x_i ... <=-1 +1
                 b_r(i)=b_r(i)+1;    %add 1 to b for each negation
                 
-            elseif isstrprop(disj{j}(2),'upper')    %upper case letter -> restriction along trajectory
-                prop_ind=disj{j}(2)-'A'+1;  %index of proposition
+            elseif isstrprop(atom_pr(2),'upper')    %upper case letter -> restriction along trajectory
+                prop_ind=str2double(atom_pr(3:end));  %index of proposition
 %                 fprintf('\tAtomic prop. %d should be FALSE along traj.\n',prop_ind);
                 %modify constraint (trajectory restrictions):
                 A_r(i,prop_ind)=1;    %1*x_i ... <=-1 +1
                 b_r(i)=b_r(i)+1;    %add 1 to b for each negation
                 
             else
-                uiwait(errordlg(sprintf('No letter in disjunction "%s"',disj{j}),...
+                uiwait(errordlg(sprintf('Something wrong in disjunction "%s"',prop{j}),...
                     'Robot Motion Toolbox','modal'));
                 return;
             end
