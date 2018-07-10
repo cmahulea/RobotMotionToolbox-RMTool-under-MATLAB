@@ -83,7 +83,7 @@ elseif strcmpi(temp,'MACI64')
 end
 
 if s~=0 %error
-    message = sprintf('ERROR when converting LTL to Buchi. Posible causes:\n (1) LTL to Buchi not corrected installed -> Remove RMTconfig.txt file and run again the toolbox; file will be automatically created.\n (2)Antivirus may have stopped ltl2ba -> temporarily disable antivirus.\n');
+    message = sprintf('ERROR when converting LTL to Buchi. Posible causes:\n (1) Antivirus may have stopped ltl2ba -> temporarily disable antivirus.\n (2) Path to LTL2BA not correct -> make sure current folder is the RMTool one (where file rmt.m is located) and the original subfolders were not renamed.\n (3) If calling rmt_create_buchi outside RMTool, please change path to ltl2ba folder on lines 64-71 in file rmt_create_buchi.m.\n');
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
     B=[];
     return

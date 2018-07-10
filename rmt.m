@@ -40,6 +40,10 @@ end
 
 thisfile='rmt';
 
+%add to path the subfolders with needed tools and functions
+addpath(genpath('aux_toolboxes'));
+addpath(genpath('environment'));
+
 switch action
     
     %================
@@ -654,7 +658,7 @@ switch action
         try
             [~,~,~] = cplexmilp(1,-1,-1);
         catch
-            message = sprintf('Cannot find CPLEX. Select Glpk for solving the optimization problems.');
+            message = sprintf('Cannot find CPLEX. If installed, please add it to Matlab''s path and restart RMTool.\n For this instance, Glpk is selected for solving the optimization problems.');
             data.cplex_variable='false';
             set(data.menuGlpk,'Checked','on');
             set(data.menuCplex,'Checked','off');
@@ -663,47 +667,34 @@ switch action
         
         
         
-        %check the ltl2ba if it is corrected installed
-        fid = fopen('RMTconfig.txt','r');
-        if (fid == -1)
-            message = sprintf('The RMTconfig.txt file not found!\nSome of the functionalities will not work properly!\nPlease select the path to LTL to Buchi located in subdir .\\ltl2ba\n');
-            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-            temp = computer;
-            if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
-                instruct = 'ltl2ba.exe';
-            elseif strcmpi(temp,'GLNXA64')
-                instruct = 'ltl2bal';
-            elseif strcmpi(temp,'MACI64')
-                instruct = 'ltl2ba';
-            end
-            [filename, pathname] = uigetfile({instruct,'*.*'},  sprintf('Locate file %s in subdir .\\ltl2ba',instruct));
-            [filename2, pathname2] = uiputfile('RMTconfig.txt', 'Save configuration file as');
-            fileID = fopen(fullfile(pathname2, filename2),'w');
-            fid = fopen(fullfile(pathname2, filename2),'r');
-            fprintf(fileID,'%s',sprintf('ltl2buchi=%s\n',fullfile(pathname, filename)));
-            fclose(fileID);
-        end
-        fis = textscan(fid,'%s','delimiter','=');
-        runLTL2BA = '';
-        for i = 1 : size(fis{1})
-            if strcmpi(deblank(fis{1}{i}),'ltl2buchi')
-                runLTL2BA = fis{1}{i+1};
-                break;
-            end
-        end
+        %path to ltl2ba
         temp = computer;
         if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
-            [s,~]=dos([runLTL2BA ' -d -f " <> p1"']); %sintax for calling ltl2ba.exe (located in subdir .\ltl2ba); use full description result (-d)
+            [~, WindowsVersion] = system('ver');
+            if isempty(strfind(WindowsVersion,'Version 10')) %different than Windows 10 (7 or before)
+                runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
+            else %Windows 10
+                runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
+            end
         elseif strcmpi(temp,'GLNXA64')
-            [s,~]=unix([runLTL2BA ' -d -f " <> p1"']);
+            runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2bal'];
         elseif strcmpi(temp,'MACI64')
-            [s,~]=unix([runLTL2BA ' -d -f " <> p1"']);
+            runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba'];
         end
-        if (s~=0) %error
-            message = sprintf('LTL to Buchi not corrected installed.\nRemove RMTconfig.txt file and run again the toolbox\nIt will be automatically created!');
-            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-            return
-        end
+%         %test a simple formula
+%         if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
+%             [s,~]=dos([runLTL2BA ' -d -f " <> y1"']); %sintax for calling ltl2ba.exe (located in subdir .\ltl2ba); use full description result (-d)
+%             %example of run: [s,r]=dos('ltl2ba -d -f "<> p1"'); %LTL 2 Buchi for our formula
+%         elseif strcmpi(temp,'GLNXA64')
+%             [s,~]=unix([runLTL2BA ' -d -f " <> y1"']);
+%         elseif strcmpi(temp,'MACI64')
+%             [s,~]=unix([runLTL2BA ' -d -f " <> y1"']);
+%         end
+%         if (s~=0) %error
+%             message = sprintf('ERROR when converting LTL to Buchi. Posible causes:\n (1) Path to LTL2BA not correct -> make sure current folder is the RMTool one (where file rmt.m is located) and the original subfolders were not renamed.\n (2)Antivirus may have stopped ltl2ba -> temporarily disable antivirus.\n');
+%             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+%             return
+%         end        
         data.ltl2ba = runLTL2BA;
         set(figpri, 'Visible','on');
         set(gcf,'UserData',data);
