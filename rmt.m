@@ -2294,16 +2294,25 @@ switch action
             [array_time, array_alpha, array_v, array_pos] = rmt_pi_controller(input_variables,ref_trajectory,pi_tuning,data.obstacles,data.Nobstacles);
         end
         
+        %new code (removing lines)
+        removePlots = questdlg('Remove previous trajectories?', 'YES', 'NO');
+        if(strcmp(removePlots,'Yes'))
+            h = findobj('type','line');
+            delete(h(1));
+            delete(h(3:end));
+        end
+        
         %drawing the result
         color = hsv(5);
         color = color(randperm(5),:);
         cha = floor(rand(1)*5+1);
         %trajectory
-        plot(data.handle_env,array_pos(1,:),array_pos(2,:),'Color','k','LineWidth',2);
+        colora = rand(1,3);
+        plot(data.handle_env,array_pos(1,:),array_pos(2,:),'Color', colora, 'LineWidth',2);
         set(data.handle_env,'XGrid','on','YGrid','on');
         
         %orientation
-        plot(data.handle_ori,array_time,rad2deg(array_pos(3,:)),'Color','k','LineWidth',2);
+        plot(data.handle_ori,array_time,rad2deg(array_pos(3,:)),'Color', colora,'LineWidth',2);
         hold on;
         xmax = max(array_time);
         ymax = max(rad2deg(array_pos(3,:)));
@@ -2314,7 +2323,7 @@ switch action
         set(data.handle_ori,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
         
         %velocities
-        plot(data.handle_vel,array_time,array_v,'Color','k','LineWidth',2);
+        plot(data.handle_vel, array_time, array_v,'Color', colora,'LineWidth',2);
         hold on;
         xmax = max(array_time);
         ymax = max(array_v)+1;
@@ -2326,7 +2335,7 @@ switch action
         %set(data.handle_vel,'XGrid','on','YGrid','on');
         
         %steering angle
-        plot(data.handle_ang,array_time,rad2deg(array_alpha),'Color','k','LineWidth',2);
+        plot(data.handle_ang,array_time,rad2deg(array_alpha),'Color', colora,'LineWidth',2);
         hold on;
         xmax = max(array_time);
         ymax = max(rad2deg(array_alpha));
