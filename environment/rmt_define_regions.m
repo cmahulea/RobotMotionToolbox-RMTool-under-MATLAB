@@ -73,9 +73,13 @@ for i=1:reg_no   %i = object number
     but=1;
     while (but==1 || j<4)
         [x,y,but]=ginput(1);
-        plot(x,y,'.k')
-        objects{i}(:,j)=[x;y];
-        j=j+1;
+        if (x >= env_bounds(1) && x <= env_bounds(2) && y >= env_bounds(3) && y <= env_bounds(4)) %inside bounds
+            plot(x,y,'.k')
+            objects{i}(:,j)=[x;y];
+            j=j+1;
+        else
+            but=1; %points outside environment bounds are ignored; do not store "but" for wrong points
+        end
     end
     
     %creating convex obstacles & drawing them
@@ -104,7 +108,8 @@ if nargin == 5
                     while but==1
                         [x,y,but]=ginput(1);
                     end
-                    in = 0;
+%                     in = 0;
+                    in = 1 - inpolygon(x,y,[env_bounds(1),env_bounds(2),env_bounds(2),env_bounds(1)],[env_bounds(3),env_bounds(3),env_bounds(4),env_bounds(4)]);    %in=1 if point is outside bounds
                     for(ii=1:reg_no)
                         in = in + inpolygon(x,y,objects{ii}(1,:),objects{ii}(2,:));
                     end
@@ -130,7 +135,8 @@ if nargin == 5
                 while but==1
                     [x,y,but]=ginput(1);
                 end
-                in = 0;
+%                 in = 0;
+                in = 1 - inpolygon(x,y,[env_bounds(1),env_bounds(2),env_bounds(2),env_bounds(1)],[env_bounds(3),env_bounds(3),env_bounds(4),env_bounds(4)]);    %in=1 if point is outside bounds
                 for(ii=1:reg_no)
                     in = in + inpolygon(x,y,objects{ii}(1,:),objects{ii}(2,:));
                 end
