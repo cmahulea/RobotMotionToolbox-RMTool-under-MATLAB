@@ -2668,7 +2668,7 @@ switch action
         data = get(gcf,'UserData');
         answer = inputdlg({...
             sprintf('Epsilon:')},'Robot Motion Toolbox',...
-            [1],{num2str(data.voronoi)});
+            [1],{num2str(data.epsilonvoronoi)});
         try
             temp(1) = eval(answer{1});
         catch
