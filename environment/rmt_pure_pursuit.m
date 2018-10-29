@@ -1,6 +1,6 @@
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
-%    Copyright (C) 2016 RMTool developing team. For people, details and citing 
+%    Copyright (C) 2016 RMTool developing team. For people, details and citing
 %    information, please see: http://webdiis.unizar.es/RMTool/index.html.
 %
 %    This program is free software: you can redistribute it and/or modify
@@ -19,19 +19,19 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on September, 2014. 
+%   First version released on September, 2014.
 %   Last modification December 29, 2015.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
 
 %**********************************************************************
-% Pure Pursuit 
+% Pure Pursuit
 % function [array_time, array_alpha, array_v, array_pos] = rmt_pure_pursuit(input_variables, ref_trajectory)
 %**********************************************************************
 function [array_time, array_alpha, ...
     array_v, array_pos] = rmt_pure_pursuit(input_variables,...
-    ref_trajectory,init_orientation,obstacles,Nobstacles)   
+    ref_trajectory,init_orientation,obstacles,Nobstacles)
 
 % Input variables
 T = input_variables(1);%sampling period
@@ -69,13 +69,13 @@ frame_limits(4) = input_variables(15);
 %     new_traj=[new_traj, [(1-interm)*traj(1,i) + interm*traj(1,i+1) ; (1-interm)*traj(2,i) + interm*traj(2,i+1)] ];
 % end
 % traj=new_traj;
-% 
+%
 % %figure,plot(traj(1,:),traj(2,:),'xr');hold on;
 % %plot(xref,yref,'ob');
-% 
+%
 % xref = traj(1,:);
 % yref = traj(2,:);
-   
+
 % Controller configuration parameters
 xobm = 1e5;%default distance to waypoint/goal
 goal_ok = 0;%minimum distance to waypoint/goal
@@ -95,112 +95,112 @@ array_pos = [];
 % Pure Pursuit
 %*************************
 i = 1;
-%terminating conditions: we have chosen when all the reference points 
+%terminating conditions: we have chosen when all the reference points
 % are checked or when the goal is obtained. In the future, this can
-% be improved, for instance, moving the robot until the goal is reached 
+% be improved, for instance, moving the robot until the goal is reached
 % or until it is far enough (threshold).
 
 while((i<=k)&&(goal_ok==0))
-    pos = [x(i) y(i) theta(i)];%actual position    
-    if(pos(1) < frame_limits(1))        
-        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal')); 
+    pos = [x(i) y(i) theta(i)];%actual position
+    if(pos(1) < frame_limits(1))
+        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal'));
         goal_ok = 1;
         %break;
     end
-    if(pos(2) < frame_limits(3))        
-        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal')); 
+    if(pos(2) < frame_limits(3))
+        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal'));
         goal_ok = 1;
         %break;
     end
-    if(pos(1) > frame_limits(2))    
-        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal')); 
-        goal_ok = 1;
-        %break;
-    end    
-    if(pos(2) > frame_limits(4))        
-        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal')); 
+    if(pos(1) > frame_limits(2))
+        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal'));
         goal_ok = 1;
         %break;
     end
-        
+    if(pos(2) > frame_limits(4))
+        uiwait(errordlg(sprintf('\nOut of limits'),'Robot Motion Toolbox','modal'));
+        goal_ok = 1;
+        %break;
+    end
+    
     for(ji=1:Nobstacles)
         [aa bb] = size(obstacles{ji});
         if(aa >= bb)
             if(isPointInPolygon([pos(1) pos(2)], obstacles{ji}))
-                uiwait(errordlg(sprintf('\nThe robot hits one obstacle'),'Robot Motion Toolbox','modal')); 
+                uiwait(errordlg(sprintf('\nThe robot hits one obstacle'),'Robot Motion Toolbox','modal'));
                 goal_ok = 1;
             end
         else
             if(isPointInPolygon([pos(1) pos(2)], obstacles{ji}'))
-                uiwait(errordlg(sprintf('\nThe robot hits one obstacle'),'Robot Motion Toolbox','modal')); 
+                uiwait(errordlg(sprintf('\nThe robot hits one obstacle'),'Robot Motion Toolbox','modal'));
                 goal_ok = 1;
             end
         end
     end
     
     if(goal_ok == 0)
-       % Minimum distance
-       xobm = 1e5;
-       for n=1:length(xref)
-           minimo = abs(xref(n)-x(i)) + abs(yref(n)-y(i));
-           if( minimo < xobm)
-               xobm = minimo;
-               minx = n;
-               if((minx+s)>k)%in order to not overpass the 
-                             %goal point or the last point in 
-                             %the reference trajectory
-                   minx = k-s;
-               end;
-           end;
-       end;       
-       %check if the goal has been reached.
-       dist = sqrt(((x(i)-xref(k))^2+(y(i)-yref(k))^2));
-       if(dist<threshold_goal)
-           goal_ok = 1;
-           fprintf('\n The goal has been reached. Stopping the robot...\n');
-       end
-       if((minx+s)==0)
-           ind = k;
-       else
-           ind = minx+s;
-       end
-       xob = xref(ind);
-       yob = yref(ind);
-       %Passing from inertial frame to local frame
-       Ax = -(xob - x(i)) * sin(theta(i)) + (yob - y(i)) * cos(theta(i));
-       %Obtaining the lookahead distance
-       L = sqrt((xob - x(i))^2 + (yob - y(i))^2);
-       %Curvature (gamma = 1/r, r the turning radius)
-       gamma = 2 * Ax / L^2;
-       %-------------------------------------------------------------------  
-       %We determine the steering wheel angle
-       alpha = atan(lv * gamma);
-       %constraint
-       if(robot_model == 1)
-        if(alpha > 0)
-           alpha = min([alpha alpha_constraint]);               
-        else
-           alpha = max([alpha -alpha_constraint]);
+        % Minimum distance
+        xobm = 1e5;
+        for n=1:length(xref)
+            minimo = abs(xref(n)-x(i)) + abs(yref(n)-y(i));
+            if( minimo < xobm)
+                xobm = minimo;
+                minx = n;
+                if((minx+s)>k)%in order to not overpass the
+                    %goal point or the last point in
+                    %the reference trajectory
+                    minx = k-s;
+                end;
+            end;
+        end;
+        %check if the goal has been reached.
+        dist = sqrt(((x(i)-xref(k))^2+(y(i)-yref(k))^2));
+        if(dist<threshold_goal)
+            goal_ok = 1;
+            fprintf('\n The goal has been reached. Stopping the robot...\n');
         end
-       end
-       if(goal_ok==1)                     
-           gamma = 0;           
-           alpha = 0;
-           v = 0;
-       end
+        if((minx+s)==0)
+            ind = k;
+        else
+            ind = minx+s;
+        end
+        xob = xref(ind);
+        yob = yref(ind);
+        %Passing from inertial frame to local frame
+        Ax = -(xob - x(i)) * sin(theta(i)) + (yob - y(i)) * cos(theta(i));
+        %Obtaining the lookahead distance
+        L = sqrt((xob - x(i))^2 + (yob - y(i))^2);
+        %Curvature (gamma = 1/r, r the turning radius)
+        gamma = 2 * Ax / L^2;
+        %-------------------------------------------------------------------
+        %We determine the steering wheel angle
+        alpha = atan(lv * gamma);
+        %constraint
+        if(robot_model == 1)
+            if(alpha > 0)
+                alpha = min([alpha alpha_constraint]);
+            else
+                alpha = max([alpha -alpha_constraint]);
+            end
+        end
+        if(goal_ok==1)
+            gamma = 0;
+            alpha = 0;
+            v = 0;
+        end
     else
-      gamma = 0; 
-      alpha = 0;
-      v = 0;
+        gamma = 0;
+        alpha = 0;
+        v = 0;
     end
     
-    if(robot_model == 2)%Differential-drive robot        
+    if(robot_model == 2)%Differential-drive robot
         position0 = [x(i) y(i) theta(i)];
-        v_l = (2*v-v*tan(-alpha))/2;        
-        v_r = 2*v - v_l;       
-        [position1,omega] = rmt_km_diff_drive_robot(position0,T,v_r,v_l,lv);        
+        v_l = (2*v-v*tan(-alpha))/2;
+        v_r = 2*v - v_l;
+        [position1,omega] = rmt_km_diff_drive_robot(position0,T,v_r,v_l,lv);
         x(i+1) = position1(1);
-        y(i+1) = position1(2); 
+        y(i+1) = position1(2);
         %omega = position1(3);
         if(omega>max_ang_vel)
             omega = max_ang_vel;
@@ -210,7 +210,7 @@ while((i<=k)&&(goal_ok==0))
             omega = omega;
         end
         %position1(3) = position0(3) + T * ((v_l-v_r)/lv);
-        theta(i+1) = theta(i) + omega;        
+        theta(i+1) = theta(i) + omega;
     else%robot_model == 1 (default model)
         %Car-like kinematic model
         position0 = [x(i) y(i) theta(i)];
@@ -225,30 +225,30 @@ while((i<=k)&&(goal_ok==0))
         else
             omega = omega;
         end
-        theta(i+1) = theta(i) + omega;        
+        theta(i+1) = theta(i) + omega;
     end
-
+    
     %Saving data to arrays
     array_time(i) =  i*T;%time
     array_alpha(i) = alpha;%steering angle
-    array_v(i) = v;%linear velocity    
+    array_v(i) = v;%linear velocity
     array_pos(1,i) = pos(1);
     array_pos(2,i) = pos(2);
     array_pos(3,i) = pos(3);
-    i = i+1;%counter       
+    i = i+1;%counter
 end;%main loop: while
 
-%draw_data_gui_more_info(x,y,xref, yref,20,10,array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);               
-    %draw_data_gui_rc(x,y,xref, yref,x_max,y_max,array_rc, angles, array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);               
-    
+%draw_data_gui_more_info(x,y,xref, yref,20,10,array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);
+%draw_data_gui_rc(x,y,xref, yref,x_max,y_max,array_rc, angles, array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);
+
 fprintf('\n End of pure pursuit.\n');
 
 [w1,l1] = size(y);
- [w2,l2] = size(yref);
- diffy = l1 - l2;
- gg = round(l1/diffy);
- removalList = 1:gg:l1;
- h = y;
+[w2,l2] = size(yref);
+diffy = l1 - l2;
+gg = round(l1/diffy);
+removalList = 1:gg:l1;
+h = y;
 h(removalList) = [];
 
 [w3,l3] = size(h);
@@ -257,27 +257,24 @@ while(l3 ~= l2)
     if(l3 > l2)
         temp = yref(end);
         yref = [yref temp];
-        [w2,l2] = size(yref);       
+        [w2,l2] = size(yref);
     else
         temp = h(end);
         h = [h temp];
-        [w3,l3] = size(h);       
-    end    
+        [w3,l3] = size(h);
+    end
 end
 
-    size(h)
-    size(yref)
-    RMSE1 = sqrt(mean((h - yref).^2))    
-    
-    
-    
-    
-    [w1,l1] = size(x);
- [w2,l2] = size(xref);
- diffx = l1 - l2;
- gg = round(l1/diffx);
- removalList = 1:gg:l1;
- h = x;
+size(h)
+size(yref)
+RMSE1 = sqrt(mean((h - yref).^2));
+
+[w1,l1] = size(x);
+[w2,l2] = size(xref);
+diffx = l1 - l2;
+gg = round(l1/diffx);
+removalList = 1:gg:l1;
+h = x;
 h(removalList) = [];
 
 [w3,l3] = size(h);
@@ -286,21 +283,18 @@ while(l3 ~= l2)
     if(l3 > l2)
         temp = xref(end);
         xref = [xref temp];
-        [w2,l2] = size(xref);       
+        [w2,l2] = size(xref);
     else
         temp = h(end);
         h = [h temp];
-        [w3,l3] = size(h);       
-    end    
+        [w3,l3] = size(h);
+    end
 end
 
-    size(h)
-    size(xref)
-    RMSE2 = sqrt(mean((h - xref).^2))    
-resSS = sqrt(RMSE1^2 + RMSE2^2)
-
-
-
+% size(h)
+% size(xref)
+RMSE2 = sqrt(mean((h - xref).^2));
+resSS = sqrt(RMSE1^2 + RMSE2^2);
 end%end function
 
 
@@ -308,43 +302,43 @@ function draw_data_gui_more_info(x,y,xref, yref,x_max,y_max,array_time,array_alp
 figure;
 hold on
 subplot(221);
-    plot(x(1),y(1),'ob','LineWidth',2);hold on;
-    plot(x(end),y(end),'xb','LineWidth',2);
-    plot(x,y,'b','LineWidth',1);%actual trajectory
-    plot(xref(1),yref(1),'or','LineWidth',1);%actual trajectory
-    plot(xref(end),yref(end),'xr','LineWidth',1);%actual trajectory
-    plot(xref,yref,'r','LineWidth',1);%actual trajectory
-    titulo = 'Trajectories, ';
-    titulo = strcat(titulo,'vehicle length: ');
-    titulo = strcat(titulo,num2str(lv));
-    titulo = strcat(titulo,'; Lookahead distance: ');
-    titulo = strcat(titulo,num2str(s));    
-    title (titulo, 'FontSize', 14);
-    %legend('Point', 'Point','Reference','Robot');
-    %text(3.5,9.5,'Black dots: Desired points','FontSize', 12);
-    %text(3.5,8.5,'Red line: Reference path','FontSize', 12);
-    %text(3.5,7.5,'Blue line: Actual path','FontSize', 12); 
-    %text(3.5,6.5,'Blue circle: Starting point','FontSize', 12);
-    axis([-x_max x_max -y_max y_max]);
-    xlabel('X [m]','FontSize', 15);
-    ylabel('Y [m]','FontSize', 15);
-    grid;
+plot(x(1),y(1),'ob','LineWidth',2);hold on;
+plot(x(end),y(end),'xb','LineWidth',2);
+plot(x,y,'b','LineWidth',1);%actual trajectory
+plot(xref(1),yref(1),'or','LineWidth',1);%actual trajectory
+plot(xref(end),yref(end),'xr','LineWidth',1);%actual trajectory
+plot(xref,yref,'r','LineWidth',1);%actual trajectory
+titulo = 'Trajectories, ';
+titulo = strcat(titulo,'vehicle length: ');
+titulo = strcat(titulo,num2str(lv));
+titulo = strcat(titulo,'; Lookahead distance: ');
+titulo = strcat(titulo,num2str(s));
+title (titulo, 'FontSize', 14);
+%legend('Point', 'Point','Reference','Robot');
+%text(3.5,9.5,'Black dots: Desired points','FontSize', 12);
+%text(3.5,8.5,'Red line: Reference path','FontSize', 12);
+%text(3.5,7.5,'Blue line: Actual path','FontSize', 12);
+%text(3.5,6.5,'Blue circle: Starting point','FontSize', 12);
+axis([-x_max x_max -y_max y_max]);
+xlabel('X [m]','FontSize', 15);
+ylabel('Y [m]','FontSize', 15);
+grid;
 subplot(222);plot(array_time,rad2deg(array_theta));
-    title ('Orientation', 'FontSize', 15);
-    xlabel('time [s]','FontSize', 15);
-    ylabel('\theta [deg]','FontSize', 15);
-    grid;
+title ('Orientation', 'FontSize', 15);
+xlabel('time [s]','FontSize', 15);
+ylabel('\theta [deg]','FontSize', 15);
+grid;
 subplot(223);plot(array_time,array_v);
-    title ('Linear velocity', 'FontSize', 15);
-    xlabel('time [s]','FontSize', 15);
-    ylabel('v [m/s]','FontSize', 15);
-    grid;
+title ('Linear velocity', 'FontSize', 15);
+xlabel('time [s]','FontSize', 15);
+ylabel('v [m/s]','FontSize', 15);
+grid;
 subplot(224);plot(array_time,rad2deg(array_alpha));
-    titulo = 'Steering wheel angle, ';
-    titulo = strcat(titulo,'\alpha constraint: ');
-    titulo = strcat(titulo,num2str(alpha_constraint));
-    title (titulo, 'FontSize', 14);
-    xlabel('time [s]','FontSize', 15);
-    ylabel('\alpha [deg]','FontSize', 15);
-    grid;
+titulo = 'Steering wheel angle, ';
+titulo = strcat(titulo,'\alpha constraint: ');
+titulo = strcat(titulo,num2str(alpha_constraint));
+title (titulo, 'FontSize', 14);
+xlabel('time [s]','FontSize', 15);
+ylabel('\alpha [deg]','FontSize', 15);
+grid;
 end

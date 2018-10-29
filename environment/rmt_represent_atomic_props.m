@@ -57,25 +57,15 @@ end
 
 message = sprintf('REGIONS OF INTEREST:');
 for i = 1 : length(propositions)
-    temp = sprintf('- %s region (output y_{%d}) is O_{%d} = \\{',data.reg_plot.color_full{i},i,i);
+    temp = sprintf('- Output y_{%d} (%s) is for O_{%d} = \\{',i,data.reg_plot.color_full{i},i);
     for j = 1 : length(propositions{i})-1
         temp = sprintf('%sc_{%d}, ',temp,propositions{i}(j));
     end
     temp = sprintf('%sc_{%d}\\}',temp,propositions{i}(length(propositions{i})));       
-    message = sprintf('%s;\n%s',message,temp);
+    message = sprintf('%s\n%s',message,temp);
 end
 
-
-% Old code
-set(data.handle_text,'FitBoxToText','on');
-
-% jScrollPane = findjobj(data.handle_text);
-% set(jScrollPane,'VerticalScrollBarPolicy',20);
-% set(jScrollPane,'String',message,'Position',[0.35    0.054    0.63    0.2477]);
 set(data.handle_text,'String',message,'Position',[0.35    0.054    0.63    0.2477]);
-set(data.handle_text,'String',message,'Position',[0.35    0.054    0.63    0.2477],...
-   'FitBoxToText','on');
-
 data.reg_plot.at_pr_h = at_pr_h;
 data.reg_plot.text_cells_h = text_cells_h;
 set(gcf,'UserData',data);

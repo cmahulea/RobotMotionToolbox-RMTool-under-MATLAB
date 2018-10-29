@@ -70,7 +70,7 @@ catch
     elseif strcmpi(temp,'MACI64')
         runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba'];
     end
-    fprintf('\n Note: rmt_create_buchi is trying the default path for ltl2ba (subfolder aux_toolboxex -> ltl2ba)...\n');
+    fprintf(1,'\n Note: rmt_create_buchi is trying the default path for ltl2ba (subfolder aux_toolboxex -> ltl2ba)...\n');
 end
 
 if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
@@ -84,7 +84,8 @@ end
 
 if s~=0 %error
     message = sprintf('ERROR when converting LTL to Buchi. Posible causes:\n (1) Antivirus may have stopped ltl2ba -> temporarily disable antivirus.\n (2) Path to LTL2BA not correct -> make sure current folder is the RMTool one (where file rmt.m is located) and the original subfolders were not renamed.\n (3) If calling rmt_create_buchi outside RMTool, please change path to ltl2ba folder on lines 64-71 in file rmt_create_buchi.m.\n');
-    uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    uiwait(errordlg(message,'Robot Motion Toolbox','modal'));
+    error(message);
     B=[];
     return
 end
