@@ -28,6 +28,9 @@ function [objects,initial_points,final_points] = rmt_get_regions(mission_task)
 % let the user to introduce the regions of interest or generate random
 % these regions
 % mission_task is 1 for ltl formula or 2 for boolean task
+objects={};
+initial_points={};
+final_points={};
 
 if (mission_task == 0) %reachability task -> ask for obstacles
     prompt = {'Number of obstacles:'};
@@ -99,10 +102,11 @@ else
     dlg_title = 'Robot Motion Toolbox';
     num_lines = 1;
     default_size = {'1'};
-    size_obs = inputdlg(prompt,dlg_title,num_lines,default_size); % Reading a dimension of interest's region from input interface
-    sizeObs= str2double(size_obs{1,1}); %Converiosn char in number
+    size_obs = char(inputdlg(prompt,dlg_title,num_lines,default_size)); % Reading a dimension of interest's region from input interface
     if isempty(size_obs)
         sizeObs = 1;
+    else
+        sizeObs = str2double(size_obs);
     end
     if (mission_task == 0)%reachability task
         [objects,initial_points,final_points]=rmt_random_env(data.handle_env,reg_no,sizeObs,bound,1,1,limits,color);

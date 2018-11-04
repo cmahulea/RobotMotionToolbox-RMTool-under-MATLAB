@@ -19,7 +19,7 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on September, 2014. 
+%   First version released on September, 2014.
 %   Last modification February 14, 2018.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
@@ -115,7 +115,7 @@ switch action
         data.control.lookahead_distance = 10;
         data.control.robot = 'Car-like';
         data.control.motion = 'Pure-Pursuit';
-
+        
         set(gcf,'UserData',data);
         
         
@@ -185,7 +185,6 @@ switch action
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
         uimenu(a,'Label','&Motion Control Parameters','Callback',strcat(thisfile,'(''motion_control_parameters'')'), 'Separator','on');
-        uimenu(a,'Label','&Change LTL formula','Callback',strcat(thisfile,'(''menu_change_ltl_formula'')'), 'Separator','on');
         a = uimenu(a,'Label','&MILP solver', 'Separator','on');
         data.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
         data.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
@@ -271,7 +270,7 @@ switch action
             'CallBack',strcat(thisfile,'(''ltl_task'')'), ...
             'Value',0,...
             'String','LTL formula');
-      
+        
         %edittext ltl formula
         uicontrol( ...
             'Style','edit', ...
@@ -404,7 +403,7 @@ switch action
             'Position',[0.0303    0.56    0.2628    0.0952], ...
             'Tag', 'weights', ...
             'String','1|norm(centr(c_i)-centr(c_j))|norm(centr(c_i)-mid(c_i,c_j))|sum(c_h, c_h~=c_j, norm(mid(c_h,c_i) mid(c_i,c_j))/(number of neighbors of c1 - 1)'); % |variable step saving data');
-
+        
         
         %intermediate trajectory points
         uicontrol( ...
@@ -424,7 +423,7 @@ switch action
             'Position',[0.0303    0.48    0.2628    0.0952], ...
             'Tag', 'waypoints', ...
             'String','Middle points|Norm 1|Norm 2|Norm Inf.|MPC'); % |variable step saving data');
-     
+        
         %text: Trajectory-Workspace
         uicontrol( ...
             'Style','text', ...
@@ -499,7 +498,7 @@ switch action
             message = sprintf('Cannot find CPLEX. If installed, please add it to Matlab''s path and restart RMTool.\n For this instance, Glpk is selected for solving the optimization problems.');
             data.cplex_variable='false';
             set(data.menuGlpk,'Checked','on');
-            set(data.menuCplex,'Checked','off');
+            set(data.menuCplex,'Checked','off','Enable','off');
             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
         end
         
@@ -520,6 +519,7 @@ switch action
         data.ltl2ba = runLTL2BA;
         set(figpri, 'Visible','on');
         set(gcf,'UserData',data);
+        rmt_delete_axes(data,0);
         
     case 'triangular'
         set(findobj(gcf,'Tag','triang'),'Value',1);
@@ -703,7 +703,7 @@ switch action
         else %mission_task == 0 ---> reachability tasks
             planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value');
             %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi; 4 - manual points
-            data = get(gcf,'UserData');            
+            data = get(gcf,'UserData');
             switch planning_approach
                 case {1,2} %cell decomposition && visibility_graph
                     %obs_no = char(inputdlg('Number of obstacles:','Robot Motion Toolbox',1,{'1'}));
@@ -813,7 +813,7 @@ switch action
         data = get(gcf,'UserData');
         
         switch mission_task
-            case 2  
+            case 2
                 % Insert button of analysis choice between Buchi and Petri
                 % Net with LTL Formula
                 choiceMenuLTL = questdlg('Which model do you want to use?', ...
@@ -1457,7 +1457,7 @@ switch action
                     for i = 1 : 2 * length(data.T.props)
                         vartype = sprintf('%sB',vartype); %put the binary variable
                     end
-                    vartype = sprintf('%sC',vartype); %put the infinite norm b as real 
+                    vartype = sprintf('%sC',vartype); %put the infinite norm b as real
                     tic;
                     [xmin,f,exitflag] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
                     
@@ -1651,227 +1651,7 @@ switch action
                 
                 set(gcf,'UserData',data);%to save data
             case 1 %rechability tasks
-                planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value'); %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi
-                data = get(gcf,'UserData');               
-                cla(data.handle_ori);
-                cla(data.handle_vel);
-                cla(data.handle_ang);
-                if ~isfield(data,'Nobstacles')
-                    return;
-                end
-                if (data.Nobstacles==0)
-                    uiwait(errordlg(sprintf('\nDefine an environment first!'),'Robot Motion Toolbox','modal'));
-                    return;
-                end
-                for i=1:data.Nobstacles
-                    aux = data.obstacles{i};
-                    [as, bs] = size(data.obstacles{1});
-                    if(as > bs)
-                        aux = aux';
-                    end
-                    obstaclesCD(i) = {aux};
-                end
-                
-                switch planning_approach
-                    case 1%cell decomposition
-                        if (get(findobj(gcf,'Tag','triang'),'Value') == 1)
-                            [C,adj,mid_X,mid_Y,com_F]=rmt_triangular_decomposition(obstaclesCD,data.frame_limits);   %triangular decomposition
-                        elseif (get(findobj(gcf,'Tag','rect'),'Value') == 1)
-                            [C,adj,mid_X,mid_Y,com_F]=rmt_rectangular_decomposition(obstaclesCD,data.frame_limits);   %rectangular decomposition
-                        elseif (get(findobj(gcf,'Tag','poly'),'Value') == 1)
-                            [C,adj,mid_X,mid_Y,com_F]=rmt_polytopal_decomposition(obstaclesCD,data.frame_limits);   %polytopal decomposition
-                        elseif (get(findobj(gcf,'Tag','trapez'),'Value') == 1)
-                            [C,adj,mid_X,mid_Y,com_F]=rmt_trapezoidal_decomposition(obstaclesCD,data.frame_limits);   %trapezoidal decomposition
-                        end
-                        cla(data.handle_env);
-                        axes(data.handle_env);
-                        rmt_plot_environment(obstaclesCD,data.frame_limits,C,'c');
-                        for k = 1 : length(data.initial)
-                            plot(data.initial{k}(1),data.initial{k}(2),'pw',...
-                                'Markersize',13, 'Color', 'k');
-                        end
-                        for k = 1 : length(data.final)
-                            plot(data.final{k}(1),data.final{k}(2),'pw',...
-                                'Markersize',13, 'Color', 'b');
-                        end
-                        set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
-                        grid on;
-                        %assign weight on the arcs if MPC is not chosen
-                        if (get(findobj(gcf,'Tag','waypoints'),'Value') ~= 5)
-                            prompt = 'Cost weights of each edge (ci,cj):';
-                            dlg_title = 'Robot Motion Toolbox';
-                            str = {'1','norm(centr(c_i)-centr(c_j))','norm(centr(c_i)-mid(c_i,c_j))',...
-                                'sum(c_h, c_h~=c_j, norm(mid(c_h,c_i)?mid(c_i,c_j))/(number of neighbors of c1 - 1)'};
-                            [s,~] = listdlg('PromptString',prompt,'Name',dlg_title,'SelectionMode','single','ListString',str);
-                            switch s
-                                case 2 %distance between the centroids
-                                    for i = 1 : size(adj,1)-1
-                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
-                                        for j = i+1 : size(adj,1)
-                                            if (adj(i,j)~=0)
-                                                adj(i,j) = norm(mean(C{i},2)-mean(C{j},2));
-                                                adj(j,i) = adj(i,j);
-                                            end
-                                        end
-                                    end
-                                case 3 %cost(ci,cj) = norm(centr(ci)-mid(ci,cj))
-                                    for i = 1 : size(adj,1)
-                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
-                                        for j = 1 : size(adj,1)
-                                            if ((j ~=i) && (adj(i,j)~=0))
-                                                temp = com_F{i,j};
-                                                adj(i,j) = norm(mean(C{i},2)-norm(temp(:,1)-temp(:,2)));
-                                            end
-                                        end
-                                    end
-                                case 4 %cost(ci,cj) = sum(c_h, c_h~=c_j, norm(mid(c_h,c_i)?mid(c_i,c_j))/(number of neighbors of c1 - 1)
-                                    for i = 1 : size(adj,1)
-                                        adj(i,i) = 0.0001; %for selfloops add a very small cost
-                                        for j = 1 : size(adj,1)
-                                            if ((j ~=i) && (adj(i,j)~=0))
-                                                temp = setdiff(find(adj(:,i)),[i,j]);
-                                                adj(i,j) = 0;
-                                                for k = 1 : length(temp)
-                                                    temp2 = com_F{temp(k),i};
-                                                    temp3 = com_F{j,i};
-                                                    adj(i,j) = adj(i,j)+...
-                                                        norm( norm(temp2(:,1) - temp2(:,2))...
-                                                        - norm(norm(temp3(:,1) - temp3(:,2))));
-                                                end
-                                                adj(i,j) = adj(i,j) / length(temp);
-                                            end
-                                        end
-                                    end
-                            end
-                        end
-                        temp1 = data.initial{1};
-                        temp2 = data.final{1};
-                        if (get(findobj(gcf,'Tag','waypoints'),'Value') == 1) %middle points
-                            tic;
-                            [traj, travel_dist, path_cells, cost_path] = rmt_find_trajectory(C,adj,mid_X,mid_Y,...
-                                temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
-                            plot(traj(1,:),traj(2,:),'r','LineWidth',2);
-                            data.trajectory = traj;
-                            message = sprintf('Travelled distance via middle points: %.2f.\n\n Time to compute trajectory %.2f segundos',...
-                                travel_dist,toc);
-                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 2)  %norm 1
-                            %function 1-norm
-                            safe_dist=0.5;  %should be smaller than half of shortest traversed segment
-                            tic;
-                            [traj, travel_dist, path_cells, cost_path] = rmt_find_trajectory(C,adj,mid_X,mid_Y,...
-                                temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
-                            start_p = temp1;
-                            goal_p = temp2;
-                            [traj_norm_one, dist_norm_one] = rmt_optimize_traj_norm_one(com_F,...
-                                path_cells,start_p,goal_p,safe_dist);  %via LP
-                            plot(traj_norm_one(1,:),traj_norm_one(2,:),'r','LineWidth',2);
-                            data.trajectory = traj_norm_one;
-                            message = sprintf('Travelled distance via Norm-1: %.2f.\n\nTime to compute the trajectory: %.2f.',...
-                                dist_norm_one,toc);
-                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 3)  %norm 2
-                            safe_dist=0.5;  %should be smaller than half of shortest traversed segment
-                            tic;
-                            [traj, travel_dist, path_cells, cost_path] = rmt_find_trajectory(C,adj,mid_X,mid_Y,...
-                                temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
-                            start_p = temp1;
-                            goal_p = temp2;
-                            [traj_norm_2_sq, dist_norm_2_sq] = rmt_optimize_traj_norm_two_sq(com_F,path_cells,start_p,goal_p,safe_dist);  %via QP
-                            data.trajectory = traj_norm_2_sq;
-                            plot(traj_norm_2_sq(1,:),traj_norm_2_sq(2,:),'r','LineWidth',2);
-                            message = sprintf('Travelled distance via Norm-2: %.2f.\n\nTime to compute the trajectory %.2f.',...
-                                dist_norm_2_sq,toc);
-                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 4)  %norm inf.
-                            safe_dist=0.5;  %should be smaller than half of shortest traversed segment
-                            tic;
-                            [traj, travel_dist, path_cells, cost_path] = rmt_find_trajectory(C,adj,mid_X,mid_Y,...
-                                temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
-                            start_p = temp1;
-                            goal_p = temp2;
-                            [traj_norm_inf, dist_norm_inf] = rmt_optimize_traj_norm_inf(com_F,path_cells,start_p,goal_p,safe_dist);  %via LP
-                            data.trajectory = traj_norm_inf;
-                            plot(traj_norm_inf(1,:),traj_norm_inf(2,:),'r','LineWidth',2);
-                            message = sprintf('Travelled distance via Norm-Inf.: %.2f.\n\nTime to compute the trajectory: %.2f',...
-                                dist_norm_inf,toc);
-                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        elseif (get(findobj(gcf,'Tag','waypoints'),'Value') == 5)  %MPC 
-                            data = get(gcf,'UserData');
-                            prompt = {'Safety distance:','N:','Number of intermediate points on common edges:'};
-                            dlg_title = 'Robot Motion Toolbox';
-                            num_lines = 1;
-                            defaultans = {num2str(data.waypointsMPC.safe_dist),num2str(data.waypointsMPC.N),...
-                                num2str(data.waypointsMPC.intermPoints)};
-                            input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
-                            data.waypointsMPC.safe_dist = str2num(char(input_user(1)));   %should be smaller than half of shortest traversed segment
-                            data.waypointsMPC.N = str2num(char(input_user(2))); % Receding horizon
-                            data.waypointsMPC.intermPoints = str2num(char(input_user(3)));                           
-                            set(gcf,'UserData',data);
-                            tic;
-                            [traj, travel_dist] = rmt_optimize_traj_mpc(C,adj,com_F,...
-                                data.waypointsMPC.safe_dist,data.waypointsMPC.intermPoints,...
-                                data.waypointsMPC.N, temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
-                            for i = 1 : size(traj,2)-1
-                                plot([traj(1,i) traj(1,i+1)],[traj(2,i) traj(2,i+1)],'r');
-                            end
-                            message = sprintf('Travelled distance via MPC: %.2f.\n\nTime to compute the trajectory: %.2f',...
-                                travel_dist,toc);
-                            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-                        end
-                        set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
-                    case 2%visibility graph
-                        input_variables = zeros(8,1);
-                        input_variables(1) = data.frame_limits(1);
-                        input_variables(2) = data.frame_limits(2);
-                        input_variables(3) = data.frame_limits(3);
-                        input_variables(4) = data.frame_limits(4);
-                        input_variables(5) = length(data.obstacles);
-                        input_variables(6) = eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
-                        temp1 = data.initial{1};
-                        temp2 = data.final{1};
-                        input_variables(7) = temp1(1);
-                        input_variables(8) = temp1(2);
-                        input_variables(9) = temp2(1);
-                        input_variables(10) = temp2(2);
-                        cla(data.handle_env);%new
-                        axes(data.handle_env);
-                        rmt_plot_environment(data.obstacles,data.frame_limits);
-                        plot(temp1(1),temp1(2),'pw','Markersize',13, 'Color', 'k');
-                        plot(temp2(1),temp2(2),'pw','Markersize',13, 'Color', 'b');
-                        grid on;
-                        %traj = rmt_visibility_graph_new2(data.handle_env,input_variables,data.map,data.obstacles);
-                        traj = rmt_vgraph2(data.handle_env,input_variables,data.obstacles);
-                        %plot(traj(1,:),traj(2,:),'--r','LineWidth',2);%new
-                        %set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
-                        %[trajectory] = rmt_vgraph2(handle,input_variables,seq_obstacles)
-                        data.trajectory = traj';
-                        set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
-                    case 3%voronoi
-                        cla(data.handle_env);%new
-                        axes(data.handle_env);
-                        rmt_plot_environment(data.obstacles,data.frame_limits);
-                        temp1 = data.initial{1};
-                        temp2 = data.final{1};
-                        plot(temp1(1),temp1(2),'pw','Markersize',13, 'Color', 'k');
-                        plot(temp2(1),temp2(2),'pw','Markersize',13, 'Color', 'b');
-                        grid on;
-                        limits = data.frame_limits;
-                        whe = eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
-                        [X_Total_points,Y_Total_points, ...
-                            All_cells_Number, Cell_start, X1] = rmt_voronoi_epsi(data.handle_env,data.Nobstacles,limits,whe*0.5,...
-                            data.epsilonvoronoi,data.obstacles);
-                        data.X_Total_points = X_Total_points;
-                        data.Y_Total_points = Y_Total_points;
-                        data.All_cells_Number = All_cells_Number;
-                        data.Cell_start = Cell_start;
-                        data.X1 = X1;
-                        traj = rmt_get_voronoi(data.handle_env, data.frame_limits, (data.Nobstacles+1),...
-                            temp1, temp2,data.X_Total_points, data.Y_Total_points, ...
-                            data.All_cells_Number, data.Cell_start, data.X1);
-                        %traj = rmt_visibility_graph(data.handle_env,input_variables,data.map,data.obstacles);
-                        data.trajectory = traj';
-                end
+                rmt_path_planning_reachability;
         end
         set(gcf,'UserData',data);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1979,7 +1759,7 @@ switch action
         set(data.handle_ang,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
         %set(data.handle_ang,'XGrid','on','YGrid','on');
         
-    case 'motion_control_parameters' 
+    case 'motion_control_parameters'
         data = get(gcf,'UserData');
         data.control = rmt_control_setup(data.control);
         set(gcf,'UserData',data);
@@ -2010,7 +1790,7 @@ switch action
         file = char(file);
         path1 = char(path1);
         file2=fullfile(path1,file);
-        if ~isempty(strfind(file,'.rmt')) 
+        if ~isempty(strfind(file,'.rmt'))
             delete(gcf);
             hgload(file2);
         end
@@ -2267,16 +2047,6 @@ switch action
         data.epsilonvoronoi = temp;
         set(gcf,'UserData',data);
         
-    case 'menu_change_ltl_formula'
-        data = get(gcf,'UserData');
-        if ~isfield(data,'propositions')
-            uiwait(errordlg(sprintf('Define first the envirronment'),'Robot Motion Toolbox','modal'));
-            return;
-        end
-        formula = rmt_read_formula(length(data.propositions));
-        data.formula=formula;
-        set(findobj(gcf,'Tag','ltlformula'),'String',formula);
-        set(gcf,'UserData',data);
     case 'ltl_formula_changed'
         data = get(gcf,'UserData');
         data.formula = get(findobj(gcf,'Tag','ltlformula'),'String');
@@ -2313,7 +2083,7 @@ switch action
         path1 = char(path1);
         file2=fullfile(path1,file);
         warning off;
-        if ~isempty(strfind(file,'.env')) 
+        if ~isempty(strfind(file,'.env'))
             eval(sprintf('load ''%s'' ''-mat''',file2));
             if ~exist('data','var')
                 h = errordlg('Error loading from file','Robot Motion Toolbox');
