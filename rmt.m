@@ -69,6 +69,7 @@ switch action
         data.initial{1} = [2 2];
         data.final{1} = [5 5];
         data.orientation = 0;
+        data.removeLine = 0;
         temp(1) = 0.8;
         temp(2) = 0.5;
         temp(3) = 0.2;
@@ -785,7 +786,7 @@ switch action
                     data.final = [traj(1,end) traj(2,end)];
                     data.trajectory = traj;
                     plot(data.initial(1),data.initial(2),'pw','Markersize',13, 'Color', 'k');
-                    plot(data.trajectory(1,:),data.trajectory(2,:),'r','LineWidth',3);
+                    plot(data.trajectory(1,:),data.trajectory(2,:),':r','LineWidth',3);
                     plot(data.final(1),data.final(2),'pw','Markersize',13, 'Color', 'b');
                     grid on;
                     set(findobj(gcf,'Tag','path_planning_button'),'Enable','off');
@@ -868,11 +869,11 @@ switch action
             data.frame_limits(3) data.frame_limits(4)];
         if strcmpi(data.control.motion,'Pure-Pursuit')
             %function pure-pursuit
-            fprintf('\nPure pursuit controller is running...');
+            %fprintf('\nPure pursuit controller is running...');
             [array_time, array_alpha, array_v, array_pos] = rmt_pure_pursuit(input_variables,ref_trajectory,data.orientation,data.obstacles,data.Nobstacles);
         else
             %PI control
-            fprintf('\nPI controller is running...');
+            %fprintf('\nPI controller is running...');
             theta_init = data.orientation;%improvement permit to the user to select the initial orientation of the robot
             dstar = 0.01;
             threshold_goal = 0.2;%distance to consider the goal has been reached.
@@ -886,11 +887,18 @@ switch action
         
         %new code (removing lines)
         removePlots = questdlg('Remove previous trajectories?', 'Robot Motion Toolbox', 'Yes', 'No','Yes');
-        if(strcmp(removePlots,'Yes'))
-            h = findobj('type','line');
-            delete(h(1));
-            delete(h(3:end));
+        if(strcmp(removePlots,'Yes'))            
+            if(data.removeLine > 1)
+                h = findobj('type','line');
+                aux = data.removeLine                
+                delete(h(1:aux));
+                delete(h(aux+4:end));
+            end
+        else
+            data.removeLine = data.removeLine + 1;
         end
+        set(gcf,'UserData',data);%to save data
+        
         
         %drawing the result
         color = hsv(5);

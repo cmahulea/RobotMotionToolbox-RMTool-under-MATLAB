@@ -157,7 +157,7 @@ while((i<=k)&&(goal_ok==0))
         dist = sqrt(((x(i)-xref(k))^2+(y(i)-yref(k))^2));
         if(dist<threshold_goal)
             goal_ok = 1;
-            fprintf('\n The goal has been reached. Stopping the robot...\n');
+            %fprintf('\n The goal has been reached. Stopping the robot...\n');
         end
         if((minx+s)==0)
             ind = k;
@@ -241,7 +241,7 @@ end;%main loop: while
 %draw_data_gui_more_info(x,y,xref, yref,20,10,array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);
 %draw_data_gui_rc(x,y,xref, yref,x_max,y_max,array_rc, angles, array_time,array_alpha,array_v,array_theta,lv,v,rad2deg(alpha_constraint),s);
 
-fprintf('\n End of pure pursuit.\n');
+%fprintf('\n End of pure pursuit.\n');
 
 [w1,l1] = size(y);
 [w2,l2] = size(yref);
@@ -265,8 +265,8 @@ while(l3 ~= l2)
     end
 end
 
-size(h)
-size(yref)
+size(h);
+size(yref);
 RMSE1 = sqrt(mean((h - yref).^2));
 
 [w1,l1] = size(x);

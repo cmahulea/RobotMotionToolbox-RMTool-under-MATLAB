@@ -245,7 +245,7 @@ while((i<=max_iterations)&&(goal_ok==0))
     i = i+1;%counter
 end%while
 
-fprintf('\n End of PI.\n');
+%fprintf('\n End of PI.\n');
 
  [w1,l1] = size(y);
  [w2,l2] = size(yref);
@@ -269,9 +269,9 @@ while(l3 ~= l2)
     end    
 end
 
-    size(h)
-    size(yref)
-    RMSE1 = sqrt(mean((h - yref).^2))    
+    size(h);
+    size(yref);
+    RMSE1 = sqrt(mean((h - yref).^2));   
     
     
     
@@ -298,10 +298,10 @@ while(l3 ~= l2)
     end    
 end
 
-    size(h)
-    size(xref)
-    RMSE2 = sqrt(mean((h - xref).^2))    
-resSS = sqrt(RMSE1^2 + RMSE2^2)
+    size(h);
+    size(xref);
+    RMSE2 = sqrt(mean((h - xref).^2));    
+resSS = sqrt(RMSE1^2 + RMSE2^2);
     
 end%function
 

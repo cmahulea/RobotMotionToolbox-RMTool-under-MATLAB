@@ -27,7 +27,6 @@
 
 %Kinematic model of a differential-drive mobile robot
 function [position1, omega] = rmt_km_diff_drive_robot(position0,T,v_r,v_l,lv)
-
 position1 = zeros(1,3);
 position1(1) = position0(1) + T * (cos(position0(3))*((v_r+v_l)/2));
 position1(2) = position0(2) + T * (sin(position0(3))*((v_r+v_l)/2));

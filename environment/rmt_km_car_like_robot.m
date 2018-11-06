@@ -26,7 +26,6 @@
 
 %Kinematic model of a car-like mobile robot
 function [position1, omega] = rmt_km_car_like_robot(position0,T,v,lv,alpha)
-
 position1 = zeros(1,3);
 position1(1) = position0(1) + T * (cos(position0(3))*v);
 position1(2) = position0(2) + T * (sin(position0(3))*v);
