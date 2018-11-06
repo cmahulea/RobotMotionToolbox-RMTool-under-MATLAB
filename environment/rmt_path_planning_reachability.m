@@ -25,10 +25,10 @@
 % ============================================================================
 
 function rmt_path_planning_reachability
+%Path-planning with reachability specification and transition system models (graph based approach)
 
-
-planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value'); %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi
 data = get(gcf,'UserData');
+planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value'); %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi
 cla(data.handle_ori);
 cla(data.handle_vel);
 cla(data.handle_ang);
@@ -244,4 +244,5 @@ switch planning_approach
         %traj = rmt_visibility_graph(data.handle_env,input_variables,data.map,data.obstacles);
         data.trajectory = traj';
 end
+set(gcf,'UserData',data);
 return
