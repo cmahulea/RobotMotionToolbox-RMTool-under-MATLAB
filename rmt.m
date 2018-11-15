@@ -110,7 +110,7 @@ switch action
         data.control.sampling_period = 0.1;
         data.control.max_ang_vel = 1;
         data.control.max_linear_vel = 1;
-        data.control.max_steering = 30;
+        data.control.max_steering = 10;
         data.control.wheel_radius = 0.05;
         data.control.wheel_base = 0.25;
         data.control.lookahead_distance = 10;
@@ -861,7 +861,8 @@ switch action
         end
         set(data.handle_text,'Visible','Off');
         ref_trajectory = data.trajectory;
-        threshold_goal = 0.15;%distance to consider the goal has been reached.
+        %threshold_goal = 0.15;%distance to consider the goal has been reached.
+        threshold_goal = 0.05;%distance to consider the goal has been reached.
         input_variables = [sampling_period, xini, yini, wheel_radius,...
             wheel_base,max_linear_vel,...
             max_steering, lookahead_distance,robotType,threshold_goal,...
@@ -885,14 +886,15 @@ switch action
             [array_time, array_alpha, array_v, array_pos] = rmt_pi_controller(input_variables,ref_trajectory,pi_tuning,data.obstacles,data.Nobstacles);
         end
         
-        %new code (removing lines)
+        %new code (removing lines) - NOVEMBER 2018
         removePlots = questdlg('Remove previous trajectories?', 'Robot Motion Toolbox', 'Yes', 'No','Yes');
         if(strcmp(removePlots,'Yes'))            
-            if(data.removeLine > 1)
-                h = findobj('type','line');
+            if(data.removeLine > 0)
+                h = findobj('type','line')
                 aux = data.removeLine                
                 delete(h(1:aux));
                 delete(h(aux+4:end));
+                data.removeLine = 1;
             end
         else
             data.removeLine = data.removeLine + 1;
