@@ -890,8 +890,8 @@ switch action
         removePlots = questdlg('Remove previous trajectories?', 'Robot Motion Toolbox', 'Yes', 'No','Yes');
         if(strcmp(removePlots,'Yes'))            
             if(data.removeLine > 0)
-                h = findobj('type','line')
-                aux = data.removeLine                
+                h = findobj('type','line');
+                aux = data.removeLine;            
                 delete(h(1:aux));
                 delete(h(aux+4:end));
                 data.removeLine = 1;
