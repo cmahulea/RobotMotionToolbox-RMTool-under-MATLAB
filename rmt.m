@@ -914,6 +914,7 @@ switch action
         %orientation
         plot(data.handle_ori,array_time,rad2deg(array_pos(3,:)),'Color', colora,'LineWidth',2);
         hold on;
+        title(data.handle_ori,'Orientation [deg]');
         xmax = max(array_time);
         ymax = max(rad2deg(array_pos(3,:)));
         ymin = min(rad2deg(array_pos(3,:)));
@@ -925,6 +926,7 @@ switch action
         %velocities
         plot(data.handle_vel, array_time, array_v,'Color', colora,'LineWidth',2);
         hold on;
+        title(data.handle_vel,'Velocities [m/s]');
         xmax = max(array_time);
         ymax = max(array_v)+1;
         ymin = min(array_v)-1;
@@ -937,6 +939,7 @@ switch action
         %steering angle
         plot(data.handle_ang,array_time,rad2deg(array_alpha),'Color', colora,'LineWidth',2);
         hold on;
+        title(data.handle_ang,'Steering angle [deg]');
         xmax = max(array_time);
         ymax = max(rad2deg(array_alpha));
         ymin = min(rad2deg(array_alpha));
