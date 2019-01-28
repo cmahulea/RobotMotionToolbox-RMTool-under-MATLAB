@@ -47,9 +47,11 @@ function B = rmt_create_buchi(formula, Obs)
 
 formula=regexprep(formula, '&', ' && ');  %make changes in formula string so it matches the sintax required by ltl2ba.exe
 formula=regexprep(formula, '\|', ' || '); %| has special meaning, so it's preceded by \
+formula=regexprep(formula, 'U', ' U ');
 formula=regexprep(formula, 'R', ' V ');
 formula=regexprep(formula, 'F', ' <> ');
 formula=regexprep(formula, 'G', ' [] ');
+formula=regexprep(formula, '  ', ' ');
 
 temp = computer;
 try
