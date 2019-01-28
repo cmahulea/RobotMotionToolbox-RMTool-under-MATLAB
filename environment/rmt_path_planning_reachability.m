@@ -199,7 +199,7 @@ switch planning_approach
         input_variables(3) = data.frame_limits(3);
         input_variables(4) = data.frame_limits(4);
         input_variables(5) = length(data.obstacles);
-        input_variables(6) = eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
+        input_variables(6) = data.control.wheel_base;%eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
         temp1 = data.initial{1};
         temp2 = data.final{1};
         input_variables(7) = temp1(1);
