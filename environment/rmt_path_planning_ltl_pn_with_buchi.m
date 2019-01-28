@@ -112,7 +112,7 @@ set(gcf,'UserData',data);%to save data
 
 data = get(gcf,'UserData');
 % Part about analysis with Buchi Automaton
-if strcmpi(data.cplex_variable,'true')
+if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
     %%%%%%%%%
     ctype='';
     for i = 1 : size(Aeq,1)
@@ -260,8 +260,8 @@ if strcmpi(data.cplex_variable,'true')
         end
     end
     
-    % Start part with GLPK
-else
+    % Start part with GLPK 
+elseif strcmpi(get(data.optim.menuGlpk,'Checked'),'on')
     ctype1='';
     ctype2='';
     for i = 1 : size(Aeq,1)

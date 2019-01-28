@@ -120,7 +120,7 @@ for p_B=1:length(paths_B)
                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.intermediateMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 tic;
-                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,options_glpk);   %optimization with glpk
+                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with glpk
         
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
@@ -129,7 +129,7 @@ for p_B=1:length(paths_B)
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 tic;
-                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, options_milp);   %optimization with intlinprog
+                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
@@ -187,7 +187,7 @@ for p_B=1:length(paths_B)
                     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.intermediateMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 tic;
-                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,options_glpk);   %optimization with GLPK
+                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with GLPK
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
                     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.intermediateMarkings, ...
@@ -195,7 +195,7 @@ for p_B=1:length(paths_B)
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 tic;
-                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, options_milp);   %optimization with intlinprog
+                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
                 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
@@ -253,7 +253,7 @@ for p_B=1:length(paths_B)
                     data.T.props, Obs, 'intermediate', obs_fin, obs_feasible, data.intermediateMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 tic;
-                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,options_glpk);   %optimization with GLPK
+                [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with GLPK
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
                     data.T.props, Obs, 'intermediate', obs_fin, obs_feasible, data.intermediateMarkings, ...
@@ -261,7 +261,7 @@ for p_B=1:length(paths_B)
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 tic;
-                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, options_milp);   %optimization with intlinprog
+                [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
                 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...

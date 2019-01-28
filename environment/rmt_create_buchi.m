@@ -60,7 +60,7 @@ try
 catch
     if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
         [~, WindowsVersion] = system('ver');
-        if isempty(strfind(WindowsVersion,'Version 10')) %different than Windows 10 (7 or before)
+        if (isempty(strfind(WindowsVersion,'Version 10')) && isempty(strfind(WindowsVersion,'Versión 10'))) %different than Windows 10 (7 or before)
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
         else %Windows 10
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
