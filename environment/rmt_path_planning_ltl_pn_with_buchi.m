@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function rmt_path_planning_ltl_pn
+function rmt_path_planning_ltl_pn_with_buchi
 %Path-planning with LTL specificaion and Petri net models (mathematical programming approach)
 
 disp('START CREATION PETRI NET WITH LTL FORMULA');

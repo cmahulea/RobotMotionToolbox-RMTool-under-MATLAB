@@ -48,20 +48,20 @@ switch action
     
     %================
     % INITIALIZATION
-    %================
+    %================             
     case 'ini'  % Initialize figure and controls
         
         figpri=figure( ...
             'Name','Robot Motion Toolbox', ...
             'Position',[35 50 1100 600], ...
             'NumberTitle','off', ...
-            'MenuBar', 'none',...
             'ToolBar','auto',...
             'Visible','off',...
+            'InvertHardcopy','off',...
+            'MenuBar', 'figure',...
             'Color',[.8 .8 .8]...
             );
         ret = figpri;
-        
         set(figpri, 'Visible','on');
         rmt('ini_UserData');
         
@@ -174,7 +174,8 @@ switch action
         a = uimenu('Label','File');
         uimenu(a,'Label','&Open','Callback',strcat(thisfile,'(''open'')'));
         uimenu(a,'Label','S&ave','Callback',strcat(thisfile,'(''save'')'));
-        
+        uimenu(a,'Label','E&xport as eps','Callback',strcat(thisfile,'(''export_eps'')'),...
+            'Separator','on');        
         
         a = uimenu('Label','Setup');
         uimenu(a,'Label','&Environment limits','Callback',strcat(thisfile,'(''environment_limits'')'));
@@ -183,13 +184,16 @@ switch action
         uimenu(a,'Label','&Add a Robot','Callback',strcat(thisfile,'(''add_robot'')'));
         uimenu(a,'Label','Re&move Robots','Callback',strcat(thisfile,'(''remove_robot'')'));
         uimenu(a,'Label','&Number of intermediate markings (PN planning)','Callback',strcat(thisfile,'(''change_k'')'), 'Separator','on');
+        uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
+            'Callback',strcat(thisfile,'(''parameter_MILP_pn_following_buchi'')'));
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
         uimenu(a,'Label','&Motion Control Parameters','Callback',strcat(thisfile,'(''motion_control_parameters'')'), 'Separator','on');
         a = uimenu(a,'Label','&MILP solver', 'Separator','on');
-        data.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
-        data.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
-        
+        data.optim.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
+        data.optim.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
+        data.optim.menuIntlinprog = uimenu(a,'Label','&Intlinprog','Callback',strcat(thisfile,'(''menu_intlinprog'')'),'Separator','on','Checked','off');
+
         a = uimenu('Label','Simulation');
         uimenu(a,'Label','&Load environment','Callback',strcat(thisfile,'(''load_env'')'));
         uimenu(a,'Label','&Save environment','Callback',strcat(thisfile,'(''save_env'')'),'Separator','on');
@@ -254,7 +258,7 @@ switch action
             'Style','radiobutton', ...
             'Units','normalized', ...
             'BackgroundColor',[0.7 0.7 0.7], ...
-            'ListboxTop',0, ...
+             'ListboxTop',0, ...
             'Position',[0.033    0.40    0.099    0.0416], ...
             'Tag', 'reach', ...
             'CallBack',strcat(thisfile,'(''reachability_task'')'), ...
@@ -489,17 +493,36 @@ switch action
             'Position',[0.87    0.005   0.1349    0.0235], ...
             'String','Time [s]');
         set(gcf,'UserData',data);
-        data.cplex_variable='true';
-        set(data.menuGlpk,'Checked','off');
-        set(data.menuCplex,'Checked','on');
-        %check if CPLEX is installed
-        try
-            [~,~,~] = cplexmilp(1,-1,-1);
+        data.optim.cplex_variable='true';
+        set(data.optim.menuGlpk,'Checked','off');
+        set(data.optim.menuCplex,'Checked','on');
+        set(data.optim.menuIntlinprog,'Checked','off');
+        
+        data.optim.param.alpha = 1;
+        data.optim.param.beta = 1;
+        data.optim.param.gamma = 100;
+        data.optim.param.kappa = 2;
+        data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
+        data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
+
+        %check if CPLEX and Intlinprog is installed
+        
+        try [~]=intlinprog(1, [], 1, 1, [], [], 0, 1, optimoptions(@intlinprog,'Display','off','MaxTime',1));
+            data.optim.options_milp=optimoptions(@intlinprog,'Display','off','MaxTime',10);   %stop optimization if not finished in specified time (in seconds)
         catch
-            message = sprintf('Cannot find CPLEX. If installed, please add it to Matlab''s path and restart RMTool.\n For this instance, Glpk is selected for solving the optimization problems.');
-            data.cplex_variable='false';
-            set(data.menuGlpk,'Checked','on');
-            set(data.menuCplex,'Checked','off','Enable','off');
+            message = sprintf('\nIntlinprog (from Matlab''s Optimization Toolbox, >=2014) not available.\n');
+            set(data.optim.menuIntlinprog,'Checked','off','Enable','off');
+            uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+        end
+        try [~]=cplexmilp(1, 1, 1, [], [], [], [], [], 0, 1, 'C', []);
+            warning off MATLAB:lang:badlyScopedReturnValue; %false warnings by Cplex in Matlab >= 2015b
+            %linux error...
+            %data.optim.options_cplex=cplexoptimset('Display','off','MaxTime',10);   %stop optimization if not finished in specified time (in seconds)
+        catch
+            message = sprintf('\nCplex not available. If you have Cplex, please add it to Matlab''s path and rerun.\n');
+            data.optim.cplex_variable='false';
+            set(data.optim.menuGlpk,'Checked','on');
+            set(data.optim.menuCplex,'Checked','off','Enable','off');
             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
         end
         
@@ -568,7 +591,7 @@ switch action
         elseif strcmpi(button,'Cancel')
             set(findobj(gcf,'Tag','reach'),'Value',0);
             return;
-        elseif strcmpi(button,'To Obstacles') %@@@@@@
+        elseif strcmpi(button,'To Obstacles') %
             data = get(gcf,'UserData');
             colors=data.reg_plot.color_full;
             rmt_delete_axes(data,0);
@@ -825,9 +848,17 @@ switch action
                     'Transistion System','Petri Net','Petri Net');
                 %% Part about analysis with Buchi Automaton
                 if strcmpi(choiceMenuLTL,'Transistion System')
-                    rmt_path_planning_ltl_trsys
+                    rmt_path_planning_ltl_trsys;
                 elseif strcmpi(choiceMenuLTL,'Petri Net')
-                    rmt_path_planning_ltl_pn
+                    choiceMenuLTL = questdlg('Which approach do you want to use?', ...
+                        'Robot Motion Toolbox', ...
+                        'Following runs in Buchi','With Buchi Included','Following runs in Buchi');
+                    %% Part about PN model with Buchi Automaton
+                    if strcmpi(choiceMenuLTL,'Following runs in Buchi')
+                        rmt_path_planning_ltl_pn_following_buchi;
+                    elseif strcmpi(choiceMenuLTL,'With Buchi Included')
+                        rmt_path_planning_ltl_pn_with_buchi;
+                    end
                 end
             case 3 %Boolean formulas on Petri net models
                 rmt_path_planning_boolean;
@@ -977,9 +1008,28 @@ switch action
         file = char(file);
         path1 = char(path1);
         file2=fullfile(path1,file);
-        if ~isempty(strfind(file,'.rmt'))
+        if contains(file,'.rmt')
             delete(gcf);
             hgload(file2);
+        end
+    case 'export_eps'
+        [filename, pathname] = uiputfile('*.eps', 'Export figure as eps');
+        
+        if (~isequal(filename,0) && ~isequal(pathname,0))
+            oldscreenunits = get(gcf,'Units');
+            oldpaperunits = get(gcf,'PaperUnits');
+            oldpaperpos = get(gcf,'PaperPosition');
+            set(gcf,'Units','pixels');
+            scrpos = get(gcf,'Position');
+            newpos = scrpos/100;
+            set(gcf,'PaperUnits','inches',...
+                'PaperPosition',newpos);
+            
+            print('-depsc2',fullfile(pathname, filename),'-r300');
+            
+            set(gcf,'Units',oldscreenunits,...
+                'PaperUnits',oldpaperunits,...
+                'PaperPosition',oldpaperpos);
         end
     case 'environment_limits'
         data = get(gcf,'UserData');
@@ -1283,7 +1333,11 @@ switch action
             data2.final = data.final;
             data2.obstacles = data.obstacles;
             data2.Nobstacles = data.Nobstacles;
-            data2.RO = data.RO;
+            if isfield(data,'RO')
+                data2.RO = data.RO;
+            else
+                data2.RO = length(data2.initial);
+            end
             data2.T = data.T;
             data2.propositions = data.propositions;
             mission_task = get(findobj(gcf,'Tag','reach'),'Value'); %mission_task=1 - reachability tasks; 0 - ltl tasks
@@ -1640,18 +1694,31 @@ switch action
         %% Part of Menu 'Setup' CPLEX
     case 'menu_cplex'
         data = get(gcf,'UserData');
-        data.cplex_variable= 'true';
-        set(data.menuGlpk,'Checked','off');
-        set(data.menuCplex,'Checked','on');
+        data.optim.cplex_variable= 'true';
+        set(data.optim.menuGlpk,'Checked','off');
+        set(data.optim.menuIntlinprog,'Checked','off');
+        set(data.optim.menuCplex,'Checked','on');
         set(gcf,'UserData',data);%to save data
         
         %% Part of Menu 'Setup' GLPK
     case 'menu_glpk'
         data = get(gcf,'UserData');
-        data.cplex_variable= 'false';
-        set(data.menuGlpk,'Checked','on');
-        set(data.menuCplex,'Checked','off');
+        data.optim.cplex_variable= 'false';
+        set(data.optim.menuGlpk,'Checked','on');
+        set(data.optim.menuIntlinprog,'Checked','off');
+        set(data.optim.menuCplex,'Checked','off');
         set(gcf,'UserData',data);%to save data
         
-        
+        %% Part of Menu 'Setup' Intlinprog
+    case 'menu_intlinprog'
+        data = get(gcf,'UserData');
+        data.optim.cplex_variable= 'false';
+        set(data.optim.menuGlpk,'Checked','off');
+        set(data.optim.menuIntlinprog,'Checked','on');
+        set(data.optim.menuCplex,'Checked','off');
+        set(gcf,'UserData',data);%to save data
+    case 'parameter_MILP_pn_following_buchi'
+        data = get(gcf,'UserData');
+        data.optim.param = rmt_milp_pn_following_setup(data.optim.param);
+        set(gcf,'UserData',data);
 end    % switch

@@ -123,8 +123,8 @@ else
     [xmin,f,exitflag] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
 end
 time = toc;
-if f==0%no solution
-    uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution. Increase k!','Robot Motion Toolbox','modal'));
+if ((f==0)||isempty(xmin)) %no solution
+    uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution or k should be increased!','Robot Motion Toolbox','modal'));
     return;
 end
 message2 = sprintf('\nTime of solving the MILP: %g secs\n', time);
