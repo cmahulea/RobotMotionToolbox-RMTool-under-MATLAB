@@ -45,8 +45,13 @@ function B = rmt_create_buchi(formula, Obs)
 %S-states (identified by integers 1,2,...; S0-initial state(s); F-accepting (final) state(s);
 %trans-structure containing transitions (trans{i,k} is a vector showing which element(s) (row indices in Obs) of alphabet_set enable transition s_i->s_k)
 
-formula=regexprep(formula, '&', ' && ');  %make changes in formula string so it matches the sintax required by ltl2ba.exe
-formula=regexprep(formula, '\|', ' || '); %| has special meaning, so it's preceded by \
+%make changes in formula string so it matches the sintax required by ltl2ba.exe:
+formula = regexprep(formula,'[pPoOY]','y'); %if user mistakenly uses for props letters p, P, o, O, or Y -> replace with lower-case "y"
+formula = regexprep(formula,'[^y0-9()<>\-!&\|FGU]',''); %remove any character different than "y", number, round paranthesis, symbols for Boolean/temporal
+formula=regexprep(formula, '&&', '&');  %if user used double "&&" instead of a single
+formula=regexprep(formula, '&', ' && '); %for ltl2ba
+formula=regexprep(formula, '\|\|', '|'); %if user used double "||" instead of a single (| has special meaning, so it's preceded by \)
+formula=regexprep(formula, '\|', ' || ');
 formula=regexprep(formula, 'U', ' U ');
 formula=regexprep(formula, 'R', ' V ');
 formula=regexprep(formula, 'F', ' <> ');
@@ -55,12 +60,14 @@ formula=regexprep(formula, '  ', ' ');
 
 temp = computer;
 try
-    data = get(gcf,'UserData');
-    runLTL2BA = data.ltl2ba;
+    if ~isempty(findobj('type','figure'))   %if there exists at least one figure (otherwise, function may have been called outside RMTool)
+        data = get(gcf,'UserData');
+    end
+    runLTL2BA = data.ltl2ba;    %forces "catch" if no figure
 catch
     if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
         [~, WindowsVersion] = system('ver');
-        if (isempty(strfind(WindowsVersion,'Version 10')) && isempty(strfind(WindowsVersion,'Versión 10'))) %different than Windows 10 (7 or before)
+        if isempty(strfind(WindowsVersion,'10')) %different than Windows 10 (7 or before)
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
         else %Windows 10
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
