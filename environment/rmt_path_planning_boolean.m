@@ -29,7 +29,7 @@ function rmt_path_planning_boolean
 
 data = get(gcf,'UserData');
 %Takes the string containing the Boolean formula inserted
-data.formula = get(findobj(gcf,'Tag','booleanformula'),'String');
+data.Bool_formula = get(findobj(gcf,'Tag','booleanformula'),'String');
 button = questdlg('Solve on the full trasition system or on the reduced one?',...
     'Robot Motion Toolbox','Full system','Reduced system','Full system');
 if strcmpi(button,'Reduced system')
@@ -45,7 +45,7 @@ if strcmpi(button,'Reduced system')
     message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
     tic;
-    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.Tr.props,data.intermediateMarkings,data.formula);
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.Tr.props,data.intermediateMarkings,data.Bool_formula);
     message2 = sprintf('\nMathematical program has %d variables and %d equality constraints and %d inequality constraints;\nTime spent for creating the problem: %g secs\n', size(A,2), size(Aeq,1), size(A,1), toc);
     message = sprintf('%s%s', message, message2);
     uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
@@ -55,7 +55,7 @@ else
     [Pre,Post] = rmt_construct_PN(data.T.adj);
     m0=data.T.m0;
     tic;
-    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.T.props,data.intermediateMarkings,data.formula);
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.T.props,data.intermediateMarkings,data.Bool_formula);
     message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
     message = sprintf('%s\nThe MILP has %d variables and %d equality constraints and %d inequality constraints;\nTime spent for creating the problem: %g secs\n', message, size(A,2), size(Aeq,1), size(A,1),toc);
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
@@ -65,7 +65,7 @@ data.Post = Post;
 set(gcf,'UserData',data);%to save data
 
 data = get(gcf,'UserData');
-if strcmp(data.cplex_variable,'true')
+if strcmp(get(data.optim.menuCplex,'Checked'),'on')
     message = sprintf('%s\n\nThe MILP solution is with CPLEX\n\n', message);
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     ctype='';
@@ -254,6 +254,8 @@ rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all ato
 
 
 rob_traj = rmt_rob_cont_traj(data.T,Runs,data.initial);    %continuous trajectory of each robot
+data.trajectory = rob_traj;
+
 message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
 for j = 1 : length(Runs)
     message = sprintf('%s\nRobot %d: ',message,j);

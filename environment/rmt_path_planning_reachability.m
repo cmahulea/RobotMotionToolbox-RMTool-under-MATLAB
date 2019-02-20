@@ -123,7 +123,7 @@ switch planning_approach
             [traj, travel_dist, path_cells, cost_path] = rmt_find_trajectory(C,adj,mid_X,mid_Y,...
                 temp1(1),temp1(2),temp2(1),temp2(2),obstaclesCD);
             plot(traj(1,:),traj(2,:),'r','LineWidth',2);
-            data.trajectory = traj;
+            data.trajectory{1} = traj;
             message = sprintf('Travelled distance via middle points: %.2f.\n\n Time to compute trajectory %.2f segundos',...
                 travel_dist,toc);
             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
@@ -138,7 +138,7 @@ switch planning_approach
             [traj_norm_one, dist_norm_one] = rmt_optimize_traj_norm_one(com_F,...
                 path_cells,start_p,goal_p,safe_dist);  %via LP
             plot(traj_norm_one(1,:),traj_norm_one(2,:),'r','LineWidth',2);
-            data.trajectory = traj_norm_one;
+            data.trajectory{1} = traj_norm_one;
             message = sprintf('Travelled distance via Norm-1: %.2f.\n\nTime to compute the trajectory: %.2f.',...
                 dist_norm_one,toc);
             uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
@@ -150,7 +150,7 @@ switch planning_approach
             start_p = temp1;
             goal_p = temp2;
             [traj_norm_2_sq, dist_norm_2_sq] = rmt_optimize_traj_norm_two_sq(com_F,path_cells,start_p,goal_p,safe_dist);  %via QP
-            data.trajectory = traj_norm_2_sq;
+            data.trajectory{1} = traj_norm_2_sq;
             plot(traj_norm_2_sq(1,:),traj_norm_2_sq(2,:),'r','LineWidth',2);
             message = sprintf('Travelled distance via Norm-2: %.2f.\n\nTime to compute the trajectory %.2f.',...
                 dist_norm_2_sq,toc);
@@ -163,7 +163,7 @@ switch planning_approach
             start_p = temp1;
             goal_p = temp2;
             [traj_norm_inf, dist_norm_inf] = rmt_optimize_traj_norm_inf(com_F,path_cells,start_p,goal_p,safe_dist);  %via LP
-            data.trajectory = traj_norm_inf;
+            data.trajectory{1} = traj_norm_inf;
             plot(traj_norm_inf(1,:),traj_norm_inf(2,:),'r','LineWidth',2);
             message = sprintf('Travelled distance via Norm-Inf.: %.2f.\n\nTime to compute the trajectory: %.2f',...
                 dist_norm_inf,toc);
@@ -217,7 +217,7 @@ switch planning_approach
         %plot(traj(1,:),traj(2,:),'--r','LineWidth',2);%new
         %set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
         %[trajectory] = rmt_vgraph2(handle,input_variables,seq_obstacles)
-        data.trajectory = traj';
+        data.trajectory{1} = traj';
         set(data.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
     case 3%voronoi
         cla(data.handle_env);%new
@@ -242,7 +242,7 @@ switch planning_approach
             temp1, temp2,data.X_Total_points, data.Y_Total_points, ...
             data.All_cells_Number, data.Cell_start, data.X1);
         %traj = rmt_visibility_graph(data.handle_env,input_variables,data.map,data.obstacles);
-        data.trajectory = traj';
+        data.trajectory{1} = traj';
 end
 set(gcf,'UserData',data);
 return

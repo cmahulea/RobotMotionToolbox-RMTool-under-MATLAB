@@ -48,7 +48,7 @@ switch action
     
     %================
     % INITIALIZATION
-    %================             
+    %================
     case 'ini'  % Initialize figure and controlsF
         
         figpri=figure( ...
@@ -58,7 +58,7 @@ switch action
             'ToolBar','auto',...
             'Visible','off',...
             'InvertHardcopy','off',...
-            'MenuBar', 'figure',...%figure
+            'MenuBar', 'none',...%figure
             'Color',[.8 .8 .8]...
             );
         ret = figpri;
@@ -80,6 +80,7 @@ switch action
         data.obstacles=[];
         data.Nobstacles=0;
         data.formula='(F y1) & G !(y2 | y3)';
+        data.Bool_formula='!Y1 & y2';
         data.rob_plot.line={'-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.'};
         data.rob_plot.line_color={'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k'};
         data.rob_plot.line_width={2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
@@ -175,7 +176,7 @@ switch action
         uimenu(a,'Label','&Open','Callback',strcat(thisfile,'(''open'')'));
         uimenu(a,'Label','S&ave','Callback',strcat(thisfile,'(''save'')'));
         uimenu(a,'Label','E&xport as eps','Callback',strcat(thisfile,'(''export_eps'')'),...
-            'Separator','on');        
+            'Separator','on');
         
         a = uimenu('Label','Setup');
         uimenu(a,'Label','&Environment limits','Callback',strcat(thisfile,'(''environment_limits'')'));
@@ -193,17 +194,17 @@ switch action
         data.optim.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
         data.optim.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
         data.optim.menuIntlinprog = uimenu(a,'Label','&Intlinprog','Callback',strcat(thisfile,'(''menu_intlinprog'')'),'Separator','on','Checked','off');
-
-        a = uimenu('Label','Simulation');
+        
+        a = uimenu('Label','Environment');
         uimenu(a,'Label','&Load environment','Callback',strcat(thisfile,'(''load_env'')'));
         uimenu(a,'Label','&Save environment','Callback',strcat(thisfile,'(''save_env'')'),'Separator','on');
-        b = uimenu(a,'Label','&Save path planning simulation to','Separator','on');
-        uimenu(b,'Label','&Workspace','Callback',strcat(thisfile,'(''save_paths_workspace'')'));
-        uimenu(b,'Label','&Figure window','Callback',strcat(thisfile,'(''save_paths_figure'')'),'Separator','on');
+        uimenu(a,'Label','&Export to workspace','Callback','rmt_export_environment_to_workspace','Separator','on');
+        uimenu(a,'Label','E&xport to figure window','Callback','rmt_export_environment_to_figure');
         
-        a = uimenu('Label','Export to workspace');
-        uimenu(a,'Label','&Environment','Callback',strcat(thisfile,'(''save_work_env'')'));
-        uimenu(a,'Label','&Petri net','Callback',strcat(thisfile,'(''save_work_pn'')'));
+        a = uimenu('Label','Path Planning');
+        uimenu(a,'Label','&Workspace','Callback','rmt_export_path_to_workspace');
+        uimenu(a,'Label','E&xport to figure window','Callback','rmt_export_environment_to_figure');
+        
         
         a = uimenu('Label','Help');
         uimenu(a,'Label','&About RMTool','Callback',strcat(thisfile,'(''help_menu'')'));
@@ -233,7 +234,7 @@ switch action
             'Position',[0.0303    0.7280    0.2628    0.0952], ...
             'Tag', 'pathpoints', ...
             'CallBack',strcat(thisfile,'(''change_planning_approach'')'), ...
-            'String','Cell Decomposition|Visibility Graph|Voronoi Diagram|Manual points'); % |variable step saving data');
+            'String','Cell Decomposition|Visibility Graph|Voronoi Diagram'); % |variable step saving data');
         
         %frame type of task
         uicontrol( ...
@@ -258,13 +259,13 @@ switch action
             'Style','radiobutton', ...
             'Units','normalized', ...
             'BackgroundColor',[0.7 0.7 0.7], ...
-             'ListboxTop',0, ...
+            'ListboxTop',0, ...
             'Position',[0.033    0.40    0.099    0.0416], ...
             'Tag', 'reach', ...
             'CallBack',strcat(thisfile,'(''reachability_task'')'), ...
             'Value',1,...
             'String','Reachability');
-        %radiobotton  BOOLEAN 
+        %radiobotton  BOOLEAN
         uicontrol( ...
             'Style','radiobutton', ...
             'Units','normalized', ...
@@ -275,7 +276,7 @@ switch action
             'CallBack',strcat(thisfile,'(''boolean_task'')'), ...
             'Value',0,...
             'String','Boolean formula');
-        %edittext  BOOLEAN 
+        %edittext  BOOLEAN
         uicontrol( ...
             'Style','edit', ...
             'Units','normalized', ...
@@ -284,7 +285,7 @@ switch action
             'Position',[0.05    0.32    0.22    0.045], ...
             'CallBack',strcat(thisfile,'(''boolean_formula_changed'')'), ...
             'Tag', 'booleanformula', ...
-            'String','!Y1 & y2',...
+            'String',data.Bool_formula,...
             'Visible','on');
         %radiobutton LTL
         uicontrol( ...
@@ -307,7 +308,7 @@ switch action
             'Position',[0.05    0.24    0.22    0.045], ...
             'CallBack',strcat(thisfile,'(''ltl_formula_changed'')'), ...
             'Tag', 'ltlformula', ...
-            'String','(F y1) & G !(y2 | y3)',...
+            'String',data.formula,...
             'Visible','on');
         
         %environment button
@@ -504,7 +505,7 @@ switch action
         data.optim.param.kappa = 2;
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
-
+        
         %check if CPLEX and Intlinprog is installed
         
         try [~]=intlinprog(1, [], 1, 1, [], [], 0, 1, optimoptions(@intlinprog,'Display','off','MaxTime',1));
@@ -581,7 +582,7 @@ switch action
             data.initial={};
             data.final={};
             data.obstacles = {};
-            data.trajectory = [];
+            data.trajectory = {};
             data.Nobstacles = 0;
             if (isfield(data,'T'))
                 data = rmfield(data,'T');
@@ -634,7 +635,7 @@ switch action
             data.initial={};
             data.final={};
             data.obstacles = {};
-            data.trajectory = [];
+            data.trajectory = {};
             data.Nobstacles = 0;
             set(gcf,'UserData',data);
             rmt('run_environment');
@@ -673,7 +674,7 @@ switch action
             rmt_delete_axes(data,2);
             data.initial={};
             data.final={};
-            data.trajectory = [];
+            data.trajectory = {};
             data.obstacles = {};
             data.Nobstacles = 0;
             set(gcf,'UserData',data);
@@ -726,7 +727,7 @@ switch action
             set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
         else %mission_task == 0 ---> reachability tasks
             planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value');
-            %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi; 4 - manual points
+            %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi;
             data = get(gcf,'UserData');
             switch planning_approach
                 case {1,2} %cell decomposition && visibility_graph
@@ -790,29 +791,6 @@ switch action
                     data.orientation= data.orientation(1);
                     set(gcf,'UserData',data);
                     set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-                case 4 %manual points
-                    cla(data.handle_env);
-                    axes(data.handle_env);
-                    cla(data.handle_ori);
-                    axes(data.handle_ori);
-                    cla(data.handle_vel);
-                    axes(data.handle_vel);
-                    cla(data.handle_ang);
-                    axes(data.handle_ang);
-                    traj_ini = [0 0];
-                    data = get(gcf,'UserData');
-                    sampling_period = eval(get(findobj(gcf,'Tag','sampling'),'String'));
-                    %axes(data.handle_env);
-                    traj = rmt_get_waypoints(data.handle_env,data.frame_limits,sampling_period,traj_ini);
-                    %cla(data.handle_env);
-                    data.initial = [traj(1,1) traj(2,1)];
-                    data.final = [traj(1,end) traj(2,end)];
-                    data.trajectory = traj;
-                    plot(data.initial(1),data.initial(2),'pw','Markersize',13, 'Color', 'k');
-                    plot(data.trajectory(1,:),data.trajectory(2,:),':r','LineWidth',3);
-                    plot(data.final(1),data.final(2),'pw','Markersize',13, 'Color', 'b');
-                    grid on;
-                    set(findobj(gcf,'Tag','path_planning_button'),'Enable','off');
             end%switch
             set(gcf,'UserData',data);%to save data
         end
@@ -833,7 +811,7 @@ switch action
         elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1)
             mission_task = 3;
         else
-          error('Unknown mission type!');
+            error('Unknown mission type!');
         end
         
         switch mission_task
@@ -896,95 +874,96 @@ switch action
             return;
         end
         set(data.handle_text,'Visible','Off');
-        ref_trajectory = data.trajectory;
-        %threshold_goal = 0.15;%distance to consider the goal has been reached.
-        threshold_goal = 0.05;%distance to consider the goal has been reached.
-        input_variables = [sampling_period, xini, yini, wheel_radius,...
-            wheel_base,max_linear_vel,...
-            max_steering, lookahead_distance,robotType,threshold_goal,...
-            max_ang_vel,data.frame_limits(1),data.frame_limits(2),...
-            data.frame_limits(3) data.frame_limits(4)];
-        if strcmpi(data.control.motion,'Pure-Pursuit')
-            %function pure-pursuit
-            %fprintf('\nPure pursuit controller is running...');
-            [array_time, array_alpha, array_v, array_pos] = rmt_pure_pursuit(input_variables,ref_trajectory,data.orientation,data.obstacles,data.Nobstacles);
-        else
-            %PI control
-            %fprintf('\nPI controller is running...');
-            theta_init = data.orientation;%improvement permit to the user to select the initial orientation of the robot
-            dstar = 0.01;
-            threshold_goal = 0.2;%distance to consider the goal has been reached.
-            input_variables = [sampling_period, xini, yini, theta_init,wheel_radius,...
-                wheel_base,max_linear_vel,max_steering, dstar,robotType,threshold_goal,...
-                max_ang_vel,lookahead_distance,data.frame_limits(1),data.frame_limits(2),...
+        for ii = 1 : length(data.trajectory)
+            ref_trajectory = data.trajectory{ii};
+            %threshold_goal = 0.15;%distance to consider the goal has been reached.
+            threshold_goal = 0.05;%distance to consider the goal has been reached.
+            input_variables = [sampling_period, xini, yini, wheel_radius,...
+                wheel_base,max_linear_vel,...
+                max_steering, lookahead_distance,robotType,threshold_goal,...
+                max_ang_vel,data.frame_limits(1),data.frame_limits(2),...
                 data.frame_limits(3) data.frame_limits(4)];
-            pi_tuning = data.pi_tuning;
-            [array_time, array_alpha, array_v, array_pos] = rmt_pi_controller(input_variables,ref_trajectory,pi_tuning,data.obstacles,data.Nobstacles);
-        end
-        
-        %new code (removing lines) - NOVEMBER 2018
-        removePlots = questdlg('Remove previous trajectories?', 'Robot Motion Toolbox', 'Yes', 'No','Yes');
-        if(strcmp(removePlots,'Yes'))            
-            if(data.removeLine > 0)
-                h = findobj('type','line');
-                aux = data.removeLine;            
-                delete(h(1:aux));
-                delete(h(aux+4:end));
-                data.removeLine = 1;
+            if strcmpi(data.control.motion,'Pure-Pursuit')
+                %function pure-pursuit
+                %fprintf('\nPure pursuit controller is running...');
+                [array_time, array_alpha, array_v, array_pos] = rmt_pure_pursuit(input_variables,ref_trajectory,data.orientation,data.obstacles,data.Nobstacles);
+            else
+                %PI control
+                %fprintf('\nPI controller is running...');
+                theta_init = data.orientation;%improvement permit to the user to select the initial orientation of the robot
+                dstar = 0.01;
+                threshold_goal = 0.2;%distance to consider the goal has been reached.
+                input_variables = [sampling_period, xini, yini, theta_init,wheel_radius,...
+                    wheel_base,max_linear_vel,max_steering, dstar,robotType,threshold_goal,...
+                    max_ang_vel,lookahead_distance,data.frame_limits(1),data.frame_limits(2),...
+                    data.frame_limits(3) data.frame_limits(4)];
+                pi_tuning = data.pi_tuning;
+                [array_time, array_alpha, array_v, array_pos] = rmt_pi_controller(input_variables,ref_trajectory,pi_tuning,data.obstacles,data.Nobstacles);
             end
-        else
-            data.removeLine = data.removeLine + 1;
-        end
-        set(gcf,'UserData',data);%to save data
-        
-        
-        %drawing the result
-        color = hsv(5);
-        color = color(randperm(5),:);
-        cha = floor(rand(1)*5+1);
-        %trajectory
-        colora = rand(1,3);
-        plot(data.handle_env,array_pos(1,:),array_pos(2,:),'Color', colora, 'LineWidth',2);
-        set(data.handle_env,'XGrid','on','YGrid','on');
-        
-        %orientation
-        plot(data.handle_ori,array_time,rad2deg(array_pos(3,:)),'Color', colora,'LineWidth',2);
-        hold on;
-        title(data.handle_ori,'Orientation [deg]');
-        xmax = max(array_time);
-        ymax = max(rad2deg(array_pos(3,:)));
-        ymin = min(rad2deg(array_pos(3,:)));
-        if(ymax == ymin)
-            ymax = ymax + 0.1;
-        end
-        set(data.handle_ori,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
-        
-        %velocities
-        plot(data.handle_vel, array_time, array_v,'Color', colora,'LineWidth',2);
-        hold on;
-        title(data.handle_vel,'Velocities [m/s]');
-        xmax = max(array_time);
-        ymax = max(array_v)+1;
-        ymin = min(array_v)-1;
-        if(ymax == ymin)
-            ymax = ymax + 0.1;
-        end
-        set(data.handle_vel,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
-        %set(data.handle_vel,'XGrid','on','YGrid','on');
-        
-        %steering angle
-        plot(data.handle_ang,array_time,rad2deg(array_alpha),'Color', colora,'LineWidth',2);
-        hold on;
-        title(data.handle_ang,'Steering angle [deg]');
-        xmax = max(array_time);
-        ymax = max(rad2deg(array_alpha));
-        ymin = min(rad2deg(array_alpha));
-        if(ymax == ymin)
-            ymax = ymax + 0.1;
-        end
-        set(data.handle_ang,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
-        %set(data.handle_ang,'XGrid','on','YGrid','on');
-        
+            
+            %new code (removing lines) - NOVEMBER 2018
+            removePlots = questdlg('Remove previous trajectories?', 'Robot Motion Toolbox', 'Yes', 'No','Yes');
+            if(strcmp(removePlots,'Yes'))
+                if(data.removeLine > 0)
+                    h = findobj('type','line');
+                    aux = data.removeLine;
+                    delete(h(1:aux));
+                    delete(h(aux+4:end));
+                    data.removeLine = 1;
+                end
+            else
+                data.removeLine = data.removeLine + 1;
+            end
+            set(gcf,'UserData',data);%to save data
+            
+            
+            %drawing the result
+            color = hsv(5);
+            color = color(randperm(5),:);
+            cha = floor(rand(1)*5+1);
+            %trajectory
+            colora = rand(1,3);
+            plot(data.handle_env,array_pos(1,:),array_pos(2,:),'Color', colora, 'LineWidth',2);
+            set(data.handle_env,'XGrid','on','YGrid','on');
+            
+            %orientation
+            plot(data.handle_ori,array_time,rad2deg(array_pos(3,:)),'Color', colora,'LineWidth',2);
+            hold on;
+            title(data.handle_ori,'Orientation [deg]');
+            xmax = max(array_time);
+            ymax = max(rad2deg(array_pos(3,:)));
+            ymin = min(rad2deg(array_pos(3,:)));
+            if(ymax == ymin)
+                ymax = ymax + 0.1;
+            end
+            set(data.handle_ori,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
+            
+            %velocities
+            plot(data.handle_vel, array_time, array_v,'Color', colora,'LineWidth',2);
+            hold on;
+            title(data.handle_vel,'Velocities [m/s]');
+            xmax = max(array_time);
+            ymax = max(array_v)+1;
+            ymin = min(array_v)-1;
+            if(ymax == ymin)
+                ymax = ymax + 0.1;
+            end
+            set(data.handle_vel,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
+            %set(data.handle_vel,'XGrid','on','YGrid','on');
+            
+            %steering angle
+            plot(data.handle_ang,array_time,rad2deg(array_alpha),'Color', colora,'LineWidth',2);
+            hold on;
+            title(data.handle_ang,'Steering angle [deg]');
+            xmax = max(array_time);
+            ymax = max(rad2deg(array_alpha));
+            ymin = min(rad2deg(array_alpha));
+            if(ymax == ymin)
+                ymax = ymax + 0.1;
+            end
+            set(data.handle_ang,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
+            %set(data.handle_ang,'XGrid','on','YGrid','on');
+        end %%%for corresponding to each trajectory
     case 'motion_control_parameters'
         data = get(gcf,'UserData');
         data.control = rmt_control_setup(data.control);
@@ -1298,7 +1277,7 @@ switch action
         set(gcf,'UserData',data);
     case 'boolean_formula_changed'
         data = get(gcf,'UserData');
-        data.formula = get(findobj(gcf,'Tag','booleanformula'),'String');
+        data.Bool_formula = get(findobj(gcf,'Tag','booleanformula'),'String');
         set(gcf,'UserData',data);
     case 'help_menu'
         set(gcf,'Units','pixel');
@@ -1379,32 +1358,6 @@ switch action
                 set(gcf,'UserData',data2);
             end
         end
-    case 'save_paths_workspace'
-        data = get(gcf,'UserData');
-        checkLabels = {'Save initial points of the robots to variable named:' ...
-            'Save regions of interest to variable named:'...
-            'Save LTL formula to variable named:',...
-            'Save transition system of one robot to variable named:'...
-            'Save transition system of the robot team to variable named:'...
-            'Save Buchi automaton to variable named:'...
-            'Save product automaton of team and Buchi automaton to variable named:'...
-            'Save regions of atomic propositions to variable named:'...
-            'Save initial regions of robots to variable named:',...
-            'Save robot trajectories to variable named:'...
-            };
-        varNames = {'robot_init', 'regions','formula', 'T', 'Tg', 'B', 'Pg', ...
-            'propositions', 'RO', 'R_trajs'};
-        items = {data.initial, data.obstacles, data.formula, data.T, data.Tg, data.B, ...
-            data.Pg, data.propositions, data.RO, data.R_trajs};
-        export2wsdlg(checkLabels, varNames, items, 'Save Simulation Results to Workspace');
-    case 'save_paths_figure'
-        [filename, pathname] = uiputfile('*.fig', 'Save experiments as');
-        data = get(gcf,'UserData');
-        Fig2 = figure;
-        copyobj(data.handle_env, Fig2);
-        temp = get(Fig2,'CurrentAxes');
-        set(temp, 'Units', 'normalized', 'Position', [0.1300 0.1100 0.7750 0.8150]);
-        hgsave(Fig2, fullfile(pathname, filename));
     case 'change_k'
         data = get(gcf,'UserData');
         answer = inputdlg({...
@@ -1668,36 +1621,6 @@ switch action
         end
         
         set(gcf,'UserData',data);%to save data
-        
-        
-    case 'save_work_env'
-        data = get(gcf,'UserData');
-        if ~isfield(data,'T')
-            uiwait(errordlg(sprintf('\nCreate a partition first'),'Robot Motion Toolbox','modal'));
-            return;
-        end
-        checkLabels = {'Save set of discrete states to variable named:' ...
-            'Save regions of interest to variable named:'...
-            'Save adjacency matrix to variable named:'...
-            };
-        varNames = {'C', 'O','Adj'};
-        items = {data.T.Q, data.T.props, data.T.adj};
-        export2wsdlg(checkLabels, varNames, items, 'Save Environment Information to Workspace');
-    case 'save_work_pn'
-        data = get(gcf,'UserData');
-        if ~isfield(data,'T')
-            uiwait(errordlg(sprintf('\nCreate a partition first'),'Robot Motion Toolbox','modal'));
-            return;
-        end
-        checkLabels = {'Save Pre matrix to variable named:' ...
-            'Save Post matrix to variable named:'...
-            'Save m0 to variable named:'...
-            };
-        varNames = {'Pre', 'Post','m0'};
-        [Pre,Post] = rmt_construct_PN(data.T.adj);
-        items = {Pre, Post, data.T.m0};
-        export2wsdlg(checkLabels, varNames, items, 'Save Petri Net model to Workspace');
-        
         
         %% Part of Menu 'Setup' CPLEX
     case 'menu_cplex'

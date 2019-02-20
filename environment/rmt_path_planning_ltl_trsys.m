@@ -118,7 +118,7 @@ message = sprintf('%s%s', message, message2);
 uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
 [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
 %we clean the workspace figure
-data.R_trajs = R_trajs;
+data.trajectory = R_trajs;
 set(gcf,'UserData',data);
 cla(data.handle_env);
 rob_plot = data.rob_plot;

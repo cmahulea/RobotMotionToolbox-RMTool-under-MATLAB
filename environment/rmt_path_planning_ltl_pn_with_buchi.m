@@ -449,6 +449,7 @@ for j = 1 : length(Runs)
     message = sprintf('%s%d',message,temp(length(temp)));
 end
 
+data.trajectory = rob_traj;
 
 for r=1:length(rob_traj)    %plot trajectories of robots
     plot(rob_traj{r}(1,1),rob_traj{r}(2,1),data.rob_plot.line_color{r},...

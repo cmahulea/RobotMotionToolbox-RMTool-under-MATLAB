@@ -321,6 +321,8 @@ if feasible_path_B==0   %no path in B could be followed
 else %plot robot trajectories
     [rob_traj,synch_points] = rmt_rob_cont_traj_synch(data.T,Rob_places,Rob_synchronize,data.initial);    %continuous trajectory of each robot 
     rob_color={'r','b','g','c','m','k','y'};    %colors of robots
+    data.trajectory = rob_traj;
+    
     for r=1:N_r    %plot trajectories of robots
         plot(rob_traj{r}(1,1),rob_traj{r}(2,1),rob_color{mod(r-1,length(rob_color))+1},'Marker','o','LineWidth',1.5);
         plot(rob_traj{r}(1,:),rob_traj{r}(2,:),rob_color{mod(r-1,length(rob_color))+1},'LineWidth',1.5);
