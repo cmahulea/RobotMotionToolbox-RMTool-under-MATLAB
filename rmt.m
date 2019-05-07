@@ -202,7 +202,7 @@ switch action
         uimenu(a,'Label','E&xport to figure window','Callback','rmt_export_environment_to_figure');
         
         a = uimenu('Label','Path Planning');
-        uimenu(a,'Label','&Workspace','Callback','rmt_export_path_to_workspace');
+        uimenu(a,'Label','&Export to workspace','Callback','rmt_export_path_to_workspace');
         uimenu(a,'Label','E&xport to figure window','Callback','rmt_export_environment_to_figure');
         
         
@@ -1306,6 +1306,7 @@ switch action
         file = char(file);
         path1 = char(path1);
         file2=fullfile(path1,file);
+        data = get(gcf,'UserData');
         warning off;
         if ~isempty(strfind(file,'.env'))
             eval(sprintf('load ''%s'' ''-mat''',file2));

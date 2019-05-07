@@ -25,7 +25,7 @@
 % ============================================================================
 
 
-function [C,adj,varargout]=rectangular_decomposition(objects,env_bounds,varargin)
+function [C,adj,varargout]=rmt_rectangular_decomposition(objects,env_bounds,varargin)
 %mk, version: may 2012 (obstacles may intersect or go outside environment)
 %rectangular decomposition, using quad-tree idea
 %env_bounds has the form [x_min,x_max,y_min,y_max]

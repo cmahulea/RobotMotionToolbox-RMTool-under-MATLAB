@@ -104,7 +104,7 @@ if isfield(data,'T')
     index = index + 1;
     checkLabels{index} = 'Save initial marking m0 to variable named:';
     varNames{index} = 'm0';
-    items{index} = m0;
+    items{index} = data.T.m0;
 end
 
 if (index == 0)

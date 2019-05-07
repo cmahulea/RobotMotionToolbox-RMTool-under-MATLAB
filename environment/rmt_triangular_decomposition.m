@@ -36,11 +36,6 @@ X = [env_bounds(1) env_bounds(3); %space boundary
     env_bounds(2) env_bounds(4);
     env_bounds(1) env_bounds(4)];
 
-% X = [x_min y_min; %space boundary
-%     x_max y_min;
-%     x_max y_max;
-%     x_min y_max];
-
 %begin creating constraints Cst (indices of lines from X giving linear constraints)
 Cst = [1 2; %space boundary
          2 3;
