@@ -531,7 +531,7 @@ switch action
         temp = computer;
         if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
             [~, WindowsVersion] = system('ver');
-            if (isempty(strfind(WindowsVersion,'Version 10')) && isempty(strfind(WindowsVersion,'Versión 10'))) %different than Windows 10 (7 or before)
+            if (isempty(strfind(WindowsVersion,'Version 10')) && isempty(strfind(WindowsVersion,'Versiï¿½n 10'))) %different than Windows 10 (7 or before)
                 runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
             else %Windows 10
                 runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
@@ -815,9 +815,9 @@ switch action
         end
         
         switch mission_task
-            case 1, %rechability tasks
+            case 1 %rechability tasks
                 rmt_path_planning_reachability;
-            case 2,
+            case 2
                 data=get(gcf,'UserData');
                 cla(data.handle_env);
                 rmt_plot_environment(data.obstacles,data.frame_limits,data.T.Vert);
