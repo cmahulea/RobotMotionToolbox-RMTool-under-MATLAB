@@ -107,7 +107,7 @@ data.Pg = Pg;
 set(gcf,'UserData',data);
 
 data.hwait = waitbar(0,'Computing trajectories. Please wait...','Name','Robot Motion Toolbox',...
-    'WindowStyle','modal','CloseRequestFcn',strcat(thisfile,'(''close_hwait'')'));
+    'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
 set(gcf,'UserData',data);%to save data
 
 tic;
