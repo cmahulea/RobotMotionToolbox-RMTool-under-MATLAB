@@ -90,6 +90,8 @@ if ((choice2 == 1) || ~isfield(data,'B'))
 else
     B = data.B;
 end
+save temp.mat
+disp('saved')
 set(gcf,'UserData',data);
 if ((choice1==1) || (choice2==1))
     tic;
