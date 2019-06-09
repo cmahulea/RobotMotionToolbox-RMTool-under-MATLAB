@@ -106,13 +106,12 @@ end
 data.Pg = Pg;
 set(gcf,'UserData',data);
 
-data.hwait = waitbar(0,'Computing trajectories. Please wait...','Name','Robot Motion Toolbox',...
     'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
 set(gcf,'UserData',data);%to save data
 
 tic;
 [run_Tg,~,~,path_Tg,~,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
-delete(data.hwait);
+% delete(data.hwait);
 message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
 message = sprintf('%s%s', message, message2);
 uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
