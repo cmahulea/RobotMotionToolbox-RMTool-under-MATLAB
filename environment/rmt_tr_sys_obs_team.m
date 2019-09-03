@@ -61,12 +61,9 @@ end
 temp_obs=unique(temp_obs,'rows');   %again remove identical rows (there may appear new repetitions, due to keeping only unique elements on each row and padding with zeros)
 %until now temp_obs has 2^n-1 lines (-1 for the empty set); add a line for the dummy prop (we shouldn't add dummy to other satisfied props, only on a single line)
 % temp_obs(end+1,:)=[N_p+1 , zeros(1,N_p-1)]; %dummy has index (N_p+1), and pad with zeros after it
-%temp_obs(end+1,:)=[ind_dummy , zeros(1,N_p-1)]; %dummy has index "ind_dummy", and pad with zeros after it
-temp_obs(end+1,:)=[ind_dummy]; %dummy has index "ind_dummy", and pad with zeros after it
+temp_obs(end+1,:)=[ind_dummy , zeros(1,N_p-1)]; %dummy has index "ind_dummy", and pad with zeros after it
+% temp_obs(end+1,:)=[ind_dummy]; %dummy has index "ind_dummy", and pad with zeros after it
 
-% AGGIUNTA DELLA REGIONE FITTIZIA AI DUE ROBOT 
-% colonne robot, righe regioni di interesse + 1 che rappresenta la regione
-% fittizia
 Tg.Obs=temp_obs; %Tg.Obs contains possible observables of the system (on rows, propositions that can be satisfied; last row for dummy)
 
 Tg.pr=sparse(st_no,size(Tg.Obs,1));  %probability of observing a conjunction of props (and only those props) in a current state of Tg (tuple) - same structure and meaning as in T for 1 robot(WODES2012)

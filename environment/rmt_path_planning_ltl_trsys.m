@@ -43,10 +43,55 @@ else
 end
 probability=ones(1,length(data.propositions));
 if ((choice1 == 1) || ~isfield(data,'Tg'))
-    tic;
-    Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-    message = sprintf('Transition system of a robot has %d states\nTeam (global) transition system has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
-    uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    choice1_1 = questdlg('Choose robot model to use:', ...
+        'Robot Motion Toolbox', ...
+        'Full','Equiv. rob. permutations (as reach. graph)','Collapsed robot model','Full');
+    switch choice1_1
+        case 'Full'
+            choice1_1=2;
+        case 'Equiv. rob. permutations (as reach. graph)'
+            choice1_1=1;
+        case 'Collapsed model'
+            choice1_1=0;
+            tic;
+            [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
+            time_reduce=toc;
+        otherwise
+            fprintf('\nERROR - Undefined/wrong case for Robot model to use!\n');
+    end
+%     if strcmpi(choice1_1,'Full')
+%         choice1_1=2;
+%     elseif strcmpi(choice1_1,'Equiv. rob. permutations (as reach. graph)')
+%         choice1_1=1;
+%     else %'Collapsed model'
+%         choice1_1=0;
+%         tic;
+%         [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
+%         time_reduce=toc;
+%     end
+    
+    if choice1_1==2
+        tic;
+        Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
+        message = sprintf('Model of a robot (full transition system) - has %d states\nTeam model (global) - full transition system - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
+        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    elseif choice1_1==1
+        tic;
+%         Tg = rmt_tr_sys_team_bisim(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
+        Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
+        time_Tg=toc;
+        Tg_init = Tg;
+        tic;
+        Tg = rmt_tr_sys_reduce_Tg(Tg); %reduce Tg w.r.t. robot permutations (as a reachability graph of PN)
+        message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - non-reduced - has %d states and it was created in %g secs\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it (reducing Tg): %g secs', length(data.T.Q),length(Tg_init.Q),time_Tg,length(Tg.Q), toc);
+        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    else %collapsed model
+        tic;
+        Tg = rmt_tr_sys_obs_team(T_red,RO_red,propositions_red,probability);    %compute team (global) transition system, including probabilities of observing propositions
+        message = sprintf('Model of a robot (reduced transition system) - has %d states\nReduced model constructed in %g secs\nTeam model (global) - product of reduced systems - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),time_reduce,length(Tg.Q), toc);
+        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+    end        
+    
 else
     Tg = data.Tg;
     message = sprintf('Transition system of a robot has %d states\nTeam (global) transition system has %d states', length(data.T.Q),length(Tg.Q));
@@ -90,8 +135,6 @@ if ((choice2 == 1) || ~isfield(data,'B'))
 else
     B = data.B;
 end
-save temp.mat
-disp('saved')
 set(gcf,'UserData',data);
 if ((choice1==1) || (choice2==1))
     tic;
@@ -113,12 +156,18 @@ data.hwait = waitbar(0,'Computing trajectories. Please wait...','Name','Robot Mo
 set(gcf,'UserData',data);%to save data
 
 tic;
-[run_Tg,~,~,path_Tg,~,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
+[run_Tg,~,~,path_Tg,path_B,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
 delete(data.hwait);
 message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
 message = sprintf('%s%s', message, message2);
 uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-[~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
+if choice1_1==2 %full model
+    [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
+elseif choice1_1==1 %reduced model w.r.t. permutations (as a reachability graph of PN)
+    [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team_red_permut(data.T,Tg,Tg_init,run_Tg,path_Tg);
+else %reduced model by collapsing states in robot model
+    [~,R_paths,R_trajs,~,~] = rmt_robot_trajectory_team_from_reduced(T_red,data.T,data.RO,Tg,run_Tg,path_Tg,path_B);
+end
 %we clean the workspace figure
 data.trajectory = R_trajs;
 set(gcf,'UserData',data);
