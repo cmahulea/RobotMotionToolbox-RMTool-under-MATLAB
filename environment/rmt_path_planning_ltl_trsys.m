@@ -78,12 +78,15 @@ if ((choice1 == 1) || ~isfield(data,'Tg'))
     elseif choice1_1==1
         tic;
 %         Tg = rmt_tr_sys_team_bisim(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-        Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-        time_Tg=toc;
-        Tg_init = Tg;
-        tic;
-        Tg = rmt_tr_sys_reduce_Tg(Tg); %reduce Tg w.r.t. robot permutations (as a reachability graph of PN)
-        message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - non-reduced - has %d states and it was created in %g secs\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it (reducing Tg): %g secs', length(data.T.Q),length(Tg_init.Q),time_Tg,length(Tg.Q), toc);
+%         Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
+%         time_Tg=toc;
+%         Tg_init = Tg;
+%         tic;
+%         Tg = rmt_tr_sys_reduce_Tg(Tg); %reduce Tg w.r.t. robot permutations (as a reachability graph of PN)
+%         message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - non-reduced - has %d states and it was created in %g secs\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it (reducing Tg): %g secs', length(data.T.Q),length(Tg_init.Q),time_Tg,length(Tg.Q), toc);
+%         uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+        Tg = rmt_tr_sys_team_reduced(data.T,data.RO,data.propositions,probability); %team model, reduced w.r.t. robot permutations (as a reachability graph of PN)
+        message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
         uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
     else %collapsed model
         tic;
@@ -164,9 +167,10 @@ uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
 if choice1_1==2 %full model
     [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
 elseif choice1_1==1 %reduced model w.r.t. permutations (as a reachability graph of PN)
-    [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team_red_permut(data.T,Tg,Tg_init,run_Tg,path_Tg);
+%     [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team_red_permut(data.T,Tg,Tg_init,run_Tg,path_Tg);
+    [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team_reduced(data.T,data.RO,Tg,run_Tg,path_Tg);
 else %reduced model by collapsing states in robot model
-    [~,R_paths,R_trajs,~,~] = rmt_robot_trajectory_team_from_reduced(T_red,data.T,data.RO,Tg,run_Tg,path_Tg,path_B);
+    [~,R_paths,R_trajs,~,~] = rmt_robot_trajectory_team_collapsed(T_red,data.T,data.RO,Tg,run_Tg,path_Tg,path_B);
 end
 %we clean the workspace figure
 data.trajectory = R_trajs;

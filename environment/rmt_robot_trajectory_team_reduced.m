@@ -24,44 +24,42 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [R_runs,R_paths,R_trajs,active_robots,path_B] = rmt_robot_trajectory_team_from_reduced(T,T_init,R0_init,Tg,run_Tg,path_Tg,path_B_r,varargin)
-%adapt runs from reduced product system Tg (T_T) to robot runs in initial partition
+function [R_runs,R_paths,R_trajs,active_robots] = rmt_robot_trajectory_team_reduced(T,R0,Tg,run_Tg,path_Tg,varargin)
+%for Tg which is reduced w.r.t. robot permutations
 %if no varargin is specified, each robot starts from centroid of its initial cell
 %otherwise, varargin{1} is a cell, with element r being a column vector containing starting position of robot r
 
 % R_runs_r={Tg.st(run_Tg{1},:)' , Tg.st(run_Tg{2},:)'}; %project run of Tg to individual and synchronized robot runs
 R_paths_r=Tg.st(path_Tg,:)';
+N_r=size(Tg.st,2);    %number of robots
 
-n_r=size(R_paths_r,1);    %number of robots
-
-%%adapt R_paths_r to initial partition
-R_paths=R0_init';   %column vector
-path_B=path_B_r(1); %path_B is made longer (while team is in teh same collapsed regions, B doesn't change state
+R_paths=R0';   %column vector
 for i=2:size(R_paths_r,2)
-    %T.Cells{R_paths_r(:,i)} - team states to be reached in collapsed system, T.Cells{R_paths_r(:,i)} - current (initial) team deployment in collapsed model
-    %R_paths(:,end) - current positions of robots in full system T_init
-    R_local_paths = rmt_reduced2full_one_step( T_init, T, R_paths(:,end), R_paths_r(:,i-1) , R_paths_r(:,i) );
+    Neigh=cell(1,N_r);  %find neighbors of each robot from previous position (configuration) of run
+    for j=1:N_r
+        Neigh{j}=find(T.adj(R_paths(j,i-1),:));    %vector with subpolytopes adjacent to j-th robot in position i-1 from run (including self loop)
+    end
 
-%     if size(R_local_paths,2) > 1 %otherwise all robots stay and R_paths remains the same
-    R_paths = [R_paths , R_local_paths(:,2:end)];   %first robot positions were already included
-%     end
-    
-    path_B = [path_B, repmat( path_B_r(i) , [1,(size(R_local_paths,2)-1)] )];   %duplicate state in path_B
-    
+    trans=rmt_cartesian_product(Neigh{:});
+    trans_sorted=sort(trans,2);  %sort each row
+
+    for j=1:size(trans,1)   %find corresponding state in Tg (that is reduced)
+        if isequal((trans_sorted(j,:))',R_paths_r(:,i))    %a transition in desired state
+            R_paths = [R_paths , trans(j,:)'];   %new state in run of the robot-specific transition system (do not use trans_sorted here)
+            break;   %this is the first state (even if there were more, we need only one); continue with next position of run
+        end
+    end
+
     if i==length(run_Tg{1})+1
         pref_len=size(R_paths,2)-1;  %to split after this R_paths into R_runs
     end
 end
 
-path_B = [path_B, path_B_r(end)];
-
 R_runs={R_paths(:,1:pref_len) , R_paths(: , (pref_len+1):end )}; %individual and synchronized robot runs
 
-T=T_init;   %use full partition (with vertices) in the following
 
+%%from here the initial function (for full models) is used; synchronizations occur at every transition in partition
 
-%%from here the initial function (for full models) is used (robot_trajectory_team.m);
-%synchronizations occur at every transition in partition (althouh they can be reduced only when changing state in teh collapsed model)
 n_r=size(R_paths,1);    %number of robots
 R_trajs=cell(1,n_r);    %each R_trajs{r} will be a matrix with 2 rows showing trajectory of robot r
 active_robots=zeros(n_r,size(R_paths,2));   %active_robots(r,i) is 1 if robot r is changing simplex between position i and i+1 from R_paths; last column dependson suffix
