@@ -117,7 +117,7 @@ switch action
         data.control.lookahead_distance = 10;
         data.control.robot = 'Car-like';
         data.control.motion = 'Pure-Pursuit';
-        
+        data.reg_plot.text_cells_h = [];
         set(gcf,'UserData',data);
         
         
@@ -184,7 +184,9 @@ switch action
             'Separator','on');
         uimenu(a,'Label','&Add a Robot','Callback',strcat(thisfile,'(''add_robot'')'));
         uimenu(a,'Label','Re&move Robots','Callback',strcat(thisfile,'(''remove_robot'')'));
-        uimenu(a,'Label','&Number of intermediate markings (PN planning)','Callback',strcat(thisfile,'(''change_k'')'), 'Separator','on');
+%        uimenu(a,'Label','&Number of intermediate markings (PN planning)','Callback',strcat(thisfile,'(''change_k'')'), 'Separator','on');
+        uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
+            'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
             'Callback',strcat(thisfile,'(''parameter_MILP_pn_following_buchi'')'));
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
@@ -200,6 +202,7 @@ switch action
         uimenu(a,'Label','&Save environment','Callback',strcat(thisfile,'(''save_env'')'),'Separator','on');
         uimenu(a,'Label','&Export to workspace','Callback','rmt_export_environment_to_workspace','Separator','on');
         uimenu(a,'Label','E&xport to figure window','Callback','rmt_export_environment_to_figure');
+        data.menuViewLabels = uimenu(a,'Label','&View region labels','Callback','rmt_change_region_label_visibility','Separator','on','Checked','on');
         
         a = uimenu('Label','Path Planning');
         uimenu(a,'Label','&Export to workspace','Callback','rmt_export_path_to_workspace');
@@ -503,6 +506,10 @@ switch action
         data.optim.param.beta = 1;
         data.optim.param.gamma = 100;
         data.optim.param.kappa = 2;
+        data.optim.param.kshort = 10;
+        data.optim.param_boolean.lambda = 1;
+        data.optim.param_boolean.mu = 1000;
+        data.optim.param_boolean.kappa = 10;
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
         
@@ -719,11 +726,11 @@ switch action
         % NUMBER OF REGION OF INTEREST and NUMBER OF ROBOTS
         
         if ((mission_task == 1) || (mission_task == 2))
-            [objects,initial_points] = rmt_get_regions(mission_task);%get the regions of interests random or given by the user
+            [objects,initial_points,~,random_grid] = rmt_get_regions(mission_task);%get the regions of interests random or given by the user
             if (isempty(objects) || isempty(initial_points))
                 return;
             end
-            rmt_generate_partitions(objects,initial_points);%generate the partitions and initialize the transition system and the PN
+            rmt_generate_partitions(objects,initial_points,random_grid);%generate the partitions and initialize the transition system and the PN
             set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
         else %mission_task == 0 ---> reachability tasks
             planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value');
@@ -844,7 +851,43 @@ switch action
                     end
                 end
             case 3 %Boolean formulas on Petri net models
-                rmt_path_planning_boolean;
+                data=get(gcf,'UserData');
+                Bool_formula = get(findobj(gcf,'Tag','booleanformula'),'String');
+                [A,~,negated_trajectory_alone] = rmt_formula2constraints(Bool_formula, [],[],length(data.T.props));
+                if (negated_trajectory_alone == 1) %nagation propostion on the trajectory are alone hence we will compute collision free trajectories
+                    %check if the formula on trajectory and on final state are
+                    %independent
+                    indep = 1;
+                    for i = 1 : size(A,1)
+                        temp = find(A(i,:));
+                        if (~isempty(find(temp<= length(data.T.props), 1)) && ~isempty(find(temp>length(data.T.props), 1)))
+                            indep = 0;
+                            break;
+                        end
+                    end
+                    if (indep == 1)
+                        if (length(data.RO) ~= length(unique(data.RO))) %exist robots in the same region
+                            button = questdlg('Assumtions to compute collision free trajectories are satisfied. However, some regions contain more than one robot. Do you want to randomly re-distribute the robots in free regions?','Robot Motion Toolbox');
+                            if strcmpi(button,'Cancel')
+                                return;
+                            elseif strcmpi(button,'No')
+                                uiwait(msgbox('Collisions will be considered as soft constraints. The robots could collide! Use the Setup menu to select the weights of the cost function.Approach in "C. Mahulea and M. Kloetzer, Robot Planning based on Boolean Specifications using Petri Net Models, IEEE TAC, 63(7): 2218-2225, July 2018" will be used!','Robot Motion Toolbox','modal'));
+                                rmt_path_planning_boolean;%%approach without collision avoidance (it is only soft constraint) TAC 2018
+                                return;
+                            end
+                            rmt_redistribute_robots;
+                        end
+                        button = questdlg('Assumtions to compute collision free trajectories are satisfied. Consider collision avoidance as hard constraints (WODES 2020)? If chose no, collisions will be considered as soft constrains ("C. Mahulea and M. Kloetzer, Robot Planning based on Boolean Specifications using Petri Net Models, IEEE TAC, 63(7): 2218-2225, July 2018").','Robot Motion Toolbox');%%approach with collision avoidance WODES2020
+                        if strcmpi(button,'Cancel')
+                            return;
+                        elseif strcmpi(button,'Yes')
+                            uiwait(msgbox('Collisions will be considered as hard constraints. Use the Setup menu to select the weights of the cost function. Approach in "WODES 2020" will be used!','Robot Motion Toolbox','modal'));
+                            rmt_path_planning_boolean_new;
+                            return;
+                        end
+                    end
+                end
+                rmt_path_planning_boolean;%%approach without collision avoidance (it is only soft constraint) TAC 2018
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
@@ -1450,7 +1493,7 @@ switch action
         end
         
         tic;
-        [xmin,~,exitflag] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+        [xmin,~,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
         time = toc;
         if isempty(f)%no solution
             uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution. Increase k!','Robot Motion Toolbox','modal'));
@@ -1488,7 +1531,7 @@ switch action
                 output_place = find(Post(:,trans_buchi+ntrans_orig));
                 output_place = output_place(output_place>nplaces_orig+length(data.Tr.props))-nplaces_orig-length(data.Tr.props);
                 fprintf(1,'\n Transition in Buchi from state %d to state %d with observation (%s)',input_place,output_place,mat2str(find([xm((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))++length(data.Tr.props)+nplaces_orig)])));
-                fprintf(1,'\nState of Buchi in step %d = %s',i/2,mat2str(find([xm((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])))
+                fprintf(1,'\nState of Buchi in step %d = %s',i/2,mat2str(find([xm((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
                 %fprintf(1,'\n\tActive observations at step %d = %s',i/2,mat2str(find([xm((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))++length(data.Tr.props)+nplaces_orig)])));
             end
             
@@ -1510,9 +1553,6 @@ switch action
                 message = sprintf('%s\n============STEP %d =============\n',message,i);
                 message=sprintf('%s\nMarking [ %s ] = %s\n',message,mat2str(find(m>eps*10^5)),mat2str(m(m>eps*10^5)));
                 message = sprintf('%s\nSigma [ %s ] = %s\n',message,mat2str(find(fire>eps*10^5)),mat2str(fire(fire>eps*10^5)));
-                %                 if (reduced == 0)
-                %                     Run_cells = [Run_cells, rmt_marking2places(m)];  %visited cells (rows)
-                %                 else
                 temp = rmt_marking2places(m);
                 original_places{i+1} = [];
                 for j = 1 : length(temp)
@@ -1652,5 +1692,9 @@ switch action
     case 'parameter_MILP_pn_following_buchi'
         data = get(gcf,'UserData');
         data.optim.param = rmt_milp_pn_following_setup(data.optim.param);
+        set(gcf,'UserData',data);
+    case 'parameter_MILP_pn_boolean'
+        data = get(gcf,'UserData');
+        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data.optim.param_boolean);
         set(gcf,'UserData',data);
 end    % switch

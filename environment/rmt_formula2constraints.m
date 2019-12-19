@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [A,b] = rmt_formula2constraints(F, A,b,nr_props)
+function [A,b,negated_trajectory_alone,A_r,b_r] = rmt_formula2constraints(F, A,b,nr_props)
 % parse Boolean formula (F) given in Conjunctive normal form
 % convert formula to constraints for ILP (by adding rows in A,b,Aeq,beq on which ILP is run)
 
@@ -58,6 +58,7 @@ D=D{1}; %D{i} will be a char string for i^th disj.
 A_r=zeros(length(D),2*nr_props); %restrictions/constraints that will be added to Aeq
 b_r=-ones(length(D),1); %corresponding for b (AX<=b); all b begin with value -1 and will be adjusted based on formula
 
+negated_trajectory_alone = 1;
 for i=1:length(D)   %current disjunction is string D{i}
     D{i}=strrep(D{i},'(',''); %remove paranthesis (may be only at first and last positions)
     D{i}=strrep(D{i},')','');
@@ -93,7 +94,6 @@ for i=1:length(D)   %current disjunction is string D{i}
                 %modify constraint (first nr_props columns are for trajectory restrictions):
                 A_r(i,prop_ind)=-1;    %-1*X_i ... <=-1
                 %no modification in b for non-negated prop.
-                
             else
                 uiwait(errordlg(sprintf('Something wrong in disjunction "%s"',prop{j}),...
                     'Robot Motion Toolbox','modal'));
@@ -114,6 +114,9 @@ for i=1:length(D)   %current disjunction is string D{i}
                 %modify constraint (trajectory restrictions):
                 A_r(i,prop_ind)=1;    %1*x_i ... <=-1 +1
                 b_r(i)=b_r(i)+1;    %add 1 to b for each negation
+                if (length(prop) > 1)
+                    negated_trajectory_alone = 0;
+                end
                 
             else
                 uiwait(errordlg(sprintf('Something wrong in disjunction "%s"',prop{j}),...

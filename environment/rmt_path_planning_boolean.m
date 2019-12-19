@@ -45,19 +45,20 @@ if strcmpi(button,'Reduced system')
     message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
     tic;
-    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.Tr.props,data.intermediateMarkings,data.Bool_formula);
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.Tr.props,data.optim.param_boolean.kappa,data.Bool_formula);
     message2 = sprintf('\nMathematical program has %d variables and %d equality constraints and %d inequality constraints;\nTime spent for creating the problem: %g secs\n', size(A,2), size(Aeq,1), size(A,1), toc);
     message = sprintf('%s%s', message, message2);
     uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
 else
     reduced = 0;
-    tic;
     [Pre,Post] = rmt_construct_PN(data.T.adj);
     m0=data.T.m0;
     tic;
-    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.T.props,data.intermediateMarkings,data.Bool_formula);
-    message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
-    message = sprintf('%s\nThe MILP has %d variables and %d equality constraints and %d inequality constraints;\nTime spent for creating the problem: %g secs\n', message, size(A,2), size(Aeq,1), size(A,1),toc);
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints(Pre,Post,m0,data.T.props,data.optim.param_boolean.kappa,data.Bool_formula);
+    time = toc;
+    message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),time);
+    message = sprintf('%s\nThe MILP has %d variables and %d equality constraints and %d inequality constraints;\nTime spent for creating the problem: %g secs\nNumber of intermediate markings: %d\n', ...
+        message, size(A,2), size(Aeq,1), size(A,1),time, data.optim.param_boolean.kappa);
     uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
 end
 data.Pre = Pre;
@@ -76,7 +77,7 @@ if strcmp(get(data.optim.menuCplex,'Checked'),'on')
         ctype = sprintf('%sU',ctype);
     end
     vartype = '';
-    for i = 1 : data.intermediateMarkings
+    for i = 1 : data.optim.param_boolean.kappa
         for j = 1 : size(Pre,1)
             vartype = sprintf('%sC',vartype); %put the markings as real
         end
@@ -89,8 +90,8 @@ if strcmp(get(data.optim.menuCplex,'Checked'),'on')
     end
     vartype = sprintf('%sC',vartype); %put the infinite norm b as real
     tic;
-    [xmin,f,exitflag] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
-    
+    [xmin,f,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+    bb = xmin(end);
 else
     % Solution with GLPK
     message = sprintf('%s\n\nThe MILP solution is with GLPK\n\n', message);
@@ -104,7 +105,7 @@ else
     end
     
     vartype = '';
-    for i = 1 : data.intermediateMarkings
+    for i = 1 : data.optim.param_boolean.kappa
         for j = 1 : size(Pre,1)
             vartype = sprintf('%sC',vartype); %put the markings as real
         end
@@ -120,10 +121,11 @@ else
     Atot = [Aeq; A];
     btot= [beq; b];
     ctype = [ctype2 ctype1];
-    [xmin,f,exitflag] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
+    [xmin,f,~] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
+    bb = xmin(end);
 end
 time = toc;
-if ((f==0)||isempty(xmin)) %no solution
+if (isempty(xmin)) %no solution
     uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution or k should be increased!','Robot Motion Toolbox','modal'));
     return;
 end
@@ -139,7 +141,7 @@ end
 
 message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
 if (reduced == 0)
-    Run_cells = data.RO';%rmt_marking2places(m0);
+    Run_cells = data.RO'; %rmt_marking2places(m0);
 else
     original_places{1} = [];
     temp = rmt_marking2places(m0);
@@ -149,16 +151,17 @@ else
 end
 nplaces = size(Pre,1);
 ntrans = size(Pre,2);
-
-for i = 1 : data.intermediateMarkings
+step = 1;
+for i = 1 : data.optim.param_boolean.kappa
     m = xmin((i-1)*(nplaces+ntrans)+1 : (i-1)*(nplaces+ntrans)+nplaces);
     fire = xmin((i-1)*(nplaces+ntrans)+nplaces+1 : (i-1)*(nplaces+ntrans)+nplaces+ntrans);
     if (max(fire) > 0)
-        message = sprintf('%s\n============STEP %d =============\n',message,i);
+        message = sprintf('%s\n============STEP %d =============\n',message,step);
+        step = step + 1;
         message=sprintf('%s\nMarking [ %s ] = %s\n',message,mat2str(find(m>eps*10^5)),mat2str(m(m>eps*10^5)));
         message = sprintf('%s\nSigma [ %s ] = %s\n',message,mat2str(find(fire>eps*10^5)),mat2str(fire(fire>eps*10^5)));
         if (reduced == 0)
-            Run_cells = [Run_cells, rmt_marking2places(m)];  %visited cells (rows)
+            Run_cells = [Run_cells, rmt_find_next_state(m,m0,Run_cells(:,end),fire,Post,Pre)];  %visited cells (rows)
         else
             temp = rmt_marking2places(m);
             original_places{i+1} = [];
@@ -171,8 +174,10 @@ for i = 1 : data.intermediateMarkings
             original_places{i+1} = original_places{i};
         end
     end
+    m0 = m;
 end
-message = sprintf('%sBoolean variables in solutions are: %s\n',message,mat2str(xmin(data.intermediateMarkings*(size(Pre,1)+size(Pre,2))+1:end)));
+message = sprintf('%sBoolean variables in solutions are: %s\n',...
+    message,mat2str(xmin(data.optim.param_boolean.kappa*(size(Pre,1)+size(Pre,2))+1:end)));
 
 if (reduced == 1)
     %                     options = cplexoptimset('cplex');
@@ -187,7 +192,7 @@ if (reduced == 1)
     message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
     Run_cells = data.RO';%rmt_marking2places(m0);
     tic;
-    for i = 1 : data.intermediateMarkings
+    for i = 1 : data.optim.param_boolean.kappa
         m = xmin((i-1)*(nplaces+ntrans)+1 : (i-1)*(nplaces+ntrans)+nplaces);
         fire = xmin((i-1)*(nplaces+ntrans)+nplaces+1 : (i-1)*(nplaces+ntrans)+nplaces+ntrans);
         if (max(fire) > 0)
@@ -221,7 +226,7 @@ if (reduced == 1)
             for j = 1 : size(Aeq,2)
                 vartype3 = sprintf('%sC',vartype3); %put the sigma as integer
             end
-            [X,~,exitflag] = glpk(ones(1,size(Pre_new,2)+size(Pre_new,1)),Aeq,beq,zeros(1,size(Pre_new,1)+size(Pre_new,2)),[],ctype3,vartype3,1);
+            [X,~,~] = glpk(ones(1,size(Pre_new,2)+size(Pre_new,1)),Aeq,beq,zeros(1,size(Pre_new,1)+size(Pre_new,2)),[],ctype3,vartype3,1);
             if f==0
                 uiwait(errordlg('Error solving LPP to project the solution!','Robot Motion Toolbox','modal'));
                 return;
@@ -236,7 +241,7 @@ if (reduced == 1)
     end
     time = toc;
     message2 = sprintf('Total time for solving %d LPPs for projecting the solution: %g secs', ...
-        data.intermediateMarkings, time);
+        data.optim.param_boolean.kappa, time);
     uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
     message = sprintf('%s\n%s',message,message2);
 end
@@ -249,17 +254,13 @@ for r=1:N_r
 end
 rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props and store handles
 
-%independent runs of each robot (no synchronizations, because of our def. of Boolean formulae)
-[Runs, ~] = rmt_robot_runs(data.T,Run_cells); %remove successive repetitions from individual discrete trajectories
-
-
-rob_traj = rmt_rob_cont_traj(data.T,Runs,data.initial);    %continuous trajectory of each robot
+rob_traj = rmt_rob_cont_traj_new(data.T,Run_cells,data.initial);    %continuous trajectory of each robot
 data.trajectory = rob_traj;
 
-message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
-for j = 1 : length(Runs)
+message = sprintf('%s\nSOLUTION - runs of robots: \nInfinite norm in solution (b):%s',message,num2str(bb));
+for j = 1 : size(Run_cells,1)
     message = sprintf('%s\nRobot %d: ',message,j);
-    temp = Runs{j};
+    temp = Run_cells(j,:);
     for k = 1 : length(temp)-1
         message = sprintf('%s%d,',message,temp(k));
     end

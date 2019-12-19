@@ -24,57 +24,45 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function param=rmt_milp_pn_following_setup(param)
+function param=rmt_milp_pn_boolean_setup(param)
 
 answer = inputdlg({...
-    sprintf('Weight in cost function on number of fired transitions:'),...
-    sprintf('Weight in cost function on number of moving robots:'),...
-    sprintf('Weight in cost function on maximum number of robots that crossed any place (for collision avoidance)'),...
-    sprintf('Number of PN intermediate markings'),...    
-    sprintf('Number of runs in Buchi'),...
+    sprintf('Weight in cost function on number of fired transitions (lambda):'),...
+    sprintf('Weight in cost function on maximum number of robots that crossed any place (mu) (for collision avoidance)'),...
+    sprintf('Number of intermediate markings (k)'),...
     },...
     'Robot Motion Toolbox',...
-    [1;1;1;1;1],{num2str(param.alpha,3),num2str(param.beta,3),...
-    num2str(param.gamma,3),num2str(param.kappa,3),num2str(param.kshort,3)});
+    [1;1;1],{num2str(param.lambda,3),num2str(param.mu,3),...
+    num2str(param.kappa,3)});
 if (isempty(answer))
     return;
 end
-%alpha
+%lambda
 input_val = char(answer{1});
 todoOK = rmt_detect_error(input_val,0,1000);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for alpha is betweeen 0 and 1000!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for alpha is betweeen 0 and 1000!');
+    uiwait(errordlg(sprintf('\nValid range for lambda is betweeen 0 and 1000!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for lambda is betweeen 0 and 1000!');
 else
-    param.alpha = eval(input_val);
+    param.lambda = eval(input_val);
 end
 
-%beta
+%mu
 input_val = char(answer{2});
-todoOK = rmt_detect_error(input_val,0,1000);
+todoOK = rmt_detect_error(input_val,0,100000);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for beta is betweeen 0 and 1000!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for beta is betweeen 0 and 1000!');
+    uiwait(errordlg(sprintf('\nValid range for mu is betweeen 0 and 1000!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for mu is betweeen 0 and 100,000!');
 else
-    param.beta = eval(input_val);
-end
-
-%gamma
-input_val = char(answer{3});
-todoOK = rmt_detect_error(input_val,0,1000);
-if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for gamma is betweeen 0 and 1000!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for gamma is betweeen 0 and 1000!');
-else
-    param.gamma = eval(input_val);
+    param.mu = eval(input_val);
 end
 
 %kappa
-input_val = char(answer{4});
-todoOK = rmt_detect_error(input_val,1,10);
+input_val = char(answer{3});
+todoOK = rmt_detect_error(input_val,1,100);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for kappa is betweeen 1 and 10!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for kappa is betweeen 1 and 10!');
+    uiwait(errordlg(sprintf('\nValid range for kappa is betweeen 1 and 100!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for kappa is betweeen 1 and 100!');
 else
     param.kappa = eval(input_val);
 end

@@ -35,12 +35,12 @@ ntrans = size(Pre,2); % number of transitions
 
 Aeq = [eye(nplaces) -(Post-Pre)];
 beq = m0;
-A = [zeros(nplaces,nplaces) Pre]; %m0 - Pre \cdot sigma \leq 0
+A = [zeros(nplaces,nplaces) Pre]; %m0 - Pre \cdot sigma \geq 0
 b = m0;
 
 for i = 2 : k
     Aeq = [Aeq zeros(size(Aeq,1),nplaces+ntrans)]; %add nplaces+ntrans columns to Aeq
-    Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add teh state equation
+    Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %state equation
     beq = [beq;zeros(nplaces,1)];
     
     A = [A zeros(size(A,1),nplaces+ntrans)]; %add nplaces+ntrans columns to A
@@ -54,7 +54,7 @@ N = sum(m0); % number of robots
 for i = 1 : length(props)
     %define the vectors v
     vi = zeros(1,k*(nplaces+ntrans));
-    for j = 1 : k
+    for j = 1 : k-1
         vi(props{i}+(j-1)*(nplaces+ntrans))=1;
         % add the boolean variables xi
     end
@@ -89,7 +89,7 @@ end
 %add constraints for infinite norm b
 temp=[];
 for i = 1 :k
-    temp = [temp zeros(nplaces,nplaces) Pre];
+    temp = [temp zeros(nplaces,nplaces) Post];
 end
 temp = [temp zeros(nplaces,2*length(props))];
 
@@ -100,11 +100,12 @@ A = [A; temp -ones(nplaces,1)];
 b = [b;zeros(nplaces,1)];
 
 %%%%%%%%%%% cost function
+data = get(gcf,'UserData');
 cost = [];
 for i = 1 : k
-    cost = [cost zeros(1,nplaces) ones(1,ntrans)];
+    cost = [cost zeros(1,nplaces) i*data.optim.param_boolean.lambda*ones(1,ntrans)];
 end
-cost = [cost zeros(1,2*length(props)) 1];
+cost = [cost zeros(1,2*length(props)) data.optim.param_boolean.mu];
 
 
 %parse formula and convert to linear constraints/restrictions

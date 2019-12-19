@@ -27,6 +27,13 @@
 function [at_pr_h] = rmt_represent_atomic_props(C,propositions)
 %atomic propositions are unions (sets) of cells from partition
 
+data = get(gcf,'UserData');
+for i = 1 : length(data.reg_plot.text_cells_h)
+    if ishandle(data.reg_plot.text_cells_h(i))
+        delete(data.reg_plot.text_cells_h(i))
+    end
+end
+visible = get(data.menuViewLabels,'Checked');
 dummy_cells = setdiff(1:length(C),cell2mat(propositions)); %handles to cells that are not atomic propositions
 
 at_pr_h=cell(1,length(propositions));   %handles for each atomic prop
@@ -37,12 +44,11 @@ for i=1:length(C)
     %write cell numbers to cells that are not atomic propositions
     if ~isempty(intersect(dummy_cells,i))
         centr=mean(C{i},2)';
-        text_cells_h(i) = text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k');
+        text_cells_h(i) = text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k','Visible',visible);
     end
 end
 
 %represent atomic propositions
-data = get(gcf,'UserData');
 colors=data.reg_plot.color;
 
 for i=1:length(propositions)
@@ -51,7 +57,7 @@ for i=1:length(propositions)
         cell_ind=propositions{i}(j);    %index of current cell
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
         centr=mean(C{cell_ind},2)';
-        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('c_{%d}',cell_ind),'HorizontalAlignment','center','Color','k');
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('c_{%d}',cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible);
     end
 end
 

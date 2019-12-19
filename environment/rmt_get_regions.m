@@ -20,18 +20,18 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on October, 2018.
-%   Last modification October 28, 2018.
+%   Last modification December 12, 2019.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [objects,initial_points,final_points] = rmt_get_regions(mission_task)
+function [objects,initial_points,final_points,random_grid] = rmt_get_regions(mission_task)
 % let the user to introduce the regions of interest or generate random
 % these regions
 % mission_task is 1 for ltl formula or 2 for boolean task
 objects={};
 initial_points={};
 final_points={};
-
+random_grid = 0;
 if (mission_task == 0) %reachability task -> ask for obstacles
     prompt = {'Number of obstacles:'};
     dlg_title = 'Obstacles';
@@ -83,17 +83,40 @@ rmt_delete_axes(data,mission_task);
 % 2 Mode Random
 choiceMenuEnv = questdlg('How do you want to generate the environment?', ...
     'Robot Motion Toolbox', ...
-    'Manual','Random','Yes');
+    'Manual','Random','Random');
+
+choiceMenuEnv2 = questdlg('Grid based or cell decomposition environment?', ...
+    'Robot Motion Toolbox', ...
+    'Grid','Polytope - cell decomposition','Grid');
 
 % Mode Manual
-if(strcmpi(choiceMenuEnv,'Manual'))
+if ((strcmpi(choiceMenuEnv,'Manual')) && (strcmpi(choiceMenuEnv2,'Polytope - cell decomposition')))
     if (mission_task == 0)%reachability task
         [objects,initial_points,final_points] = rmt_define_regions([limits(1),limits(2),limits(3),limits(4)],reg_no, data.handle_env,1,1);
     else %ltl or boolean task
         [objects,initial_points,~] = rmt_define_regions([limits(1),limits(2),limits(3),limits(4)],reg_no, data.handle_env,robot_no,0);
         final_points={};
     end
-else
+elseif ((strcmpi(choiceMenuEnv,'Manual')) && (strcmpi(choiceMenuEnv2,'Grid')))
+    %Set dimension of region of interest
+    prompt = {'Length of the line segment'};
+    dlg_title = 'Robot Motion Toolbox';
+    num_lines = 1;
+    default_size = {'1'};
+    size_obs = char(inputdlg(prompt,dlg_title,num_lines,default_size)); % Reading a dimension of interest's region from input interface
+    if isempty(size_obs)
+        sizeObs = 1;
+    else
+        sizeObs = str2double(size_obs);
+    end
+    if (mission_task == 0)%reachability task
+        [objects,initial_points,final_points] = rmt_define_regions_grid([limits(1),limits(2),limits(3),limits(4)],reg_no, data.handle_env,1,1,sizeObs);
+    else %ltl or boolean task
+        [objects,initial_points,~] = rmt_define_regions_grid([limits(1),limits(2),limits(3),limits(4)],reg_no, data.handle_env,robot_no,0,sizeObs);
+        final_points={};
+    end
+    random_grid = 1;
+elseif ((strcmpi(choiceMenuEnv,'Random')) && (strcmpi(choiceMenuEnv2,'Polytope - cell decomposition')))
     % Creation Enviroment with Random Function
     bound=[limits(1),limits(2),limits(3),limits(4)];
     color=data.reg_plot.color_full;
@@ -113,5 +136,25 @@ else
     else %ltl or boolean task
         [objects,initial_points,final_points]=rmt_random_env(data.handle_env,reg_no,sizeObs,bound,0,robot_no,limits,color);
     end
+else %random grid
+    % Creation Enviroment with Random Function
+    color=data.reg_plot.color_full;
+    %Set dimension of region of interest
+    prompt = {'Length of the line segment'};
+    dlg_title = 'Robot Motion Toolbox';
+    num_lines = 1;
+    default_size = {'0.5'};
+    size_obs = char(inputdlg(prompt,dlg_title,num_lines,default_size)); % Reading a dimension of interest's region from input interface
+    if isempty(size_obs)
+        sizeObs = 1;
+    else
+        sizeObs = str2double(size_obs);
+    end
+    if (mission_task == 0)%reachability task
+        [objects,initial_points,final_points]=rmt_random_env_grid(data.handle_env,reg_no,sizeObs,1,1,limits,color);
+    else %ltl or boolean task
+        [objects,initial_points,final_points]=rmt_random_env_grid(data.handle_env,reg_no,sizeObs,0,robot_no,limits,color);
+    end
+    random_grid = 1;
 end
 return;

@@ -24,14 +24,14 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function rmt_generate_partitions(objects,initial_points)
+function rmt_generate_partitions(objects,initial_points,random_grid)
 % let the user to introduce the regions of interest or generate random
 
 data = get(gcf,'UserData');
 limits = data.frame_limits;
 robot_no = length(initial_points);
 
-[T,propositions] = rmt_tr_sys_partition(objects,limits(2),limits(4));  %create partition and represent it
+[T,propositions] = rmt_tr_sys_partition(objects,limits(2),limits(4),random_grid);  %create partition and represent it
 rmt_plot_environment(objects,data.frame_limits,T.Vert);
 rmt_represent_atomic_props(T.Vert,propositions);    %represent all atomic props
 rob_plot = data.rob_plot;
@@ -74,6 +74,7 @@ end
 Tr = rmt_quotient_T(T); % quotient of partition T, with fewer states
 %(based on collapsing states with same observables in same connected component
 % with same obs)
+data = get(gcf,'UserData');
 orient = [];
 for i = 1 : length(initial_points)
     orient(i) = 0;

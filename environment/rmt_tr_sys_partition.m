@@ -24,14 +24,19 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [T,propositions] = rmt_tr_sys_partition(regions,x_max,y_max)
+function [T,propositions] = rmt_tr_sys_partition(regions,x_max,y_max,random_grid)
 %regions is a cell with each element a 2-row matrix; x_max,y_max define the boundaries of world (lower-left point is 0,0)
 %function creates partition and states of transition systems (not observables/probabilities)
 
-[C,adj,OBS_set,obs,mid_X,mid_Y]=rmt_triangular_decomposition_regions(regions,[0,x_max,0,y_max]);  %triangular decomposition: C is a cell containing vertices of triangles
+if (random_grid == 0)
+    [C,adj,OBS_set,obs,mid_X,mid_Y]=rmt_triangular_decomposition_regions(regions,[0,x_max,0,y_max]);  %triangular decomposition: C is a cell containing vertices of triangles
                                                                     %adj is adjacency (symmetric)
                                                                     %obs is the observation of each cell: obs(i) is the satisfied defined region (1,2,...), and is 0 if cell i lies in the free space
                                                                     %obs is ignored for this function (we'll define propositions as unions of cells (predefined regions))
+else
+    [C,adj,OBS_set,obs,mid_X,mid_Y]=rmt_grid_decomposition_regions(regions,[0,x_max,0,y_max]);  %triangular decomposition: C is a cell containing vertices of triangles
+end    
+    
 no_states=length(C);
 T.Q=1:no_states;  %states
 T.Vert=C; %vertices of regions (on rows of C{i})
