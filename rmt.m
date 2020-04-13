@@ -535,17 +535,16 @@ switch action
         end
         
         %path to ltl2ba
-        temp = computer;
-        if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
-            [~, WindowsVersion] = system('ver');
-            if (isempty(strfind(WindowsVersion,'Version 10')) && isempty(strfind(WindowsVersion,'Versi�n 10'))) %different than Windows 10 (7 or before)
+        if ispc
+            WindowsVersion = system_dependent('getos');
+            if (isempty(strfind(WindowsVersion,'10'))) %different than Windows 10 (7 or before)
                 runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
             else %Windows 10
                 runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
             end
-        elseif strcmpi(temp,'GLNXA64')
+        elseif (isunix && ~ismac)
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2bal'];
-        elseif strcmpi(temp,'MACI64')
+        elseif ismac
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba'];
         end
         data.ltl2ba = runLTL2BA;
@@ -842,7 +841,7 @@ switch action
                 elseif strcmpi(choiceMenuLTL,'Petri Net')
                     choiceMenuLTL = questdlg('Which approach do you want to use?', ...
                         'Robot Motion Toolbox', ...
-                        'Following runs in Buchi','With Buchi Included','Following runs in Buchi');
+                        'Following runs in Buchi','With Buchi Included','With Buchi Included');
                     %% Part about PN model with Buchi Automaton
                     if strcmpi(choiceMenuLTL,'Following runs in Buchi')
                         rmt_path_planning_ltl_pn_following_buchi;
@@ -1370,6 +1369,11 @@ switch action
                 data2.RO = length(data2.initial);
             end
             data2.T = data.T;
+            if isfield(data,'Tr')
+                data2.Tr = data.Tr;
+            else
+                data2.Tr = rmt_quotient_T_new(data.T);
+            end
             data2.propositions = data.propositions;
             mission_task = get(findobj(gcf,'Tag','reach'),'Value'); %mission_task=1 - reachability tasks; 0 - ltl tasks
             if (mission_task == 0)
@@ -1421,7 +1425,7 @@ switch action
         tic;
         
         if ~isfield(data,'Tr')
-            data.Tr = rmt_quotient_T(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
+            data.Tr = rmt_quotient_T_new(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
         end
         
         [Pre,Post] = rmt_construct_PN(data.Tr.adj);

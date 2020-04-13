@@ -20,7 +20,7 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on September, 2014. 
-%   Last modification Febrero 28, 2017.
+%   Last modification Enero, 2020.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
@@ -38,7 +38,7 @@ ntrans = size(Pre,2); % number of transitions
 %add the state equation: m_{i+1} = m_i + (Post-Pre)*sigma_{i+1}
 Aeq = [eye(nplaces) -(Post-Pre)];
 beq = m0;
-A = [zeros(nplaces,nplaces) Pre]; %m0 - Pre \cdot sigma \leq 0
+A = [zeros(nplaces,nplaces) Pre]; %m0 - Pre \cdot sigma \geq 0
 b = m0;
 %in the first step fire only transitions of the robot model
 Aeq = [Aeq; trans_Buchi];
@@ -46,7 +46,7 @@ beq = [beq;0];
 
 for i = 2 : k
     Aeq = [Aeq zeros(size(Aeq,1),nplaces+ntrans)]; %add nplaces+ntrans columns to Aeq
-   Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add the state equation
+    Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add the state equation
     beq = [beq;zeros(nplaces,1)];
     if (i/2 == round(i/2)) %fire only transitions of the Buchi automaton
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model
@@ -56,7 +56,7 @@ for i = 2 : k
     else %fire only transitions of the robot model
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi];
         beq = [beq;0];
-    end    
+    end
     A = [A zeros(size(A,1),nplaces+ntrans)]; %add nplaces+ntrans columns to A
     A = [A ; zeros(nplaces, (i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) zeros(nplaces,nplaces) Pre];
     b = [b ; zeros(nplaces,1)];
@@ -82,13 +82,9 @@ b = [b;-1];
 % A = [A; zeros(1,nplaces) -trans_model zeros(1,(k-1)*(nplaces+ntrans))];
 % b = [b ; -1];
 
-%fire at leat one transiton of the Buchi in step 2 (first step in Buchi)
-%A = [A; zeros(1,nplaces+ntrans) -trans_Buchi zeros(1,(k-2)*(nplaces+ntrans))];
+%fire at lesat one transiton of the Buchi in last step 
+%A = [A; zeros(1,(k-1)*(nplaces+ntrans)) -trans_Buchi];
 %b = [b ; -1];
-
-%fire at leat one transiton of the Buchi in last step 
-A = [A; zeros(1,(k-1)*(nplaces+ntrans)) -trans_Buchi];
-b = [b ; -1];
 
 fprintf(1,'\nIntermediate states %d',interm);
 %%%%%%%%%%% cost function

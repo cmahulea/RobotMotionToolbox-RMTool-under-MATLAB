@@ -65,16 +65,16 @@ try
     end
     runLTL2BA = data.ltl2ba;    %forces "catch" if no figure
 catch
-    if (strcmpi(temp,'PCWIN') || strcmpi(temp,'PCWIN64'))
-        [~, WindowsVersion] = system('ver');
-        if isempty(strfind(WindowsVersion,'10')) %different than Windows 10 (7 or before)
+    if ispc
+        WindowsVersion = system_dependent('getos');
+        if (isempty(strfind(WindowsVersion,'10'))) %different than Windows 10 (7 or before)
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba_Win7.exe'];
         else %Windows 10
             runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba.exe'];
         end
-    elseif strcmpi(temp,'GLNXA64')
+    elseif (isunix && ~ismac)
         runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2bal'];
-    elseif strcmpi(temp,'MACI64')
+    elseif ismac
         runLTL2BA = ['.' filesep 'aux_toolboxes' filesep 'ltl2ba' filesep 'ltl2ba'];
     end
     fprintf(1,'\n Note: rmt_create_buchi is trying the default path for ltl2ba (subfolder aux_toolboxex -> ltl2ba)...\n');

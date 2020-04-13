@@ -71,7 +71,7 @@ T.RO = RO;
 for i=T.Q
     T.m0(i)=sum(ismember(RO,i));  %number of robots initially in state i
 end
-Tr = rmt_quotient_T(T); % quotient of partition T, with fewer states
+Tr = rmt_quotient_T_new(T); % quotient of partition T, with fewer states
 %(based on collapsing states with same observables in same connected component
 % with same obs)
 data = get(gcf,'UserData');

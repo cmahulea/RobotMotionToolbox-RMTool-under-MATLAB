@@ -36,7 +36,7 @@ if strcmpi(button,'Reduced system')
     reduced = 1;
     tic;
     if ~isfield(data,'Tr')
-        data.Tr = rmt_quotient_T(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
+        data.Tr = rmt_quotient_T_new(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
     end
     
     % Construction of the Petri net

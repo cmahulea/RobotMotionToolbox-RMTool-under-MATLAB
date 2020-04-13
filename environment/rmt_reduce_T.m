@@ -71,7 +71,7 @@ T.props=propositions;
 
 
 %%now reduce the above T (PN_Boolean function quotient_T.m)
-T_r = rmt_quotient_T(T);
+T_r = rmt_quotient_T_new(T);
 
 propositions_r=T_r.props;   %T_r's states constructing propositions
 
