@@ -215,8 +215,12 @@ end
 
 
 %%***variables and constraints for w_i (size nplaces*k), z_i (size 1*k) for cost function - norm 1, norm infinity
-Aeq = [Aeq , zeros(size(Aeq,1),k*(nplaces+1))]; % add new columns to Aeq
-A = [A , zeros(size(A,1),k*(nplaces+1))]; %add new columns to A
+if ~isempty(Aeq)  %if Aeq was empty, leave it as is to avoid warnings
+    Aeq = [Aeq , zeros(size(Aeq,1),k*(nplaces+1))]; % add new columns to Aeq
+end
+if ~isempty(A)  %if A was empty, leave it as is to avoid warnings
+    A = [A , zeros(size(A,1),k*(nplaces+1))]; %add new columns to A
+end
 %order of variables in vector with unknowns: m1 (vector), sigma_1 (vector), m_2, sigma_2, ..., sigma_k,  x_1, x_2,...,x_{N_p},   (x_1(t), x_2(t),...,x_{N_p}(t)),   w_1 (vector),z_1(scalar), w_2,z_2, ..., z_k.
 if strcmp(obs_type,'trajectory')  %2*N_p binary vars, k=1
     % n_prev_vars=k*(nplaces+ntrans)+2*N_p; %number of previous variables

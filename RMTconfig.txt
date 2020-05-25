@@ -1,1 +1,0 @@
-ltl2buchi=/Users/ramon_gonzalez/Documents/MIT/MIT_Research projects/Rover 2 - extension/GitHub/RobotMotionToolbox/aux_toolboxes/ltl2ba/ltl2ba
