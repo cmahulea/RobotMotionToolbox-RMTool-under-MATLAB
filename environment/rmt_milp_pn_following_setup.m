@@ -35,7 +35,7 @@ answer = inputdlg({...
     },...
     'Robot Motion Toolbox',...
     [1;1;1;1;1],{num2str(param.alpha,3),num2str(param.beta,3),...
-    num2str(param.gamma,3),num2str(param.kappa,3),num2str(param.kshort,3)});
+    num2str(param.gamma,3),num2str(param.intMarkings,3),num2str(param.kappa,3)});
 if (isempty(answer))
     return;
 end
@@ -71,10 +71,21 @@ end
 
 %kappa
 input_val = char(answer{4});
-todoOK = rmt_detect_error(input_val,1,10);
+todoOK = rmt_detect_error(input_val,1,50);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for kappa is betweeen 1 and 10!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for kappa is betweeen 1 and 10!');
+    uiwait(errordlg(sprintf('\nValid range for number of intermediate markings is betweeen 1 and 50!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for kappa is betweeen 1 and 50!');
+else
+    param.intMarkings = eval(input_val);
+end
+
+
+%kappa
+input_val = char(answer{5});
+todoOK = rmt_detect_error(input_val,1,50);
+if (todoOK == 0)
+    uiwait(errordlg(sprintf('\nValid range for kappa is betweeen 1 and 20!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for kappa is betweeen 1 and 50!');
 else
     param.kappa = eval(input_val);
 end

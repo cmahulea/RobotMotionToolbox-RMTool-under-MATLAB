@@ -161,9 +161,16 @@ set(gcf,'UserData',data);%to save data
 tic;
 [run_Tg,~,~,path_Tg,path_B,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
 delete(data.hwait);
-message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
-message = sprintf('%s%s', message, message2);
-uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
+if isempty(run_Tg)
+    message2 = sprintf('\nNo solution foundf! The formula seems not be possible to fulfill');
+    message = sprintf('%s%s', message, message2);
+    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
+    return;
+else
+    message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
+    message = sprintf('%s%s', message, message2);
+    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
+end
 if choice1_1==2 %full model
     [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
 elseif choice1_1==1 %reduced model w.r.t. permutations (as a reachability graph of PN)

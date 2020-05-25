@@ -112,7 +112,8 @@ data.Pre_full = Pre;
 data.Post_full = Post;
 set(gcf,'UserData',data);%to save data
 
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig, length(data.Tr.props) , 2*data.intermediateMarkings, final_places);
+[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
+    length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
 
 data = get(gcf,'UserData');
 % Part about analysis with Buchi Automaton
@@ -134,6 +135,13 @@ for i = 1 : size(Aeq,2)/(size(Pre,1)+size(Pre,2))
         vartype = sprintf('%sI',vartype); %put the sigma as integer
     end
 end
+
+message2 = sprintf('Total number of variables in the MILP problem: %d for %d intermediate markings',...
+    size(Aeq,2),data.optim.paramWith.interM);
+message2 = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints.',...
+    message2, size(Aeq,1), size(A,1));
+uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
+message = sprintf('%s\n%s',message,message2);
 
 tic;
 switch solver
@@ -177,7 +185,7 @@ for i = 1 : length(temp)
 end
 possible_regions{1} = pos_regions;
 number_of_robots{1} = marking_temp;
-for i = 1 : 2*data.intermediateMarkings
+for i = 1 : 2*data.optim.paramWith.interM
     if (i/2 == round(i/2))
         trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))]);
         input_place = find(Pre(:,trans_buchi+ntrans_orig)) ;
@@ -375,6 +383,8 @@ for i = 1 : size(Aeq,2)/(nplaces+ntrans)
         vartype = sprintf('%sI',vartype); %put the sigma as integer
     end
 end
+
+
 
 tic;
 switch solver

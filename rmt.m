@@ -76,7 +76,6 @@ switch action
         temp(4) = 0.01;
         data.pi_tuning = temp;
         data.epsilonvoronoi = 0.4;
-        data.intermediateMarkings = 10;
         data.obstacles=[];
         data.Nobstacles=0;
         data.formula='(F y1) & G !(y2 | y3)';
@@ -184,11 +183,12 @@ switch action
             'Separator','on');
         uimenu(a,'Label','&Add a Robot','Callback',strcat(thisfile,'(''add_robot'')'));
         uimenu(a,'Label','Re&move Robots','Callback',strcat(thisfile,'(''remove_robot'')'));
-%        uimenu(a,'Label','&Number of intermediate markings (PN planning)','Callback',strcat(thisfile,'(''change_k'')'), 'Separator','on');
-        uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
-            'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
+%        uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
+%            'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
-            'Callback',strcat(thisfile,'(''parameter_MILP_pn_following_buchi'')'));
+            'Callback',strcat(thisfile,'(''parameter_MILP_pn_following_buchi'')'),'Separator','on');
+        uimenu(a,'Label','P&arameters for MILP PN with Buchi',...
+            'Callback',strcat(thisfile,'(''parameter_MILP_pn_with_buchi'')'));
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
         uimenu(a,'Label','&Motion Control Parameters','Callback',strcat(thisfile,'(''motion_control_parameters'')'), 'Separator','on');
@@ -505,13 +505,14 @@ switch action
         data.optim.param.alpha = 1;
         data.optim.param.beta = 1;
         data.optim.param.gamma = 100;
-        data.optim.param.kappa = 2;
-        data.optim.param.kshort = 10;
+        data.optim.param.kappa = 3;
+        data.optim.param.intMarkings = 10;
         data.optim.param_boolean.lambda = 1;
         data.optim.param_boolean.mu = 1000;
         data.optim.param_boolean.kappa = 10;
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
+        data.optim.paramWith.interM = 10;
         
         %check if CPLEX and Intlinprog is installed
         
@@ -1406,19 +1407,6 @@ switch action
                 set(gcf,'UserData',data2);
             end
         end
-    case 'change_k'
-        data = get(gcf,'UserData');
-        answer = inputdlg({...
-            sprintf('Maximum number of intermediate markings:')},'Robot Motion Toolbox',...
-            [1],{num2str(data.intermediateMarkings)});
-        try
-            temp(1) = eval(answer{1});
-        catch
-            uiwait(errordlg('Error introducing data!','Robot Motion Toolbox','modal'));
-            return;
-        end
-        data.intermediateMarkings = temp;
-        set(gcf,'UserData',data);
     case 'ltl_pn'
         data = get(gcf,'UserData');
         data.formula = get(findobj(gcf,'Tag','ltlformula'),'String');
@@ -1476,7 +1464,8 @@ switch action
         data.Post_full = Post;
         set(gcf,'UserData',data);%to save data
         
-        [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig, length(data.Tr.props) , 2*data.intermediateMarkings, final_places);
+        [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
+            length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
         
         %%%%%%%%%
         ctype='';
@@ -1487,7 +1476,7 @@ switch action
             ctype = sprintf('%sU',ctype);
         end
         vartype = '';
-        for i = 1 : 2*data.intermediateMarkings
+        for i = 1 : 2*data.optim.paramWith.interM
             for j = 1 : size(Pre,1)
                 vartype = sprintf('%sC',vartype); %put the markings as real
             end
@@ -1520,7 +1509,7 @@ switch action
         ymin = [];
         fprintf(1,'\nInitial state of Buchi = %s',mat2str(find(m0_Buchi)));
         fprintf(1,'\n\tActive observations = %s',mat2str(find(m0_obs)));
-        for i = 1 : 2*data.intermediateMarkings
+        for i = 1 : 2*data.optim.paramWith.interM
             xmin = [xmin ; xm((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];%marking of places modeling the team
             %fprintf(1,'Marking of places modeling the team at step %d: %s',)
             xmin = [xmin ; xm((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig)];%firing vector of places modeling the team
@@ -1550,7 +1539,7 @@ switch action
         nplaces = nplaces_orig;
         ntrans = ntrans_orig;
         
-        for i = 1 : 2*data.intermediateMarkings
+        for i = 1 : 2*data.optim.paramWith.interM
             m = xmin((i-1)*(nplaces+ntrans)+1 : (i-1)*(nplaces+ntrans)+nplaces);
             fire = xmin((i-1)*(nplaces+ntrans)+nplaces+1 : (i-1)*(nplaces+ntrans)+nplaces+ntrans);
             if (max(fire) > 0)
@@ -1580,7 +1569,7 @@ switch action
         message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
         Run_cells = data.RO';%rmt_marking2places(m0);
         tic;
-        for i = 1 : 2*data.intermediateMarkings
+        for i = 1 : 2*data.optim.paramWith.interM
             m = xmin((i-1)*(nplaces+ntrans)+1 : (i-1)*(nplaces+ntrans)+nplaces);
             fire = xmin((i-1)*(nplaces+ntrans)+nplaces+1 : (i-1)*(nplaces+ntrans)+nplaces+ntrans);
             if (max(fire) > 0)
@@ -1620,7 +1609,7 @@ switch action
         end
         time = toc;
         message2 = sprintf('Total time for solving %d LPPs for projecting the solution: %g secs', ...
-            2*data.intermediateMarkings, time);
+            2*data.optim.paramWith.interM, time);
         uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
         message = sprintf('%s\n%s',message,message2);
         
@@ -1697,8 +1686,8 @@ switch action
         data = get(gcf,'UserData');
         data.optim.param = rmt_milp_pn_following_setup(data.optim.param);
         set(gcf,'UserData',data);
-    case 'parameter_MILP_pn_boolean'
+    case 'parameter_MILP_pn_with_buchi'
         data = get(gcf,'UserData');
-        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data.optim.param_boolean);
+        data.optim.paramWith = rmt_milp_pn_with_setup(data.optim.paramWith);
         set(gcf,'UserData',data);
 end    % switch

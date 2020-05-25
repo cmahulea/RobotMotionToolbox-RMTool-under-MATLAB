@@ -59,22 +59,39 @@ paths_B = {};
 index_suffix = [];
 for ii = 1 : length(B.S0)
     for jj = 1 : length(B.F)
-        [paths_B_pref, ~] = kShortestPath(adj_B,B.S0(ii),B.F(jj), data.optim.param.kshort); %use k shortest paths, with k = kappa
+        [paths_B_pref, ~] = kShortestPath(adj_B,B.S0(ii),B.F(jj), data.optim.param.kappa); %use k shortest paths, with k = kappa
         Ssf = find(adj_B(:,B.F(jj)));%find all transitions that have transitions to the terminal state
+        for oo = length(Ssf): -1 : 1
+            if ~isfinite(adj_B(Ssf(oo),B.F(jj)))
+                Ssf(oo) = [];
+            end
+        end
         for kk = 1 : length(Ssf)
             if ((B.F(jj) == Ssf(kk)) && (adj_B(B.F(jj),B.F(jj))==1))
+                if (isempty(paths_B_pref) &&  length(union(B.S0(ii),B.F))==length(B.F)) %if the initial state is also final one
+                    index_suffix(length(paths_B)+1) = 2;
+                    paths_B{length(paths_B)+1} = [B.F(jj) B.F(jj)];
+                end                    
                 for ll = 1 : length(paths_B_pref)
                     index_suffix(length(paths_B)+1) = length(paths_B_pref{ll}) +1;
                     paths_B{length(paths_B)+1} = [paths_B_pref{ll} B.F(jj)];
                 end
             elseif (B.F(jj) ~= Ssf(kk))
                 [paths_B_suff, ~] = kShortestPath(adj_B,B.F(jj),Ssf(kk), ...
-                    ceil(data.optim.param.kshort/length(Ssf))); %use k shortest paths from final state to a state in Ssf
+                    ceil(data.optim.param.kappa/length(Ssf))); %use k shortest paths from final state to a state in Ssf
                 for mm = 1 : length(paths_B_suff)
-                    for ll = 1 : length(paths_B_pref)
-                        temp = paths_B_suff{mm};
-                        temp = [temp(2:end) temp(1)];
-                        paths_B_suff{mm} = temp;
+                    temp = paths_B_suff{mm};
+                    temp = [temp(2:end) temp(1)];
+                    paths_B_suff{mm} = temp;
+                end
+                if (isempty(paths_B_pref) &&  length(union(B.S0(ii),B.F))==length(B.F)) %if the initial state is also final one
+                    for mm = 1 : length(paths_B_suff)
+                        index_suffix(length(paths_B)+1) = 2;
+                        paths_B{length(paths_B)+1} = [B.F(jj) paths_B_suff{mm}];
+                    end
+                end
+                for ll = 1 : length(paths_B_pref)
+                    for mm = 1 : length(paths_B_suff)
                         index_suffix(length(paths_B)+1) = length(paths_B_pref{ll}) +1;
                         paths_B{length(paths_B)+1} = [paths_B_pref{ll} paths_B_suff{mm}];
                     end
@@ -117,14 +134,14 @@ for p_B=1:length(paths_B)
         switch solver
             case 'glpk'
                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.kappa, ...
+                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 tic;
                 [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with glpk
         
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.kappa, ...
+                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -133,7 +150,7 @@ for p_B=1:length(paths_B)
 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.kappa, ...
+                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices            Pre, Post, m0,          props,       Obs, obs_type, set_ind_fin, set_ind_traj, k, alpha, beta, gamma, solver
                 Aeq_sparse=sparse(Aeq);
@@ -163,7 +180,7 @@ for p_B=1:length(paths_B)
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
         [feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
             Rob_synchronize_temp, min_k1] = rmt_test_solution_feasibility(Pre, Post, PN_marking, ...
-            data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.kappa, solver, xmin, ...
+            data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, solver, xmin, ...
             status, Rob_positions);
         
         if feasible_sol==1 %ILP1 gives good result, go to next transition in Buchi
@@ -184,13 +201,13 @@ for p_B=1:length(paths_B)
         switch solver
             case 'glpk'
                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.kappa, ...
+                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 tic;
                 [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with GLPK
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.kappa, ...
+                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -199,7 +216,7 @@ for p_B=1:length(paths_B)
                 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.kappa,...
+                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings,...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -228,7 +245,7 @@ for p_B=1:length(paths_B)
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
         [feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
             Rob_synchronize_temp, min_k2] = rmt_test_solution_feasibility(Pre, Post, PN_marking, ...
-            data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.kappa, ...
+            data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
             solver, xmin, status, Rob_positions);
         
         if feasible_sol==1 %ILP2 gives good result, go to next transition in Buchi
