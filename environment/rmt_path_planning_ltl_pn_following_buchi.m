@@ -32,7 +32,8 @@ function rmt_path_planning_ltl_pn_following_buchi
 data = get(gcf,'UserData');
 N_p = data.Nobstacles;%number of regions of interest
 N_r = length(data.RO); %number of robots
-Obs = rmt_observation_set(N_p); %observations - power set of \Pi
+Obs = rmt_observation_set_new(data.T.OBS_set,N_p,N_r); %observations - power set of \Pi
+total_time = 0;
 
 if strcmp(get(data.optim.menuCplex,'Checked'),'on')
     solver = 'cplex';
@@ -158,7 +159,9 @@ for p_B=1:length(paths_B)
                 [xmin, fmin, status, extra] = cplexmilp(cost, A, b, Aeq, beq, [],[],[], lb, ub, ...
                     vartype, [], []);   %optimization with cplexmilp
         end
-        fprintf('\n\t ILP 1 finished in %g seconds: \n ',toc);
+        tiempo = toc;
+        total_time = total_time + tiempo;
+        fprintf('\n\t ILP 1 finished in %g seconds: \n ',tiempo);
         
         prec=0.5e-5;    %additional tests for solution feasibility
         switch solver
@@ -223,7 +226,9 @@ for p_B=1:length(paths_B)
                 tic;
                 [xmin, fmin, status, extra] = cplexmilp(cost, A, b, Aeq, beq, [],[],[], lb, ub, vartype, [], []);   %optimization with cplexmilp
         end
-        fprintf('\n\t ILP 2 finished in %g seconds: \n ',toc);
+        tiempo = toc;
+        total_time = total_time + tiempo;
+        fprintf('\n\t ILP 2 finished in %g seconds: \n ',tiempo);
 
         prec=0.5e-5;    %additional tests for solution feasibility
         switch solver
@@ -264,13 +269,14 @@ for p_B=1:length(paths_B)
     end
     
     if feasible_path_B==1   %path in B was followed
-        fprintf('\nSOUTION FOUND!\n')
+        fprintf('\nSOUTION FOUND!\nTotal time of solving all MILPS: %d seconds\n',total_time)
         break;
     end
 end
 
 if feasible_path_B==0   %no path in B could be followed
-    fprintf('\nNO SOLUTION! No path in B could be followed. \n\tPossible reasons:\n\t\t-the problem is unfeasible (impossible to satisfy task);\n\t\t-too few paths in Buchi;\n\t\t-too small number of intermediate PN markings.\n')
+    fprintf('\nNO SOLUTION! No path in B could be followed. \n\tPossible reasons:\n\t\t-the problem is unfeasible (impossible to satisfy task);\n\t\t-too few paths in Buchi;\n\t\t-too small number of intermediate PN markings.\n');
+    fprintf('\nTotal time of solving all MILPS: %d seconds\n',total_time);
 else %plot robot trajectories
     [rob_traj,synch_points] = rmt_rob_cont_traj_synch(data.T,Rob_places,Rob_synchronize,data.initial);    %continuous trajectory of each robot 
     rob_color={'r','b','g','c','m','k','y'};    %colors of robots
