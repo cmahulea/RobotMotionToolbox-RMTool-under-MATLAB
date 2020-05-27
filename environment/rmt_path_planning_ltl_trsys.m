@@ -29,7 +29,7 @@ function rmt_path_planning_ltl_trsys
 
 data = get(gcf,'UserData');
 data.formula = get(findobj(gcf,'Tag','ltlformula'),'String');
-
+time_c = 0;
 probability=ones(1,length(data.propositions));
 choice1_1 = questdlg('Choose robot model to use:', ...
     'Robot Motion Toolbox', ...
@@ -37,15 +37,21 @@ choice1_1 = questdlg('Choose robot model to use:', ...
 switch choice1_1
     case 'Full'
         choice1_1=2;
-        data.hwait = waitbar(0,'Computing trajectories (Transition System full). Please wait...','Name','Robot Motion Toolbox',...
-            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+        disp('Computing trajectories (Transition System full). Please wait...');
+        message_c = sprintf('--------------------------------------------------------\n');
+        message_c = sprintf('%s---Path planning using transition system (full model)---\n',message_c);
+        message_c = sprintf('%s--------------------------------------------------------\n',message_c);
     case 'Equiv. rob. permutations (as reach. graph)'
-        data.hwait = waitbar(0,'Computing trajectories (Transition System reduced w.r.t. robot permutations). Please wait...','Name','Robot Motion Toolbox',...
-            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+        disp('Computing trajectories (Transition System reduced w.r.t. robot permutations). Please wait...');
+        message_c = sprintf('-------------------------------------------------------------------------------\n');
+        message_c = sprintf('%s---Path planning using transition system (reduced w.r.t. robot permutations)---\n',message_c);
+        message_c = sprintf('%s-------------------------------------------------------------------------------\n',message_c);
         choice1_1=1;
     case 'Collapsed robot model' 
-        data.hwait = waitbar(0,'Computing trajectories (Transition System reduced). Please wait...','Name','Robot Motion Toolbox',...
-            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+        disp('Computing trajectories (Transition System reduced). Please wait...');
+        message_c = sprintf('----------------------------------------------------------------------------------------------------\n');
+        message_c = sprintf('%s---Path planning using transition system (reduced collapsing regions with identical observations)---\n',message_c);
+        message_c = sprintf('%s----------------------------------------------------------------------------------------------------\n',message_c);
         choice1_1=0;
         tic;
         [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
@@ -58,15 +64,24 @@ set(gcf,'UserData',data);%to save data
 if choice1_1==2
     tic;
     Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-    message = sprintf('Model of a robot (full transition system) - has %d states\nTeam model (global) - full transition system - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
+    tiempo = toc;
+    time_c = tiempo;
+    message = sprintf('Model of a robot (full transition system) - has %d states\nTeam model (global) - full transition system - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), tiempo);
+    message_c = sprintf('%sTime of generating the transition system of the team: %g secs\n',message_c,tiempo);
 elseif choice1_1==1
     tic;
     Tg = rmt_tr_sys_team_reduced(data.T,data.RO,data.propositions,probability); %team model, reduced w.r.t. robot permutations (as a reachability graph of PN)
-    message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
+    tiempo = toc;
+    time_c = tiempo;
+    message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), tiempo);
+    message_c = sprintf('%sTime of generating the transition system of the team: %g secs\n',message_c,tiempo);
 else %collapsed model
     tic;
     Tg = rmt_tr_sys_obs_team(T_red,RO_red,propositions_red,probability);    %compute team (global) transition system, including probabilities of observing propositions
-    message = sprintf('Model of a robot (reduced transition system) - has %d states\nReduced model constructed in %g secs\nTeam model (global) - product of reduced systems - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),time_reduce,length(Tg.Q), toc);
+    tiempo = toc;
+    time_c = tiempo;
+    message = sprintf('Model of a robot (reduced transition system) - has %d states\nReduced model constructed in %g secs\nTeam model (global) - product of reduced systems - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),time_reduce,length(Tg.Q), tiempo);
+    message_c = sprintf('%sTime of generating the transition system of the team: %g secs\n',message_c,tiempo);
 end
 
 data.Tg=Tg;
@@ -83,35 +98,41 @@ if(data.Nobstacles < size(regionFormula,2))
     %defaultans = {'(F u1) & G !(u2 | u3)'};
     input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
     data.formula= char(input_user(1));   % Reading of region's numbers from input interface
+    tic;
     B = rmt_create_buchi(data.formula, Tg.Obs);
     data.B=B;
 else
+    tic;
     B = rmt_create_buchi(data.formula, Tg.Obs);
     data.B=B;
 end
-    
+tiempo = toc;
+time_c = time_c + tiempo;
+message_c = sprintf('%sTime of generating the Buchi automata: %g secs\n',message_c,tiempo);
 set(gcf,'UserData',data);
-    tic;
-    Pg = rmt_product_autom_prob_team(Tg,B);  %Pg has trans with log of probabilities plus epsilon (used for Dijkstra), and 2 additional costs: probability of transition and number of moving robots
-    message2 = sprintf('\nBuchi automaton has %d states;\nProduct automaton has %d states;\nTime spent for creating it: %g secs', size(B.S,2), size(Pg.S,1), toc);
-    message = sprintf('%s%s', message, message2);
+tic;
+Pg = rmt_product_autom_prob_team(Tg,B);  %Pg has trans with log of probabilities plus epsilon (used for Dijkstra), and 2 additional costs: probability of transition and number of moving robots
+tiempo = toc;
+message2 = sprintf('\nBuchi automaton has %d states;\nProduct automaton has %d states;\nTime spent for creating it: %g secs', size(B.S,2), size(Pg.S,1), tiempo);
+message = sprintf('%s%s', message, message2);
+message_c = sprintf('%sTime of generating the global model (team model X Buchi): %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 data.Pg = Pg;
 
 tic;
 [run_Tg,~,~,path_Tg,path_B,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
-
-data = get(gcf,'UserData');
-delete(data.hwait);
-set(gcf,'UserData',data);%to save data
 
 if isempty(run_Tg)
     message2 = sprintf('\nNo solution foundf! The formula seems not be possible to fulfill');
     message = sprintf('%s%s', message, message2);
     return;
 else
-    message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
+    tiempo = toc;
+    message2 = sprintf('\nTime for finding accepted run: %g secs', tiempo);
     message = sprintf('%s%s', message, message2);
 end
+message_c = sprintf('%sTime of finding the path(s): %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 if choice1_1==2 %full model
     [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
 elseif choice1_1==1 %reduced model w.r.t. permutations (as a reachability graph of PN)
@@ -148,6 +169,8 @@ while i<=size(R_paths,2)  %go through synchronized paths and simulate robot move
     i=i+1;
 end
 
+message_c = sprintf('%sTotal time: %g secs\n',message_c,time_c);
+disp(message_c);
 button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
 if strcmpi(button,'Yes')
     [filename, pathname] = uiputfile('*.txt', 'Save experiments as');
@@ -155,5 +178,4 @@ if strcmpi(button,'Yes')
     fprintf(fileID,'%s',message);
     fclose(fileID);
 end
-
 set(gcf,'UserData',data);%to save data

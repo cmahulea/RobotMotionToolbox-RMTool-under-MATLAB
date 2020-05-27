@@ -29,15 +29,16 @@ function rmt_path_planning_ltl_pn_following_buchi
 %Path-planning with LTL specifications and Petri net models following paths
 %in Buchi automaton
 
+disp('Computing trajectories (PN models folowing paths in Buchi). Please wait...');
 data = get(gcf,'UserData');
-data.hwait = waitbar(0,'Computing trajectories (PN models folowing paths in Buchi). Please wait...','Name','Robot Motion Toolbox',...
-    'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
-set(gcf,'UserData',data);%to save data
-
 N_p = data.Nobstacles;%number of regions of interest
 N_r = length(data.RO); %number of robots
 Obs = rmt_observation_set_new(data.T.OBS_set,N_p,N_r); %observations - power set of \Pi
 total_time = 0;
+time_c = 0;
+message_c = sprintf('----------------------------------------------------------------------------------------------------\n');
+message_c = sprintf('%s---Path planning using Petri net models following rund in Buchi---\n',message_c);
+message_c = sprintf('%s----------------------------------------------------------------------------------------------------\n',message_c);
 
 if strcmp(get(data.optim.menuCplex,'Checked'),'on')
     solver = 'cplex';
@@ -52,8 +53,11 @@ end
 tic;
 [Pre,Post] = rmt_construct_PN(data.T.adj);
 m0 = data.T.m0;
+tiempo = toc;
 message = sprintf('Petri net system has %d places and %d transitions\nTime spent to create the PN system: %g secs',...
-    size(Pre,1),size(Pre,2),toc);
+    size(Pre,1),size(Pre,2),tiempo);
+message_c = sprintf('%sTime of generating the PN model of the team: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 
 %nplaces = size(Pre,1);
 %ntrans = size(Pre,2); 
@@ -61,8 +65,11 @@ message = sprintf('Petri net system has %d places and %d transitions\nTime spent
 %***Buchi automaton for formula, with elements of power set of \Pi (Obs) on transitions***%
 tic;
 B = rmt_create_buchi(data.formula, Obs);
+tiempo = toc;
 message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi: %g secs',...
-    message,length(B.S),toc);
+    message,length(B.S),tiempo);
+message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 
 %%***solution's main part: choose a path in B and try to follow it with observations of PN
 tic;
@@ -112,13 +119,17 @@ for ii = 1 : length(B.S0)
         end 
     end
 end
- 
+
+tiempo = toc;
 message = sprintf('%s\nComputing %d paths in Buchi\nTime spent to compute all paths: %g secs',...
-    message,length(paths_B),toc);
+    message,length(paths_B),tiempo);
+message_c = sprintf('%sTime of finding %d accepted paths in Buchi: %g secs\n',message_c,length(paths_B),tiempo);
+time_c = time_c + tiempo;
 
 %try to follow a path in Buchi
 feasible_path_B=0;
 message2 = '';
+time_paths = 0;
 for p_B=1:length(paths_B)
     message = sprintf('%s\nTrying to follow path %d in Buchi',message,p_B);
     path_B = paths_B{p_B};  %chosen path in Buchi
@@ -271,6 +282,7 @@ for p_B=1:length(paths_B)
             message2,path_B(i),path_B(i+1));
         feasible_path_B=0; %current path in Buchi is not feasible
         tiempo = toc;
+        time_paths = time_paths + tiempo;
         total_time = total_time + tiempo;
         message2 = sprintf('%s\n\t Path_%d NOT feasible. Time solving the ILPs trying to follow it: %g seconds. \n ',...
             message2,p_B,tiempo);
@@ -285,13 +297,11 @@ for p_B=1:length(paths_B)
             message2,p_B,tiempo);
         message = sprintf('%s\n\t Path_%d is feasible.\n \t Time solving all ILPs: %g seconds. \n ',...
             message,p_B,tiempo);
+        time_paths = time_paths + tiempo;
         break;
     end
 end
-
-data = get(gcf,'UserData');
-delete(data.hwait);
-set(gcf,'UserData',data);%to save data
+message_c = sprintf('%sTime of finding the path(s): %g secs\n',message_c,time_paths);
 
 if feasible_path_B==0   %no path in B could be followed
     message2 = sprintf('%s\nNO SOLUTION! No path in B could be followed. \n\tPossible reasons:\n\t\t-the problem is unfeasible (impossible to satisfy task);\n\t\t-too few paths in Buchi;\n\t\t-too small number of intermediate PN markings.\n',message2);
@@ -310,6 +320,10 @@ else %plot robot trajectories
         plot(synch_points{r}(1,:),synch_points{r}(2,:),'k','Marker','s','MarkerSize',5);
     end
 end
+time_c = time_c + time_paths;
+message_c = sprintf('%sTotal time: %g secs\n',message_c,time_c);
+disp(message_c);
+
 button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
 if strcmpi(button,'Yes')
     [filename, pathname] = uiputfile('*.txt', 'Save experiments as');

@@ -41,20 +41,25 @@ else
     uiwait(errordlg(sprintf('\nUnknown MILP solver'),'Robot Motion Toolbox','modal'));
     error('Unknown MILP solver');
 end
-data.hwait = waitbar(0,'Computing trajectories (PN model with Buchi included). Please wait...','Name','Robot Motion Toolbox',...
-    'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
-set(gcf,'UserData',data);%to save data
+time_c = 0;
+message_c = sprintf('--------------------------------------------------------------\n');
+message_c = sprintf('%s---Path planning using Petri net models with Buchi included---\n',message_c);
+message_c = sprintf('%s--------------------------------------------------------------\n',message_c);
+
+disp('Computing trajectories (PN model with Buchi included). Please wait...');
 
 tic;
 data.Tr = rmt_quotient_T_new(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
-
 [Pre,Post] = rmt_construct_PN(data.Tr.adj);
 m0=data.Tr.m0;
-message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
+tiempo = toc;
+message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),tiempo);
+message_c = sprintf('%sTime of generating the quotient PN model of the team: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
-%crete the observation set
+%create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 %observ_set = data.Tr.OBS_set(1:size(data.Tr.OBS_set,1)-1,:); %Remove free space from initial Obs set
 observ_set = data.T.OBS_set(1:size(data.T.OBS_set,1)-1,:); %Remove free space from initial Obs set
@@ -88,16 +93,21 @@ else
     tic;
     B = rmt_create_buchi(data.formula, temp_obs);
 end
+tiempo = toc;
 message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi: %g secs',...
-    message,length(B.S),toc);
+    message,length(B.S),tiempo);
+message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 data.B=B;
 set(gcf,'UserData',data);
 
 tic;
 [Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
+tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
-    message,size(Pre,1),size(Pre,2),toc);
-
+    message,size(Pre,1),size(Pre,2),tiempo);
+message_c = sprintf('%sTime of generating the quotient PN model with Buchi included: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 data.Pre_full = Pre;
 data.Post_full = Post;
 set(gcf,'UserData',data);%to save data
@@ -142,13 +152,12 @@ time = toc;
 if isempty(f)%no solution
     uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
         'Robot Motion Toolbox','modal'));
-    data = get(gcf,'UserData');
-    delete(data.hwait);
-    set(gcf,'UserData',data);%to save data
     return;
 end
 message = sprintf('%s\nTime of solving the MILP (trajectory on quotient PN): %g secs\n', message, time);
 total_time = total_time + time;
+message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi: %g secs\n',message_c,time);
+time_c = time_c + time;
 message = sprintf('%s\n=======================================================',message);
 message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
 message = sprintf('%s\n=======================================================\n',message);
@@ -391,11 +400,8 @@ message = sprintf('%s\nThe LP has %d equality contraints and %d inequality const
 time = toc;
 message = sprintf('%s\nTotal time for solving LPP to project the solution: %g secs', message,time);
 total_time = total_time + time;
-
-data = get(gcf,'UserData');
-delete(data.hwait);
-set(gcf,'UserData',data);%to save data
-
+message_c = sprintf('%sTime for projecting the solution on the full model: %g secs\n',message_c,time);
+time_c = time_c + time;
 
 if isempty(f)
     uiwait(errordlg('Error solving LPP to project the solution!','Robot Motion Toolbox','modal'));
@@ -464,6 +470,9 @@ if ~isempty(Synch)
         message = sprintf('%s %s',message,mat2str(Run_cells(:,Synch(i))));
     end
 end
+
+message_c = sprintf('%sTotal time: %g secs\n',message_c,time_c);
+disp(message_c);
 
 message2 = '';
 button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
