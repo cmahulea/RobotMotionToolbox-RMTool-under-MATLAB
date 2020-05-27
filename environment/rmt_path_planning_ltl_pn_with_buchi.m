@@ -27,10 +27,10 @@
 function rmt_path_planning_ltl_pn_with_buchi
 %Path-planning with LTL specificaion and Petri net models (mathematical programming approach)
 
-disp('START CREATION PETRI NET WITH LTL FORMULA');
+%disp('START CREATION PETRI NET WITH LTL FORMULA');
 data = get(gcf,'UserData');
 data.formula = get(findobj(gcf,'Tag','ltlformula'),'String'); %% read LTL formula
-
+total_time = 0;
 if strcmp(get(data.optim.menuCplex,'Checked'),'on')
     solver = 'cplex';
 elseif strcmp(get(data.optim.menuIntlinprog,'Checked'),'on')
@@ -41,16 +41,16 @@ else
     uiwait(errordlg(sprintf('\nUnknown MILP solver'),'Robot Motion Toolbox','modal'));
     error('Unknown MILP solver');
 end
+data.hwait = waitbar(0,'Computing trajectories (PN model with Buchi included). Please wait...','Name','Robot Motion Toolbox',...
+    'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+set(gcf,'UserData',data);%to save data
 
 tic;
-%if ~isfield(data,'Tr')
 data.Tr = rmt_quotient_T_new(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
-%end
 
 [Pre,Post] = rmt_construct_PN(data.Tr.adj);
 m0=data.Tr.m0;
 message = sprintf('Petri net system has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
-uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
 nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
@@ -72,41 +72,31 @@ temp_obs=unique(sort(temp_obs,2),'rows');   %again remove identical rows (there 
 temp_obs(end+1,:)=[length(data.Tr.props)+1 , zeros(1,size(temp_obs,2)-1)]; %dummy has index "ind_dummy", and pad with zeros after it
 
 % Creating the automaton Buchi to be included in the global Petri Net
-if ~isfield(data,'B')
-    % Control on the number of region of interest
-    regionFormula=strfind(data.formula, 'u');
-    if(data.Nobstacles < size(regionFormula,2))
-        uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
-        prompt = {'New LTL Formula:'};
-        dlg_title = 'Robot Motion Toolbox';
-        num_lines = 1;
-        defaultans = {''};
-        input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
-        data.formula= char(input_user(1));   % Reading of region's numbers from input interface
-        B = rmt_create_buchi(data.formula, temp_obs);
-        data.B=B;
-    else
-        B = rmt_create_buchi(data.formula, temp_obs);
-        data.B=B;
-    end
+% Control on the number of region of interest
+regionFormula=strfind(data.formula, 'u');
+if(data.Nobstacles < size(regionFormula,2))
+    uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
+    prompt = {'New LTL Formula:'};
+    dlg_title = 'Robot Motion Toolbox';
+    num_lines = 1;
+    defaultans = {''};
+    input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
+    data.formula= char(input_user(1));   % Reading of region's numbers from input interface
+    tic;
+    B = rmt_create_buchi(data.formula, temp_obs);
 else
-    choice2 = questdlg('Should the Buchi automaton be computed again?', ...
-        'Robot Motion Toolbox', ...
-        'Yes','No','Yes');
-    if strcmpi(choice2,'Yes')
-        B = rmt_create_buchi(data.formula, temp_obs);
-    else
-        B = data.B;
-    end
+    tic;
+    B = rmt_create_buchi(data.formula, temp_obs);
 end
+message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi: %g secs',...
+    message,length(B.S),toc);
 data.B=B;
 set(gcf,'UserData',data);
 
 tic;
 [Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
-message2 = sprintf('Petri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs', size(Pre,1),size(Pre,2),toc);
-message = sprintf('%s\n%s', message, message2);
-uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
+    message,size(Pre,1),size(Pre,2),toc);
 
 data.Pre_full = Pre;
 data.Post_full = Post;
@@ -136,12 +126,10 @@ for i = 1 : size(Aeq,2)/(size(Pre,1)+size(Pre,2))
     end
 end
 
-message2 = sprintf('Total number of variables in the MILP problem: %d for %d intermediate markings',...
-    size(Aeq,2),data.optim.paramWith.interM);
-message2 = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints.',...
-    message2, size(Aeq,1), size(A,1));
-uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-message = sprintf('%s\n%s',message,message2);
+message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
+    message,size(Aeq,2),data.optim.paramWith.interM);
+message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
+    message, size(Aeq,1), size(A,1));
 
 tic;
 switch solver
@@ -152,13 +140,15 @@ switch solver
 end
 time = toc;
 if isempty(f)%no solution
-    uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution. Increase k!','Robot Motion Toolbox','modal'));
+    uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
+        'Robot Motion Toolbox','modal'));
+    data = get(gcf,'UserData');
+    delete(data.hwait);
+    set(gcf,'UserData',data);%to save data
     return;
 end
-message2 = sprintf('\nTime of solving the MILP: %g secs\n', time);
-message = sprintf('%s%s', message, message2);
-uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-
+message = sprintf('%s\nTime of solving the MILP (trajectory on quotient PN): %g secs\n', message, time);
+total_time = total_time + time;
 message = sprintf('%s\n=======================================================',message);
 message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
 message = sprintf('%s\n=======================================================\n',message);
@@ -169,12 +159,12 @@ m0_old = m0;
 m0 = m0(1:nplaces_orig);
 m0_Buchi = m0_old(nplaces_orig+2*length(data.Tr.props)+1:end);
 m0_obs = m0_old(nplaces_orig+1:nplaces_orig+length(data.Tr.props));
-fprintf(1,'\n\t Initial state of Buchi = %s',mat2str(find(m0_Buchi)));
+message = sprintf('%s\n\n\t Initial state of Buchi = %s',message,mat2str(find(m0_Buchi)));
 active_observations{1} = find(m0_obs);
 if isempty(active_observations{1})
-    fprintf(1,'\n\t No active observations at initial state');
+    message = sprintf('%s\n\t No active observations at initial state',message);
 else
-    fprintf(1,'\n\t Active observations = %s',mat2str(active_observations{1}));
+    message = sprintf('%s\n\t Active observations = %s',message,mat2str(active_observations{1}));
 end
 pos_regions={};
 temp = find(m0);
@@ -192,14 +182,16 @@ for i = 1 : 2*data.optim.paramWith.interM
         input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
         output_place = find(Post(:,trans_buchi+ntrans_orig));
         output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
-        fprintf(1,'\n Transition in Buchi from state %d to state %d with observation (%s)',input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)])));
-        fprintf(1,'\n\t State of Buchi in step %d = %s',i/2,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
+        message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
+            input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)])));
+        message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
+            mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
         
         active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)]);
         if isempty(active_observations{length(active_observations)})
-            fprintf(1,'\n\t No active observations at step %d',i/2);
+            message = sprintf('%s\n\t No active observations at step %d',message,i/2);
         else
-            fprintf(1,'\n\t Active observations at step %d = %s',i/2,mat2str(active_observations{length(active_observations)}));
+            message = sprintf('%s\n\t Active observations at step %d = %s',message,i/2,mat2str(active_observations{length(active_observations)}));
         end
         %take the new marking of the robot model
         marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
@@ -213,9 +205,9 @@ for i = 1 : 2*data.optim.paramWith.interM
         
         possible_regions{length(possible_regions)+1} = pos_regions;
         number_of_robots{length(number_of_robots)+1} = marking_temp; %number of robots in each macro region
-        fprintf(1,'\n\t Possible regions for the robots');
+        message = sprintf('%s\n\t Possible regions for the robots',message);
         for k = 1 : length(pos_regions)
-            fprintf(1,'\n\t\t --- %s',mat2str(pos_regions{k}));
+            message = sprintf('%s\n\t\t --- %s',message,mat2str(pos_regions{k}));
         end
     end
 end
@@ -228,8 +220,7 @@ for j = length(active_observations):-1:2
         number_of_robots(j) = [];
     end
 end
-fprintf(1,'\n');
-message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
+message = sprintf('%s\n\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
 
 message = sprintf('%s\n=======================================================',message);
 message = sprintf('%s\nProject the solution to the initial transition system with CPLEX',message);
@@ -384,8 +375,6 @@ for i = 1 : size(Aeq,2)/(nplaces+ntrans)
     end
 end
 
-
-
 tic;
 switch solver
     case 'cplex'
@@ -394,10 +383,18 @@ switch solver
         [X,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
 end
 
+message = sprintf('%s\nTotal number of variables in the LP problem (project the solution): %d',...
+    message,size(Aeq,2));
+message = sprintf('%s\nThe LP has %d equality contraints and %d inequality constraints (project the solution).',...
+    message, size(Aeq,1), size(A,1));
+
 time = toc;
-message2 = sprintf('Total time for solving LPP to project the solution: %g secs', time);
-uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-message = sprintf('%s\n%s',message,message2);
+message = sprintf('%s\nTotal time for solving LPP to project the solution: %g secs', message,time);
+total_time = total_time + time;
+
+data = get(gcf,'UserData');
+delete(data.hwait);
+set(gcf,'UserData',data);%to save data
 
 
 if isempty(f)
@@ -467,6 +464,14 @@ if ~isempty(Synch)
         message = sprintf('%s %s',message,mat2str(Run_cells(:,Synch(i))));
     end
 end
-disp(message);
+
+message2 = '';
+button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
+if strcmpi(button,'Yes')
+    [filename, pathname] = uiputfile('*.txt', 'Save experiments as');
+    fileID = fopen(fullfile(pathname, filename),'w');
+    fprintf(fileID,'%s\n\nTotal time to solve both optimization problems: %d',message,total_time);
+    fclose(fileID);
+end
 
 set(gcf,'UserData',data);%to save data

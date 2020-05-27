@@ -20,11 +20,11 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on January, 2019. 
-%   Last modification January 31, 2019.
+%   Last modification May, 2020.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [feasible_sol , marking_final, Rob_positions_final, Rob_places, Rob_trans, Rob_synchronize, tr_number] = rmt_test_solution_feasibility(Pre, Post, m0, props, Obs, obs_type, set_ind_fin, set_ind_traj, k, solver, xmin, status, Rob_positions)
+function [message,feasible_sol , marking_final, Rob_positions_final, Rob_places, Rob_trans, Rob_synchronize, tr_number] = rmt_test_solution_feasibility(message,Pre, Post, m0, props, Obs, obs_type, set_ind_fin, set_ind_traj, k, solver, xmin, status, Rob_positions)
 %if optimizxation on PN model finished, test feasibility of obtained solution
 %this is done in two steps:
 %1. sigma should be feasible (non-spurious)
@@ -79,17 +79,17 @@ prec=1e-5;
 switch solver
     case 'glpk'
         if (status ~= 5) || (max(abs(xmin-round(xmin)))>prec)    %optimization did not finish, or solution is not close to integer values
-            fprintf('\nGLPK optimization did not successfully finish (no solution found)!\n')
+            message = sprintf('%s\nGLPK optimization did not successfully finish (no solution found)!\n',message);
             return; %return function, with feasible_traj on zero
         end
     case 'intlinprog'
         if (status ~= 1) || (max(abs(xmin-round(xmin)))>prec)    %optimization did not finish, or solution is not close to integer values
-            fprintf('\nINTLINPROG optimization did not successfully finish (no solution found)!\n')
+            message = sprintf('%s\nINTLINPROG optimization did not successfully finish (no solution found)!\n',message);
             return; %return function, with feasible_traj on zero
         end
     case 'cplex'
         if (status < 0) || (max(abs(xmin-round(xmin)))>prec)    %optimization did not finish, or solution is not close to integer values
-            fprintf('\nCPLEX optimization did not successfully finish (no solution found)!\n')
+            message = sprintf('%s\nCPLEX optimization did not successfully finish (no solution found)!\n',message);
             return; %return function, with feasible_traj on zero
         end
 end
@@ -105,7 +105,7 @@ for i=1:k
     [feasible_sigma, Rob_places_i, Rob_trans_i, Rob_positions_next] = ...
         rmt_sigma2trajectories(Pre,Post,m0,sigma,Rob_positions); %construct places and transition sequences in PN
     if feasible_sigma==0 %spurious sigma
-        fprintf('\nSpurious sigma obtained! ILP constraints type: %s.\n',obs_type)
+        message = sprintf('%s\nSpurious sigma obtained! ILP constraints type: %s.\n',message,obs_type);
         return;
     end
     %for feasible sigma, update:
@@ -147,11 +147,11 @@ Rob_positions_final = Rob_positions; %if for loop finished
 if strcmp(obs_type,'final') %ILP1
     team_observ = rmt_traj2observ(Rob_places , props , Obs); %construct possible team observations resulting from unsynchronized robot movements
     if ~isempty(setdiff(team_observ , set_ind_traj)) %it is possible to generate undesired observations -> not feasible solution; set_ind_traj includes set_ind_fin
-        fprintf('\tUndesired team observations can be generated! ILP constraints type: %s.\n',obs_type)
+        message = sprintf('%s\tUndesired team observations can be generated! ILP constraints type: %s.\n',message,obs_type);
         return;
     end
 end
 
 
 feasible_sol = 1; %if this point is reached, solution is feasible
-fprintf('\tCurrent solution is feasible!\n')
+message = sprintf('%s\tCurrent solution is feasible!\n',message);

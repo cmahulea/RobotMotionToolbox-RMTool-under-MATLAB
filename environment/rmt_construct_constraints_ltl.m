@@ -86,7 +86,7 @@ b = [b;-1];
 %A = [A; zeros(1,(k-1)*(nplaces+ntrans)) -trans_Buchi];
 %b = [b ; -1];
 
-fprintf(1,'\nIntermediate states %d',interm);
+%fprintf(1,'\nIntermediate states %d',interm);
 %%%%%%%%%%% cost function
 cost = [];
 for i = 1 : k

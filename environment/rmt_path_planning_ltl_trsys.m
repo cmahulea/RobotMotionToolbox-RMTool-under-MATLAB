@@ -29,147 +29,88 @@ function rmt_path_planning_ltl_trsys
 
 data = get(gcf,'UserData');
 data.formula = get(findobj(gcf,'Tag','ltlformula'),'String');
-if isfield(data,'Tg')
-    choice1 = questdlg('Should the product automaton of the robot team be computed again?', ...
-        'Robot Motion Toolbox', ...
-        'Yes','No','Yes');
-    if strcmpi(choice1,'Yes')
-        choice1=1;
-    else
-        choice1=0;
-    end
-else
-    choice1 = 1;
-end
+
 probability=ones(1,length(data.propositions));
-if ((choice1 == 1) || ~isfield(data,'Tg'))
-    choice1_1 = questdlg('Choose robot model to use:', ...
-        'Robot Motion Toolbox', ...
-        'Full','Equiv. rob. permutations (as reach. graph)','Collapsed robot model','Full');
-    switch choice1_1
-        case 'Full'
-            choice1_1=2;
-        case 'Equiv. rob. permutations (as reach. graph)'
-            choice1_1=1;
-        case 'Collapsed model'
-            choice1_1=0;
-            tic;
-            [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
-            time_reduce=toc;
-        otherwise
-            fprintf('\nERROR - Undefined/wrong case for Robot model to use!\n');
-    end
-%     if strcmpi(choice1_1,'Full')
-%         choice1_1=2;
-%     elseif strcmpi(choice1_1,'Equiv. rob. permutations (as reach. graph)')
-%         choice1_1=1;
-%     else %'Collapsed model'
-%         choice1_1=0;
-%         tic;
-%         [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
-%         time_reduce=toc;
-%     end
-    
-    if choice1_1==2
+choice1_1 = questdlg('Choose robot model to use:', ...
+    'Robot Motion Toolbox', ...
+    'Full','Equiv. rob. permutations (as reach. graph)','Collapsed robot model','Full');
+switch choice1_1
+    case 'Full'
+        choice1_1=2;
+        data.hwait = waitbar(0,'Computing trajectories (Transition System full). Please wait...','Name','Robot Motion Toolbox',...
+            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+    case 'Equiv. rob. permutations (as reach. graph)'
+        data.hwait = waitbar(0,'Computing trajectories (Transition System reduced w.r.t. robot permutations). Please wait...','Name','Robot Motion Toolbox',...
+            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+        choice1_1=1;
+    case 'Collapsed robot model' 
+        data.hwait = waitbar(0,'Computing trajectories (Transition System reduced). Please wait...','Name','Robot Motion Toolbox',...
+            'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
+        choice1_1=0;
         tic;
-        Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-        message = sprintf('Model of a robot (full transition system) - has %d states\nTeam model (global) - full transition system - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
-        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-    elseif choice1_1==1
-        tic;
-%         Tg = rmt_tr_sys_team_bisim(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-%         Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
-%         time_Tg=toc;
-%         Tg_init = Tg;
-%         tic;
-%         Tg = rmt_tr_sys_reduce_Tg(Tg); %reduce Tg w.r.t. robot permutations (as a reachability graph of PN)
-%         message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - non-reduced - has %d states and it was created in %g secs\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it (reducing Tg): %g secs', length(data.T.Q),length(Tg_init.Q),time_Tg,length(Tg.Q), toc);
-%         uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-        Tg = rmt_tr_sys_team_reduced(data.T,data.RO,data.propositions,probability); %team model, reduced w.r.t. robot permutations (as a reachability graph of PN)
-        message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
-        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-    else %collapsed model
-        tic;
-        Tg = rmt_tr_sys_obs_team(T_red,RO_red,propositions_red,probability);    %compute team (global) transition system, including probabilities of observing propositions
-        message = sprintf('Model of a robot (reduced transition system) - has %d states\nReduced model constructed in %g secs\nTeam model (global) - product of reduced systems - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),time_reduce,length(Tg.Q), toc);
-        uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
-    end        
-    
-else
-    Tg = data.Tg;
-    message = sprintf('Transition system of a robot has %d states\nTeam (global) transition system has %d states', length(data.T.Q),length(Tg.Q));
-    uiwait(msgbox(message,'Robot Motion Toolbox','modal'));
+        [T_red,propositions_red,RO_red] = rmt_reduce_T(data.T,data.propositions,data.RO);
+        time_reduce=toc;
+    otherwise
+        error('\nERROR - Undefined/wrong case for Robot model to use!\n');
 end
+set(gcf,'UserData',data);%to save data
+    
+if choice1_1==2
+    tic;
+    Tg = rmt_tr_sys_obs_team(data.T,data.RO,data.propositions,probability);    %compute team (global) transition system, including probabilities of observing propositions
+    message = sprintf('Model of a robot (full transition system) - has %d states\nTeam model (global) - full transition system - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
+elseif choice1_1==1
+    tic;
+    Tg = rmt_tr_sys_team_reduced(data.T,data.RO,data.propositions,probability); %team model, reduced w.r.t. robot permutations (as a reachability graph of PN)
+    message = sprintf('Model of a robot (full transition system) has %d states\nTeam model (global) - reduced based on robot permutations (as reachability graph) - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),length(Tg.Q), toc);
+else %collapsed model
+    tic;
+    Tg = rmt_tr_sys_obs_team(T_red,RO_red,propositions_red,probability);    %compute team (global) transition system, including probabilities of observing propositions
+    message = sprintf('Model of a robot (reduced transition system) - has %d states\nReduced model constructed in %g secs\nTeam model (global) - product of reduced systems - has %d states\nTime spent for creating it: %g secs', length(data.T.Q),time_reduce,length(Tg.Q), toc);
+end
+
 data.Tg=Tg;
 set(gcf,'UserData',data);
 
-if isfield(data,'B')
-    choice2 = questdlg('Should the Buchi automaton be computed again?', ...
-        'Robot Motion Toolbox', ...
-        'Yes','No','Yes');
-    if strcmpi(choice2,'Yes')
-        choice2=1;
-    else
-        choice2=0;
-    end
-else
-    choice2 = 1;
-end
-
 % Control of regions of interest in the LTL Formula
-if ((choice2 == 1) || ~isfield(data,'B'))
-    regionFormula=strfind(data.formula, 'u');
-    if(data.Nobstacles < size(regionFormula,2))
-        uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
-        prompt = {'New LTL Formula:'};
-        dlg_title = 'Robot Motion Toolbox';
-        num_lines = 1;
-        defaultans = {''};
-        %defaultans = {'(F u1) & G !(u2 | u3)'};
-        input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
-        data.formula= char(input_user(1));   % Reading of region's numbers from input interface
-        B = rmt_create_buchi(data.formula, Tg.Obs);
-        data.B=B;
-    else
-        B = rmt_create_buchi(data.formula, Tg.Obs);
-        data.B=B;
-    end
-    
+regionFormula=strfind(data.formula, 'u');
+if(data.Nobstacles < size(regionFormula,2))
+    uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
+    prompt = {'New LTL Formula:'};
+    dlg_title = 'Robot Motion Toolbox';
+    num_lines = 1;
+    defaultans = {''};
+    %defaultans = {'(F u1) & G !(u2 | u3)'};
+    input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
+    data.formula= char(input_user(1));   % Reading of region's numbers from input interface
+    B = rmt_create_buchi(data.formula, Tg.Obs);
+    data.B=B;
 else
-    B = data.B;
+    B = rmt_create_buchi(data.formula, Tg.Obs);
+    data.B=B;
 end
+    
 set(gcf,'UserData',data);
-if ((choice1==1) || (choice2==1))
     tic;
     Pg = rmt_product_autom_prob_team(Tg,B);  %Pg has trans with log of probabilities plus epsilon (used for Dijkstra), and 2 additional costs: probability of transition and number of moving robots
     message2 = sprintf('\nBuchi automaton has %d states;\nProduct automaton has %d states;\nTime spent for creating it: %g secs', size(B.S,2), size(Pg.S,1), toc);
     message = sprintf('%s%s', message, message2);
-    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-else
-    Pg = data.Pg;
-    message2 = sprintf('\nProduct automaton has %d states', size(Pg.S,1));
-    message = sprintf('%s%s', message, message2);
-    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
-end
 data.Pg = Pg;
-set(gcf,'UserData',data);
-
-data.hwait = waitbar(0,'Computing trajectories. Please wait...','Name','Robot Motion Toolbox',...
-    'WindowStyle','modal','CloseRequestFcn','rmt(''close_hwait'')');
-set(gcf,'UserData',data);%to save data
 
 tic;
 [run_Tg,~,~,path_Tg,path_B,~] = rmt_find_accepted_run_multicost(Pg,'prob','move');  %solution in Pg and projection to Tg and B
+
+data = get(gcf,'UserData');
 delete(data.hwait);
+set(gcf,'UserData',data);%to save data
+
 if isempty(run_Tg)
     message2 = sprintf('\nNo solution foundf! The formula seems not be possible to fulfill');
     message = sprintf('%s%s', message, message2);
-    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
     return;
 else
     message2 = sprintf('\nTime for finding accepted run: %g secs', toc);
     message = sprintf('%s%s', message, message2);
-    uiwait(msgbox(message2,'Robot Motion Toolbox','modal'));
 end
 if choice1_1==2 %full model
     [~,R_paths,R_trajs,~] = rmt_robot_trajectory_team(data.T,Tg,run_Tg,path_Tg);  %each robot starts from centroid of its initial cell; R_trajs is a cell array,
