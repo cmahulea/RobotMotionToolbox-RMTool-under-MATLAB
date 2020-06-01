@@ -112,8 +112,12 @@ data.Pre_full = Pre;
 data.Post_full = Post;
 set(gcf,'UserData',data);%to save data
 
+tic;
 [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
     length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
+tiempo = toc;
+message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 
 data = get(gcf,'UserData');
 % Part about analysis with Buchi Automaton
