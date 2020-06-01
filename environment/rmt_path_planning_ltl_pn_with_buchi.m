@@ -27,8 +27,14 @@
 function rmt_path_planning_ltl_pn_with_buchi
 %Path-planning with LTL specificaion and Petri net models (mathematical programming approach)
 
-%disp('START CREATION PETRI NET WITH LTL FORMULA');
 data = get(gcf,'UserData');
+if (length(unique(data.RO)) ~= length(data.RO))
+    rmt_plot_robots;
+    uiwait(errordlg(sprintf('\nRobots should be initially located in different regions. Please change the initial position of the robots using Setup->Robots initial and final positions'),'Robot Motion Toolbox','modal'));
+    error('Robots should be initially located in different regions. Please change the initial position of the robots using Setup->Robots initial and final positions');
+end
+
+%disp('START CREATION PETRI NET WITH LTL FORMULA');
 data.formula = get(findobj(gcf,'Tag','ltlformula'),'String'); %% read LTL formula
 total_time = 0;
 if strcmp(get(data.optim.menuCplex,'Checked'),'on')

@@ -20,7 +20,7 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on September, 2014.
-%   Last modification February 14, 2018.
+%   Last modification June, 2020.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
@@ -1154,7 +1154,9 @@ switch action
             for j=1:length(data.T.Vert)   %indices of starting cell
                 if inpolygon(initial(1),initial(2),data.T.Vert{j}(1,:),data.T.Vert{j}(2,:))
                     data.RO(Selection) = j;
+                    data.T.m0(data.T.RO(Selection)) = data.T.m0(data.T.RO(Selection)) - 1;
                     data.T.RO(Selection) = j;
+                    data.T.m0(data.T.RO(Selection)) = data.T.m0(data.T.RO(Selection)) + 1;
                     break;
                 end
             end
@@ -1176,16 +1178,7 @@ switch action
             plot(data.initial{1}(1),data.initial{1}(2),'or','LineWidth',3);
             plot(data.final{1}(1),data.final{1}(2),'xk','LineWidth',3);
         else
-            cla(data.handle_env);
-            rmt_plot_environment(data.obstacles,data.frame_limits,data.T.Vert);
-            rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props
-            for r=1:length(data.RO)
-                plot(data.initial{r}(1),data.initial{r}(2),'Color',data.rob_plot.line_color{r},...
-                    'LineStyle',data.rob_plot.line{r},...
-                    'LineWidth',data.rob_plot.line_width{r},...
-                    'Marker',data.rob_plot.marker{r},...
-                    'MarkerFaceColor',data.rob_plot.face_color{r});
-            end
+            rmt_plot_robots;
         end
         
     case 'add_robot'
