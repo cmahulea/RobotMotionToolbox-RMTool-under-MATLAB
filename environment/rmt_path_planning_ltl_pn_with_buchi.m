@@ -67,20 +67,8 @@ ntrans_orig = size(Pre,2);
 
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
-%observ_set = data.Tr.OBS_set(1:size(data.Tr.OBS_set,1)-1,:); %Remove free space from initial Obs set
-observ_set = data.T.OBS_set(1:size(data.T.OBS_set,1)-1,:); %Remove free space from initial Obs set
-temp_cell=mat2cell( observ_set , ones(1,size(observ_set,1)) , size(observ_set,2) );  %duplicate observables of transition systems
-temp_obs=rmt_cartesian_product(temp_cell{:});  %possible observables, on rows (more robots can have the same observables, that's why we use carth product); observables will be labeled with indices of rows (in T.obs)
-temp_obs=unique(sort(temp_obs,2),'rows');   %sort rows and remove identical ones (they would have the same observable)
-for i=1:size(temp_obs,1)  %modify observables (keep at most one occurence of same prop on each row, and pad with zeros until length
-    obs=unique(temp_obs(i,:));    %keep unique elements on each row, and pad wih zeros
-    if length(obs)<size(temp_obs,2) %pad with zeros until number of propositions
-        obs((end+1):size(temp_obs,2))=0;
-    end
-    temp_obs(i,:)=obs;
-end
-temp_obs=unique(sort(temp_obs,2),'rows');   %again remove identical rows (there may appear new repetitions, due to keeping only unique elements on each row and padding with zeros)
-temp_obs(end+1,:)=[length(data.Tr.props)+1 , zeros(1,size(temp_obs,2)-1)]; %dummy has index "ind_dummy", and pad with zeros after it
+N_p = data.Nobstacles;%number of regions of interest
+temp_obs = rmt_observation_set_new(data.T.OBS_set,N_p,N_r);
 
 % Creating the automaton Buchi to be included in the global Petri Net
 % Control on the number of region of interest
@@ -107,6 +95,13 @@ time_c = time_c + tiempo;
 data.B=B;
 set(gcf,'UserData',data);
 
+if (data.optim.paramWith.interM > 2 * length(data.B.S))
+    choiceMenu = questdlg(sprintf('The number of intermedate markings is greater than twice the number of states in Buchi automaton (%d states). Do you want to limit the number of intermediate markings to %d (for prefix and suffix)?',...
+        length(data.B.S),2*length(data.B.S)),'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','No','Yes');
+    if strcmpi(choiceMenu,'Yes')
+        data.optim.paramWith.interM = 2 * length(data.B.S);
+    end
+end
 tic;
 [Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
 tiempo = toc;
