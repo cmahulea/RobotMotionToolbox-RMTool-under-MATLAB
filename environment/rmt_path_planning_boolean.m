@@ -26,6 +26,7 @@
 
 function rmt_path_planning_boolean
 %Path-planning with boolean specificaion and Petri net models (mathematical programming approach)
+%%approach without collision avoidance (it is only soft constraint) TAC 2018
 
 data = get(gcf,'UserData');
 %Takes the string containing the Boolean formula inserted
@@ -121,7 +122,8 @@ else
     Atot = [Aeq; A];
     btot= [beq; b];
     ctype = [ctype2 ctype1];
-    [xmin,f,~] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
+%    [xmin,f,~] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
+    [xmin, fmin, status, extra] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
     bb = xmin(end);
 end
 time = toc;

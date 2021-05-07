@@ -26,6 +26,7 @@
 
 function rmt_path_planning_boolean_new
 %Path-planning with boolean specificaion and Petri net models (mathematical programming approach)
+%Collisions will be considered as hard constraints
 
 data = get(gcf,'UserData');
 %Takes the string containing the Boolean formula inserted

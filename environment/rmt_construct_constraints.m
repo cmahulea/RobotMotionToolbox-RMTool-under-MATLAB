@@ -47,7 +47,7 @@ for i = 2 : k
     A = [A ; zeros(nplaces, (i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) zeros(nplaces,nplaces) Pre];
     b = [b ; zeros(nplaces,1)];
 end
-N = sum(m0); % number of robots
+N = 2*sum(m0); % big number, for example double of the number of robots
 
 
 %define the boolean variables for the trajectories
