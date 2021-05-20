@@ -52,6 +52,7 @@ while (sum(vector)>0)
     C = Post - Pre;
     sigma = zeros(size(Pre,2),1);
     sigma(tfire(1)) = 1;
+    old_places = rmt_marking2places(m0);
     mnew = m0 + (Post-Pre)*sigma;
     vector = vector - sigma;
     m0 = mnew;
@@ -60,14 +61,17 @@ while (sum(vector)>0)
     
     % places = find(m0>0);
     places = rmt_marking2places(m0);
-    Run_cells = [Run_cells , places];
-    for i = 1 : length(places)-1
-        for j = 1 : length(m0(places(i)))
-            ret = sprintf('%s %d, ',ret,places(i));
+    changed_from = setdiff(old_places,places);
+    changed_to = setdiff(places,old_places);
+    Run_cells = [Run_cells , Run_cells(:,size(Run_cells,2))];
+    for i = 1 : size(Run_cells,1)
+        if (Run_cells(i,size(Run_cells,2)) == changed_from)
+            Run_cells(i,size(Run_cells,2)) = changed_to;
+            break;
         end
     end
-    for j = 1 : length(m0(places(length(places))))-1
-        ret = sprintf('%s %d, ',ret,places(length(places)));
+    for i = 1 : size(Run_cells,1)-1
+        ret = sprintf('%s %d, ',ret,Run_cells(i,size(Run_cells,2)));
     end
-    ret = sprintf('%s %d ',ret,places(length(places)));
+    ret = sprintf('%s %d ',ret,Run_cells(size(Run_cells,1),size(Run_cells,2)));
 end

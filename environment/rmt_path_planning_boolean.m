@@ -228,8 +228,8 @@ if (reduced == 1)
             for j = 1 : size(Aeq,2)
                 vartype3 = sprintf('%sC',vartype3); %put the sigma as integer
             end
-            [X,~,~] = glpk(ones(1,size(Pre_new,2)+size(Pre_new,1)),Aeq,beq,zeros(1,size(Pre_new,1)+size(Pre_new,2)),[],ctype3,vartype3,1);
-            if f==0
+            [X,~,f] = glpk(ones(1,size(Pre_new,2)+size(Pre_new,1)),Aeq,beq,zeros(1,size(Pre_new,1)+size(Pre_new,2)),[],ctype3,vartype3,1);
+            if (f~=5) %glpk staus=5 is optimal solution found
                 uiwait(errordlg('Error solving LPP to project the solution!','Robot Motion Toolbox','modal'));
                 return;
             end
