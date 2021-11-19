@@ -65,6 +65,9 @@ time_c = time_c + tiempo;
 nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
+%clean OBS_set
+data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
+
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 N_p = data.Nobstacles;%number of regions of interest
