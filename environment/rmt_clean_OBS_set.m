@@ -49,9 +49,13 @@ reg_formula = unique(cellfun(@str2num, numbers));
 
 all_reg = 1:Nobstacles; 
 useless_reg = find(ismember(all_reg, reg_formula) == 0); % save the regions which are not used in LTL formula
+
 aux_OBS_set = [];
 k = 1;
+
 for i = 1:size(OBS_set,1)
+    % add in a new matrix, all the observations which contains only the
+    % regions used in the LTL formula
     if(isempty(find(ismember(useless_reg,OBS_set(i,:)),1)))
         aux_OBS_set = [aux_OBS_set; OBS_set(i,:)];
         k = k + 1;
