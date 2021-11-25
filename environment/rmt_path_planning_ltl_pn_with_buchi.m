@@ -218,7 +218,7 @@ for i = 1 : 2*data.optim.paramWith.interM
         end
         %take the new marking of the robot model
         marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
-        temp = find(marking_new);%marking of places modeling the team
+        temp = find(marking_new > eps);%marking of places modeling the team; condition > eps necessary for gplk solution
         pos_regions={};
         marking_temp = zeros(1,length(temp));
         for j = 1 : length(temp)
