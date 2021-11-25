@@ -110,6 +110,7 @@ end
 B.trans = rmt_reduce_obs_Buchi(temp_obs, B.trans);
 data.B = B;
 
+% use new function to reduce transitions in Quontient Buchi PN
 tic;
 [Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
 tiempo = toc;
