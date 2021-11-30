@@ -161,6 +161,8 @@ switch solver
         [xmin,f,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
     case 'glpk'
         [xmin,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+    case 'intlinprog'
+        [xmin,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
 end
 time = toc;
 if isempty(f)%no solution
@@ -206,7 +208,7 @@ for i = 1 : 2*data.optim.paramWith.interM
         output_place = find(Post(:,trans_buchi+ntrans_orig));
         output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
         message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
-            input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)])));
+            input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9)));
         message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
             mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
         
@@ -218,7 +220,7 @@ for i = 1 : 2*data.optim.paramWith.interM
         end
         %take the new marking of the robot model
         marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
-        temp = find(marking_new > eps);%marking of places modeling the team; condition > eps necessary for gplk solution
+        temp = find(marking_new > eps*1e9);%marking of places modeling the team; condition > eps necessary for gplk solution
         pos_regions={};
         marking_temp = zeros(1,length(temp));
         for j = 1 : length(temp)
@@ -404,6 +406,9 @@ switch solver
         [X,f,~] = cplexlp(cost,A,b,Aeq,beq,zeros(1,size(Aeq,2)),[]);
     case 'glpk'
         [X,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+    case 'intlinprog'
+        [X,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+        
 end
 
 message = sprintf('%s\nTotal number of variables in the LP problem (project the solution): %d',...
