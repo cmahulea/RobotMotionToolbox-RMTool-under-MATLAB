@@ -24,11 +24,17 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [Pre,Post,m0,final_states] = rmt_construct_PN_ltl_v2(Pre,Post,m0,props,B,OBS_set)
+function [Pre,Post,m0,final_states] = rmt_construct_PN_ltl_v2(Pre,Post,m0,props,B,OBS_set,not_obs)
 % In this function the Petri net is created starting from the Buchi automaton.
-% In particular, a new place (new line) is added to the existing PRE and POST matrices, for each state presents in the the Buchi automaton.
-% The same conceptis valid to add a new transitions (new columns) in the PRE and POST matrices, for each transition presents in the Buchi automaton .
+% In particular, a new place (new line) is added to the existing PRE and POST matrices, for each state present in the the Buchi automaton.
+% The same concept is valid to add a new transitions (new columns) in the PRE and POST matrices, for each transition presents in the Buchi automaton .
 % Finally, the arcs are created between the posts and the transitions, obtaining the complete Petri net.
+%
+% OBS_set - set of active observations for the entire team
+% not_obs - set for inactive observations for the entire team
+%
+% e.g., for observation y1 & y2 & y3: Obs(i,:) = [1 2 0]; and
+%        NotObs(i,:) = [0 0 1]
 
 nplaces = size(Pre,1);
 N_r = sum(m0); %number of robots
@@ -70,27 +76,34 @@ for i = 1 : size(B.trans,1)
             Post = [Post zeros(size(Post,1),1)];
             Pre(nplaces+2*length(props)+i,size(Pre,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
             Post(nplaces+2*length(props)+j,size(Post,2)) = 1; %add an arc from the new transition to state j of the Buchi automaton
-        else 
-            for k = 1 : length(temp) %add a transition for each disjunctive term
+        else
+            for k = 1 : size(temp,1) %add a transition for each disjunctive term
                 Pre = [Pre zeros(size(Pre,1),1)];
                 Post = [Post zeros(size(Post,1),1)];
                 Pre(nplaces+2*length(props)+i,size(Pre,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
                 Post(nplaces+2*length(props)+j,size(Post,2)) = 1; %add an arc from the new transition to state j of the Buchi automaton
-                observ = OBS_set(temp(k),:);
+                observ = OBS_set(temp(k,1),:);
                 % with the follow control we discard from the analysis the free space,
                 % infact, the columns of OBS_set only concerning the regions of interest
-                not_observed = 1 : length(props);
-
-                for l = 1 : length(observ)
-                    if ((observ(l) ~= 0) && (observ(l)<=length(props)) )
-                        Pre(nplaces + observ(l),size(Pre,2)) = 1; %add a double arc from observation place to the new transition
-                        Post(nplaces + observ(l),size(Post,2)) = 1;
-                        not_observed = setdiff(not_observed,observ(l));
+                not_observed = not_obs(temp(k,2),:);
+                if ~isempty(setdiff(observ,OBS_set(end,:)))
+                    for l = 1 : length(observ)
+                        if ((observ(l) ~= 0) && (observ(l)<=length(props)) )
+                            Pre(nplaces + observ(l),size(Pre,2)) = 1; %add a double arc from observation place to the new transition
+                            Post(nplaces + observ(l),size(Post,2)) = 1;
+                            %                         not_observed = setdiff(not_observed,observ(l));
+                        end
                     end
-                end
-                for l = 1 : length(not_observed)
-                    Pre(nplaces + length(props) + not_observed(l),size(Pre,2)) = N_r; %add a double arc from observation place to the new transition
-                    Post(nplaces + length(props) + not_observed(l),size(Post,2)) = N_r;
+                    for l = 1 : length(find(not_observed))
+                        aux = find(not_observed);
+                        Pre(nplaces + length(props) + aux(l),size(Pre,2)) = N_r; %add a double arc from observation place to the new transition
+                        Post(nplaces + length(props) + aux(l),size(Post,2)) = N_r;
+                    end
+                else % in case of free space (last line from OBS_set and not_obs, add double arc from all negated observations !yi to the new transition
+                    for l = 1 : size(not_observed,2)
+                        Pre(nplaces + length(props) + l,size(Pre,2)) = N_r; %add a double arc from observation place to the new transition
+                        Post(nplaces + length(props) + l,size(Post,2)) = N_r;
+                    end
                 end
             end
         end

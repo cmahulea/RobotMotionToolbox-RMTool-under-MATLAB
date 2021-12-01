@@ -71,7 +71,7 @@ data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 N_p = data.Nobstacles;%number of regions of interest
-temp_obs = rmt_observation_set_new(data.T.OBS_set,N_p,N_r);
+[temp_obs,temp_not_obs] = rmt_observation_set_new_v2(data.T.OBS_set,N_p,N_r); % add a matrix for the set of negated observations
 
 % Creating the automaton Buchi to be included in the global Petri Net
 % Control on the number of region of interest
@@ -112,7 +112,7 @@ data.B = B;
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
-[Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
+[Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs,temp_not_obs);%final places - places corresponding to the final states in the Buchi automaton
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
     message,size(Pre,1),size(Pre,2),tiempo);
@@ -202,7 +202,7 @@ possible_regions{1} = pos_regions;
 number_of_robots{1} = marking_temp;
 for i = 1 : 2*data.optim.paramWith.interM
     if (i/2 == round(i/2))
-        trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))]);
+        trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
         input_place = find(Pre(:,trans_buchi+ntrans_orig)) ;
         input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
         output_place = find(Post(:,trans_buchi+ntrans_orig));
