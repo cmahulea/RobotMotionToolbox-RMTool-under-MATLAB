@@ -72,6 +72,7 @@ data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 N_p = data.Nobstacles;%number of regions of interest
 [temp_obs,temp_not_obs] = rmt_observation_set_new_v2(data.T.OBS_set,N_p,N_r); % add a matrix for the set of negated observations
+% [temp_obs] = rmt_observation_set_new(data.T.OBS_set,N_p,N_r); % add a matrix for the set of negated observations
 
 % Creating the automaton Buchi to be included in the global Petri Net
 % Control on the number of region of interest
@@ -107,12 +108,14 @@ if (data.optim.paramWith.interM > 2 * length(data.B.S))
 end
 
 % reduce the number of observations from state i to state j in Buchi
-B.trans = rmt_reduce_obs_Buchi(temp_obs, B.trans);
+B.trans = rmt_reduce_obs_Buchi_v2(temp_obs, temp_not_obs, B.trans);
 data.B = B;
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
 [Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs,temp_not_obs);%final places - places corresponding to the final states in the Buchi automaton
+% [Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
+
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
     message,size(Pre,1),size(Pre,2),tiempo);
@@ -170,6 +173,7 @@ if isempty(f)%no solution
         'Robot Motion Toolbox','modal'));
     return;
 end
+message = sprintf('%s\nFunction value for first MILP: %g \n', message, f);
 message = sprintf('%s\nTime of solving the MILP (trajectory on quotient PN): %g secs\n', message, time);
 total_time = total_time + time;
 message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi: %g secs\n',message_c,time);
@@ -410,7 +414,7 @@ switch solver
         [X,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
         
 end
-
+message = sprintf('%s\nFunction value second MILP: %g \n', message, f);
 message = sprintf('%s\nTotal number of variables in the LP problem (project the solution): %d',...
     message,size(Aeq,2));
 message = sprintf('%s\nThe LP has %d equality contraints and %d inequality constraints (project the solution).',...
