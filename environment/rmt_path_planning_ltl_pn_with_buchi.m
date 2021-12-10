@@ -66,7 +66,7 @@ nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
 %clean OBS_set based on the regions of interest included in LTL formula
-data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
+% data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
 
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
@@ -108,13 +108,14 @@ if (data.optim.paramWith.interM > 2 * length(data.B.S))
 end
 
 % reduce the number of observations from state i to state j in Buchi
-B.trans = rmt_reduce_obs_Buchi_v2(temp_obs, temp_not_obs, B.trans);
-data.B = B;
+% B.trans = rmt_reduce_obs_Buchi_v2(temp_obs, temp_not_obs, B.trans);
+% data.B = B;
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
-[Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs,temp_not_obs);%final places - places corresponding to the final states in the Buchi automaton
+% [Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v2(Pre,Post,m0,data.Tr.props, data.B,temp_obs,temp_not_obs);%final places - places corresponding to the final states in the Buchi automaton
 % [Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
+[Pre,Post,m0,final_places] = rmt_construct_PN_ltl_v3(Pre,Post,m0,data.Tr.props, data.B);%final places - places corresponding to the final states in the Buchi automaton
 
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...

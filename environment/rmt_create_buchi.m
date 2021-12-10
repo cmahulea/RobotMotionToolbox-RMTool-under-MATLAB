@@ -186,6 +186,7 @@ for i=1:states_no
         if strcmp(row{j},'skip')    %self-loop for all inputs
             B.trans{i,i}=1:size(Obs,1);   %for all observables there is loop s_i -> s_i
             B.trans{i,i}=B.trans{i,i}(:);   %force column vector (or "B.trans{i,i}=reshape(B.trans{i,i},[],1)")
+            B.new_trans{i,next_state} = Inf;
             continue; %end current tests for this row, continue with next row or next state
         end
         
@@ -205,10 +206,10 @@ for i=1:states_no
             
             %ONLY {& (and), ! (not), 1 (any=True)} can appear on each row with respect to propositions (|| (OR) operator results in 2 rows)
             %if 1 appears, it is the first element and there is no atomic proposition on current row
-            if prop(1)==1
+            if str2num(prop(1))==1
                 B.trans{i,next_state}=1:size(Obs,1);   %for all observables there is transition s_i -> s_{next_state}
                 B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
-                B.new_trans(i,next_state) = Inf;
+                B.new_trans{i,next_state} = Inf;
                 continue
             end
 
