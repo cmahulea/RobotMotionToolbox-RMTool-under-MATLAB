@@ -133,7 +133,7 @@ time_paths = 0;
 for p_B=1:length(paths_B)
     message = sprintf('%s\nTrying to follow path %d in Buchi',message,p_B);
     path_B = paths_B{p_B};  %chosen path in Buchi
-    message2 = sprintf('\n\ PATH_%d in Buchi is: %s\n',p_B,num2str(path_B));
+    message2 = sprintf('\n\n PATH_%d in Buchi is: %s\n',p_B,num2str(path_B));
     
     %initialization
     feasible_path_B=1;  %assume current path in Buchi is feasible
