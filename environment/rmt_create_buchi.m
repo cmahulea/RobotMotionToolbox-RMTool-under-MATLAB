@@ -209,7 +209,7 @@ for i=1:states_no
             if str2num(prop(1))==1
                 B.trans{i,next_state}=1:size(Obs,1);   %for all observables there is transition s_i -> s_{next_state}
                 B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
-                B.new_trans{i,next_state} = Inf;
+                B.new_trans{i,next_state} = Inf; % add True for self loop in the final state
                 continue
             end
 
@@ -242,7 +242,9 @@ for i=1:states_no
                                                          %(equivalent with OR operator between propositions)
             B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
             
-            temp = B.new_trans{i,next_state};
+            temp = B.new_trans{i,next_state}; % each line from B.new_trans is a DNF
+            % the negated observation !y_i are expressed as negative
+            % observations -y_i
             if (size(temp,2) < length(new_labels))
                 temp = [temp zeros(size(temp,1), length(new_labels) - size(temp,2))];
             else
@@ -250,6 +252,8 @@ for i=1:states_no
             end
             temp = [temp ; new_labels];
             B.new_trans{i,next_state}=temp;
+            % e.g.,for formula !y1 | (!y2 & !y3), B.new_trans = [-1 0; -2
+            % -3]
         end
     end
 end
