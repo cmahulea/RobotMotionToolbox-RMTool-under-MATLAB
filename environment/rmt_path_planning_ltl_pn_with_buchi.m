@@ -108,7 +108,7 @@ end
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
-[Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B);%final places - places corresponding to the final states in the Buchi automaton
+[Pre,Post,PreV, PostV, idxV, m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B);%final places - places corresponding to the final states in the Buchi automaton
 
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
@@ -473,6 +473,9 @@ duplicate_ind = setdiff(1:length(Synch), ind);
 % duplicate values
 Synch = unique(Synch(duplicate_ind));
 disp(Synch);
+
+rob_color={'g','c','m','k','y','r','b'};
+data.rob_plot.line_color = rob_color;
 
 for r=1:length(rob_traj)    %plot trajectories of robots
     for tt = 1 : length(Synch)

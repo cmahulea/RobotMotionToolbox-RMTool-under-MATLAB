@@ -44,7 +44,7 @@ for i=1:length(C)
     %write cell numbers to cells that are not atomic propositions
     if ~isempty(intersect(dummy_cells,i))
         centr=mean(C{i},2)';
-        text_cells_h(i) = text(centr(1),centr(2),sprintf('c_{%d}',i),'HorizontalAlignment','center','Color','k','Visible',visible);%,'FontSize',14);
+        text_cells_h(i) = text(centr(1),centr(2),sprintf('p_{%d}',i),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',14);
     end
 end
 
@@ -57,7 +57,7 @@ for i=1:length(propositions)
         cell_ind=propositions{i}(j);    %index of current cell
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
         centr=mean(C{cell_ind},2)';
-        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('c_{%d}',cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible);%,'FontSize',14);
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('p_{%d}',cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',14);
     end
 end
 
@@ -65,9 +65,9 @@ message = sprintf('REGIONS OF INTEREST:');
 for i = 1 : length(propositions)
     temp = sprintf('- Output y_{%d} (%s) is for O_{%d} = \\{',i,data.reg_plot.color_full{i},i);
     for j = 1 : length(propositions{i})-1
-        temp = sprintf('%sc_{%d}, ',temp,propositions{i}(j));
+        temp = sprintf('%sp_{%d}, ',temp,propositions{i}(j));
     end
-    temp = sprintf('%sc_{%d}\\}',temp,propositions{i}(length(propositions{i})));       
+    temp = sprintf('%sp_{%d}\\}',temp,propositions{i}(length(propositions{i})));       
     message = sprintf('%s\n%s',message,temp);
 end
 
