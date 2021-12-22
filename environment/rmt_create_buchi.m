@@ -186,7 +186,7 @@ for i=1:states_no
         if strcmp(row{j},'skip')    %self-loop for all inputs
             B.trans{i,i}=1:size(Obs,1);   %for all observables there is loop s_i -> s_i
             B.trans{i,i}=B.trans{i,i}(:);   %force column vector (or "B.trans{i,i}=reshape(B.trans{i,i},[],1)")
-            B.new_trans{i,next_state} = Inf;
+            B.new_trans{i,i} = Inf;
             continue; %end current tests for this row, continue with next row or next state
         end
         
