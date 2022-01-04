@@ -50,7 +50,7 @@ number_of_robots{1} = marking_temp;
 for i = 1 : data.optim.paramWith.interM
     if (i/2 == round(i/2))
         trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
-        input_place = find(Pre(:,trans_buchi+ntrans_orig)) ;
+        input_place = find(Pre(:,trans_buchi+ntrans_orig));
         input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
         output_place = find(Post(:,trans_buchi+ntrans_orig));
         output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
@@ -59,7 +59,7 @@ for i = 1 : data.optim.paramWith.interM
         message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
             mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
         
-        active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)]);
+        active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9);
         if isempty(active_observations{length(active_observations)})
             message = sprintf('%s\n\t No active observations at step %d',message,i/2);
         else

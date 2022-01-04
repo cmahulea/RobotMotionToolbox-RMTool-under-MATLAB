@@ -99,6 +99,29 @@ time_c = time_c + tiempo;
 data.B=B;
 set(gcf,'UserData',data);
 
+% eliminate the final state in Buchi if they are the same with the initial
+% state and the self-loop is not on True
+% sisf = intersect(B.S0,B.F);
+% idx_sisf = find(B.F == sisf);
+% if ~isempty(sisf) & B.new_trans{idx_sisf,idx_sisf} ~= Inf
+%     B.F(idx_sisf) = [];
+%     % add message on GUI
+%     helpdlg('The final state in Buchi automaton which correpsonds to the initial state is deleted if the self-loop is not on True','Information');
+%     uiwait(gcf,2);
+% end
+
+% check if the self-loop of the initial state (when is equal with on final
+% state) includes the initial active observations of the robots. It is
+% assumed that the robots are initially placed in the free space
+% (translated to last combination in the temp_obs variable)
+sisf = intersect(B.S0,B.F);
+idx_sisf = find(B.F == sisf);
+if ~isempty(sisf) && ~isempty(intersect(size(temp_obs,1),B.trans{idx_sisf,idx_sisf}))
+   flag_sisf = 1; 
+else
+    flag_sisf = 0; % in this case, the computation of the prefix will not include the virtual transitions in the first step on firing Buchi transitions
+end
+
 if (data.optim.paramWith.interM > 2 * length(data.B.S))
     choiceMenu = questdlg(sprintf('The number of intermedate markings is greater than twice the number of states in Buchi automaton (%d states). Do you want to limit the number of intermediate markings to %d (for prefix and suffix)?',...
         length(data.B.S),2*length(data.B.S)),'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','No','Yes');
@@ -109,7 +132,7 @@ end
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
-[Pre,Post,PreV, PostV, idxV, m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B);%final places - places corresponding to the final states in the Buchi automaton
+[Pre,Post,PreV, PostV, idxV, m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, B);%final places - places corresponding to the final states in the Buchi automaton
 
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
@@ -123,15 +146,24 @@ set(gcf,'UserData',data);%to save data
 vect_fmin = []; % this vector stores all the cost function values for all final states
 cell_X = {}; % store solution X for all final states
 
-for idx_fs = 1:length(final_places)
+choiceMenu = questdlg(sprintf('Do you want to find a better solution by inspecting all final states of Buchi automaton? (The optimal solution is not guranteed)') ...
+    ,'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','No','Yes');
+if strcmpi(choiceMenu,'Yes')
+    flag_opt = 1;
+else
+    flag_opt = 0; %limit number of final places to one - the script will solve the path planing based on the first final state in Buchi
+end
 
+idx_fs = 1;
+while idx_fs <= length(final_places)
+% old call of the function
 % [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
 %     length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
 
 % compute prefix for final state idx_fs
 tic;
 [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(PreV,PostV,m0, ntrans_orig, ...
-     data.optim.paramWith.interM, final_places(idx_fs));
+     data.optim.paramWith.interM, final_places(idx_fs), idxV, flag_sisf);
 tiempo = toc;
 
 message = sprintf('%s\n*****************************************************************',message);
@@ -198,16 +230,37 @@ message = sprintf('%s\n=======================================================\n
 % After the optimization problem was solved, an
 % initial solution was obtained on the reduced system
 
+% TO DO!!!! *clean xmin_pref if it used PreV and PostV
+
 % check the active observations after prefix 
+        % ?? - use here Pre and Post instead of PreV and PostV
 [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+% [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+
+% modify the last active observations to combinations from temp_obs
+% act_temp = [];
+idx_act_temp = [];
+for idx_tempobs = 1:size(temp_obs,1)
+    if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
+            length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
+%         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
+        idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
+    end
+end
 
 % check if the last active observations are a subset of observations in the
 % self-loop of the final state
 flag_act_obs = 0; 
 temp_fs = B.F(idx_fs);
+% for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
+%     if length(find(intersect(active_observations{end},B.new_trans{temp_fs,temp_fs}(idx_obs,:)) == active_observations{end})) == length(active_observations{end}) | ...
+%             B.new_trans{temp_fs,temp_fs} == Inf
+%         flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+%     end
+% end
+
 for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
-    if length(find(intersect(active_observations{end},B.new_trans{temp_fs,temp_fs}(idx_obs,:)) == active_observations{end})) == length(active_observations{end}) | ...
-            B.new_trans{temp_fs,temp_fs} == Inf
+    if B.new_trans{temp_fs,temp_fs} == Inf | intersect(idx_act_temp, B.trans{temp_fs,temp_fs})
         flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
     end
 end
@@ -234,8 +287,8 @@ m0_fs(end - length(B.S) + 1) = 0;
 % if flag_act_obs == 0, solve MILP 1.2 for suffix
 
 if flag_act_obs == 0 
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_suffix(PreV,PostV,m0_fs, ntrans_orig,...
-     data.optim.paramWith.interM, final_places(idx_fs));
+[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_suffix(PreV,PostV,m0_fs, ntrans_orig, ...
+     data.optim.paramWith.interM, final_places(idx_fs),idxV);
 
 data = get(gcf,'UserData');
 % Part about analysis with Buchi Automaton
@@ -317,16 +370,16 @@ message = sprintf('%s\n=======================================================\n
 
 % second MILP - project the solution
 
-[Pre,Post] = rmt_construct_PN(data.T.adj);
+[PreP,PostP] = rmt_construct_PN(data.T.adj);
 m0_ps = data.T.m0;
-nplaces = size(Post,1);
-ntrans = size(Post,2);
+nplaces = size(PostP,1);
+ntrans = size(PostP,2);
 steps = 1;
 message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0_ps>eps*10^5)),mat2str(m0_ps(m0_ps>eps*10^5)));
 
 tic;
 
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_project_sol(Pre,Post,m0_ps, number_of_robots,...
+[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_project_sol(PreP,PostP,m0_ps, number_of_robots,...
     possible_regions, nplaces, ntrans, data);
 
 time = toc;
@@ -341,10 +394,10 @@ for i = 1 : size(A,1)
 end
 vartype = '';
 for i = 1 : size(Aeq,2)/(nplaces+ntrans)
-    for j = 1 : size(Pre,1)
+    for j = 1 : size(PreP,1)
         vartype = sprintf('%sC',vartype); %put the markings as real
     end
-    for j = 1 : size(Pre,2)
+    for j = 1 : size(PreP,2)
         vartype = sprintf('%sI',vartype); %put the sigma as integer
     end
 end
@@ -385,6 +438,13 @@ end
 % save all 
 vect_fmin = [vect_fmin f];
 cell_X{idx_fs} = X;
+
+if flag_opt == 0 && (~isempty(f) || ~isempty(f_suff))
+    break;
+end
+
+idx_fs = idx_fs + 1;
+
 end
 
 % memorize final state with the minimum cost function value
@@ -394,7 +454,7 @@ message = sprintf('%s\n\n______________________________________________________\
 message = sprintf('%s\n\nTotal time for MILPs: %g\n', message,total_time_MILP);
 
 Run_cells = data.RO';
-[message,Run_cells] = rmt_path_planning_ltl_with_buchi_trajectories(cell_X{idx_fmin},Pre,Post,Run_cells,Run_cells,message);
+[message,Run_cells] = rmt_path_planning_ltl_with_buchi_trajectories(cell_X{idx_fmin},PreP,PostP,Run_cells,Run_cells,message);
 
 %%Execution monitoring strategy starts from here:
 rob_traj = rmt_rob_cont_traj_new(data.T,Run_cells,data.initial);    %continuous trajectory of each robot
@@ -442,7 +502,7 @@ duplicate_ind = setdiff(1:length(Synch), ind);
 Synch = unique(Synch(duplicate_ind));
 disp(Synch);
 
-rob_color={'g','c','m','k','y','r','b'};
+rob_color={'g','c','m','k','y','r','b','g','c','m','k','y','r','b','g','c'};
 data.rob_plot.line_color = rob_color;
 
 for r=1:length(rob_traj)    %plot trajectories of robots

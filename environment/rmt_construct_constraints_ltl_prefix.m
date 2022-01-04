@@ -24,9 +24,12 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(Pre,Post,m0, ntrans_orig, k, final)
+function [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(Pre,Post,m0, ntrans_orig, k, final, idxV, flag_sisf)
 trans_model = [zeros(1,length(m0)) ones(1,ntrans_orig) zeros(1,size(Pre,2)-ntrans_orig)];
-trans_Buchi = [zeros(1,length(m0)) zeros(1,ntrans_orig) ones(1,size(Pre,2)-ntrans_orig)];
+idxV_Buchi = idxV - ntrans_orig;
+trans_for_Buchi = ones(1,size(Pre,2)-ntrans_orig);
+trans_Buchi = [zeros(1,length(m0)) zeros(1,ntrans_orig) trans_for_Buchi];
+
 marking_final = sparse(zeros(1,length(m0)));
 marking_final(final)=1;
 
@@ -53,8 +56,17 @@ for i = 2 : k
     if (i/2 == round(i/2)) %fire only transitions of the Buchi automaton
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model
         beq = [beq;0];
-        Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi]; %fire one transition of Buchi
-        beq = [beq;1];
+         if i == 2 && flag_sisf == 0% j) force one transition in buchi from final state., but not the virtual one
+            trans_for_Buchi(idxV_Buchi) = 0;
+            trans_BuchiB = [zeros(1,length(m0)) zeros(1,ntrans_orig) trans_for_Buchi];
+            Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_BuchiB]; %fire one transition of Buchi
+            beq = [beq;1];
+         elseif flag_sisf == 1
+            Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi]; %fire one transition of Buchi
+            beq = [beq;1];
+        end
+        
+
     % f)     
     else %fire only transitions of the robot model
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi];
@@ -94,8 +106,9 @@ beq = [beq;-1];
 %fprintf(1,'\nIntermediate states %d',interm);
 %%%%%%%%%%% cost function
 cost = [];
+trans_QB = [ones(1,ntrans_orig) trans_for_Buchi]; % the cost function will consider only the real transitions
 for i = 1 : k
-    cost = [cost zeros(1,nplaces) ones(1,ntrans)];
+    cost = [cost zeros(1,nplaces) i*trans_QB];
 end
 
 
