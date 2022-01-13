@@ -91,11 +91,13 @@ b = [b;zeros(nplaces,1)];
 Aeq = [Aeq; zeros(nplaces,(N_r-1)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)];
 beq = [beq; zeros(nplaces,1)];
 %change the regions to the next sets
+if length(possible_regions) > 1
 for j = 1 : length(possible_regions{2})
     temp = zeros(1,nplaces);
     temp(possible_regions{2}{j})=1;
     Aeq = [Aeq; zeros(1,(N_r)*(nplaces+ntrans)) temp zeros(1,ntrans)];
     beq = [beq; number_of_robots{2}(j)];
+end
 end
 
 for i = 2 : length(possible_regions)-1

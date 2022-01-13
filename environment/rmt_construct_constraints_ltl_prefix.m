@@ -57,16 +57,15 @@ for i = 2 : k
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model
         beq = [beq;0];
          if i == 2 && flag_sisf == 0% j) force one transition in buchi from final state., but not the virtual one
+            
             trans_for_Buchi(idxV_Buchi) = 0;
             trans_BuchiB = [zeros(1,length(m0)) zeros(1,ntrans_orig) trans_for_Buchi];
+         else
+            trans_BuchiB = trans_Buchi;
+         end
             Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_BuchiB]; %fire one transition of Buchi
             beq = [beq;1];
-         elseif flag_sisf == 1
-            Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi]; %fire one transition of Buchi
-            beq = [beq;1];
-        end
         
-
     % f)     
     else %fire only transitions of the robot model
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi];

@@ -67,12 +67,12 @@ nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
 %clean OBS_set based on the regions of interest included in LTL formula
-data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
+% data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
 
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 N_p = data.Nobstacles;%number of regions of interest
-[temp_obs] = rmt_observation_set_new(data.T.OBS_set,N_p,N_r); 
+[temp_obs] = rmt_observation_set_new(data.T.OBS_set,N_p,N_r);
 
 % Creating the automaton Buchi to be included in the global Petri Net
 % Control on the number of region of interest
@@ -99,27 +99,17 @@ time_c = time_c + tiempo;
 data.B=B;
 set(gcf,'UserData',data);
 
-% eliminate the final state in Buchi if they are the same with the initial
-% state and the self-loop is not on True
-% sisf = intersect(B.S0,B.F);
-% idx_sisf = find(B.F == sisf);
-% if ~isempty(sisf) & B.new_trans{idx_sisf,idx_sisf} ~= Inf
-%     B.F(idx_sisf) = [];
-%     % add message on GUI
-%     helpdlg('The final state in Buchi automaton which correpsonds to the initial state is deleted if the self-loop is not on True','Information');
-%     uiwait(gcf,2);
-% end
-
 % check if the self-loop of the initial state (when is equal with on final
 % state) includes the initial active observations of the robots. It is
 % assumed that the robots are initially placed in the free space
 % (translated to last combination in the temp_obs variable)
+flag_sisf_actobs = 0; % in this case, the computation of the prefix will not include the virtual transitions in the first step on firing Buchi transitions
 sisf = intersect(B.S0,B.F);
-idx_sisf = find(B.F == sisf);
-if ~isempty(sisf) && ~isempty(intersect(size(temp_obs,1),B.trans{idx_sisf,idx_sisf}))
-   flag_sisf = 1; 
-else
-    flag_sisf = 0; % in this case, the computation of the prefix will not include the virtual transitions in the first step on firing Buchi transitions
+if ~isempty(sisf)
+    idx_sisf = find(B.F == sisf);
+    if ~isempty(intersect(size(temp_obs,1),B.trans{idx_sisf,idx_sisf}))
+        flag_sisf_actobs = 1; % include the virtual transition for the first step in Buchi PN
+    end
 end
 
 if (data.optim.paramWith.interM > 2 * length(data.B.S))
@@ -146,305 +136,321 @@ set(gcf,'UserData',data);%to save data
 vect_fmin = []; % this vector stores all the cost function values for all final states
 cell_X = {}; % store solution X for all final states
 
-choiceMenu = questdlg(sprintf('Do you want to find a better solution by inspecting all final states of Buchi automaton? (The optimal solution is not guranteed)') ...
-    ,'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','No','Yes');
-if strcmpi(choiceMenu,'Yes')
-    flag_opt = 1;
-else
-    flag_opt = 0; %limit number of final places to one - the script will solve the path planing based on the first final state in Buchi
-end
+idx_fs = 1; % take the first final state and search for a solution
+flag_sol = 0;
 
-idx_fs = 1;
+flag_opt = 0;
+
 while idx_fs <= length(final_places)
-% old call of the function
-% [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
-%     length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
-
-% compute prefix for final state idx_fs
-tic;
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(PreV,PostV,m0, ntrans_orig, ...
-     data.optim.paramWith.interM, final_places(idx_fs), idxV, flag_sisf);
-tiempo = toc;
-
-message = sprintf('%s\n*****************************************************************',message);
-message = sprintf('%s\n\nFinal state %g\n',message, B.F(idx_fs));
-
-message_c = sprintf('%s-----------------------------------------------------------\n',message_c);
-message_c = sprintf('%s\nFinal state: %g\n',message_c,B.F(idx_fs));
-message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
-time_c = time_c + tiempo;
-
-data = get(gcf,'UserData');
-% Part about analysis with Buchi Automaton
-%if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
-%%%%%%%%%
-ctype='';
-for i = 1 : size(Aeq,1)
-    ctype = sprintf('%sS',ctype);
-end
-for i = 1 : size(A,1)
-    ctype = sprintf('%sU',ctype);
-end
-vartype = '';
-for i = 1 : size(Aeq,2)/(size(PreV,1)+size(PreV,2))
-    for j = 1 : size(PreV,1)
-        vartype = sprintf('%sC',vartype); %put the markings as real
+    % old call of the function
+    % [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
+    %     length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
+    
+    % compute prefix for final state idx_fs
+    tic;
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(PreV,PostV,m0, ntrans_orig, ...
+        data.optim.paramWith.interM, final_places(idx_fs), idxV, flag_sisf_actobs);
+    tiempo = toc;
+    
+    message = sprintf('%s\n*****************************************************************',message);
+    message = sprintf('%s\n\nFinal state %g\n',message, B.F(idx_fs));
+    
+    message_c = sprintf('%s-----------------------------------------------------------\n',message_c);
+    message_c = sprintf('%s\nFinal state: %g\n',message_c,B.F(idx_fs));
+    message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
+    time_c = time_c + tiempo;
+    
+    data = get(gcf,'UserData');
+    % Part about analysis with Buchi Automaton
+    %if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
+    %%%%%%%%%
+    ctype='';
+    for i = 1 : size(Aeq,1)
+        ctype = sprintf('%sS',ctype);
     end
-    for j = 1 : size(PreV,2)
-        vartype = sprintf('%sI',vartype); %put the sigma as integer
+    for i = 1 : size(A,1)
+        ctype = sprintf('%sU',ctype);
     end
-end
-
-message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
-    message,size(Aeq,2),data.optim.paramWith.interM);
-message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
-    message, size(Aeq,1), size(A,1));
-
-tic;
-switch solver
-    case 'cplex'
-        [xmin_pref,f,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
-    case 'glpk'
-        [xmin_pref,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
-    case 'intlinprog'
-        [xmin_pref,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
-end
-time = toc;
-if isempty(f)%no solution
-    uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
-        'Robot Motion Toolbox','modal'));
-    return;
-end
-
-message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
-% message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, f);
-message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
-total_time = total_time + time;
-total_time_MILP = total_time_MILP + time;
-message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - prefix: %g secs\n',message_c,time);
-time_c = time_c + time;
-message = sprintf('%s\n=======================================================',message);
-message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
-message = sprintf('%s\n=======================================================\n',message);
-
-% After the optimization problem was solved, an
-% initial solution was obtained on the reduced system
-
-% TO DO!!!! *clean xmin_pref if it used PreV and PostV
-
-% check the active observations after prefix 
-        % ?? - use here Pre and Post instead of PreV and PostV
-[active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
-% [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
-
-% modify the last active observations to combinations from temp_obs
-% act_temp = [];
-idx_act_temp = [];
-for idx_tempobs = 1:size(temp_obs,1)
-    if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
-            length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
-%         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
-        idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
+    vartype = '';
+    for i = 1 : size(Aeq,2)/(size(PreV,1)+size(PreV,2))
+        for j = 1 : size(PreV,1)
+            vartype = sprintf('%sC',vartype); %put the markings as real
+        end
+        for j = 1 : size(PreV,2)
+            vartype = sprintf('%sI',vartype); %put the sigma as integer
+        end
     end
-end
-
-% check if the last active observations are a subset of observations in the
-% self-loop of the final state
-flag_act_obs = 0; 
-temp_fs = B.F(idx_fs);
-% for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
-%     if length(find(intersect(active_observations{end},B.new_trans{temp_fs,temp_fs}(idx_obs,:)) == active_observations{end})) == length(active_observations{end}) | ...
-%             B.new_trans{temp_fs,temp_fs} == Inf
-%         flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
-%     end
-% end
-
-for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
-    if B.new_trans{temp_fs,temp_fs} == Inf | intersect(idx_act_temp, B.trans{temp_fs,temp_fs})
-        flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+    
+    message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
+        message,size(Aeq,2),data.optim.paramWith.interM);
+    message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
+        message, size(Aeq,1), size(A,1));
+    
+    tic;
+    switch solver
+        case 'cplex'
+            [xmin_pref,fp,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+        case 'glpk'
+            [xmin_pref,fp,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+        case 'intlinprog'
+            [xmin_pref,fp,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
     end
-end
-
-% update initial marking for MILP 1.2
-No_obstacles = data.Nobstacles;
-
-m0_fs = m0;
-m0_fs(1:length(data.Tr.Cells)) = marking_new;
-
-idx_obs = data.Tr.obs(find(marking_new));
-temp_m0_fs = m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles);
-idx_obs_act = idx_obs(find(idx_obs <= No_obstacles));
-temp_m0_fs(idx_obs_act) = 1;
-m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles) = temp_m0_fs;
-
-temp_m0_fs = m0_fs(2*length(data.Tr.Cells):2*length(data.Tr.Cells) + No_obstacles-1);
-temp_m0_fs(idx_obs_act) = 0;
-m0_fs(2*length(data.Tr.Cells):2*length(data.Tr.Cells) + No_obstacles-1) = temp_m0_fs;
-
-m0_fs(final_places(idx_fs)) = 1;
-m0_fs(end - length(B.S) + 1) = 0;
-
-% if flag_act_obs == 0, solve MILP 1.2 for suffix
-
-if flag_act_obs == 0 
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_suffix(PreV,PostV,m0_fs, ntrans_orig, ...
-     data.optim.paramWith.interM, final_places(idx_fs),idxV);
-
-data = get(gcf,'UserData');
-% Part about analysis with Buchi Automaton
-%if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
-%%%%%%%%%
-ctype='';
-for i = 1 : size(Aeq,1)
-    ctype = sprintf('%sS',ctype);
-end
-for i = 1 : size(A,1)
-    ctype = sprintf('%sU',ctype);
-end
-vartype = '';
-for i = 1 : size(Aeq,2)/(size(PreV,1)+size(PreV,2))
-    for j = 1 : size(PreV,1)
-        vartype = sprintf('%sC',vartype); %put the markings as real
+    time = toc;
+    if isempty(fp)%no solution
+        uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
+            'Robot Motion Toolbox','modal'));
+        return;
     end
-    for j = 1 : size(PreV,2)
-        vartype = sprintf('%sI',vartype); %put the sigma as integer
+    
+    message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
+    % message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, f);
+    message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
+    total_time = total_time + time;
+    total_time_MILP = total_time_MILP + time;
+    message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - prefix: %g secs\n',message_c,time);
+    time_c = time_c + time;
+    message = sprintf('%s\n=======================================================',message);
+    message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
+    message = sprintf('%s\n=======================================================\n',message);
+    
+    % After the optimization problem was solved, an
+    % initial solution was obtained on the reduced system
+    
+    % TO DO!!!! *clean xmin_pref if it used PreV and PostV
+    
+    % check the active observations after prefix
+    % ?? - use here Pre and Post instead of PreV and PostV
+    [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+    % [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+    
+    % modify the last active observations to combinations from temp_obs
+    % act_temp = [];
+    idx_act_temp = [];
+    for idx_tempobs = 1:size(temp_obs,1)
+        if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
+                length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
+            %         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
+            idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
+        end
     end
-end
-
-message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
-    message,size(Aeq,2),data.optim.paramWith.interM);
-message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
-    message, size(Aeq,1), size(A,1));
-
-tic;
-switch solver
-    case 'cplex'
-        [xmin_suff,f_suff,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
-    case 'glpk'
-        [xmin_suff,f_suff,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
-    case 'intlinprog'
-        [xmin_suff,f_suff,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
-end
-time = toc;
-total_time_MILP = total_time_MILP + time;
-if isempty(f_suff)%no solution
-    uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
-        'Robot Motion Toolbox','modal'));
-    return;
-end 
-message = sprintf('%s\n\n---------------------- SUFFIX --------------------',message);
-% message = sprintf('%s\nFunction value for first MILP - suffix: %g \n', message, f_suff);
-message = sprintf('%s\nTime of solving the MILP - suffix (trajectory on quotient PN): %g secs\n', message, time);
-total_time = total_time + time;
-message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - suffix: %g secs\n',message_c,time);
-time_c = time_c + time;
-message = sprintf('%s\n=======================================================',message);
-message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
-message = sprintf('%s\n=======================================================\n',message);
-
-% check the active observations after suffix 
-[active_observations_suff, possible_regions_suff, number_of_robots_suff, marking_new, message] = rmt_check_active_observations(xmin_suff,PreV,PostV,m0_fs,data,nplaces_orig,ntrans_orig,message);
-
-possible_regions = [possible_regions possible_regions_suff];
-active_observations = [active_observations active_observations_suff];
-number_of_robots = [number_of_robots number_of_robots_suff];
-
-%remove eventually identical observations
-for j = length(active_observations):-1:2
-    if (isempty(setxor(active_observations{j},active_observations{j-1})) && ...
-            isempty(setxor(unique([possible_regions{j}{:}]),unique([possible_regions{j-1}{:}]))))
-        active_observations(j) = [];
-        possible_regions(j) = [];
-        number_of_robots(j) = [];
+    
+    % check if the last active observations are a subset of observations in the
+    % self-loop of the final state
+    flag_act_obs = 0;
+    temp_fs = B.F(idx_fs);
+    % for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
+    %     if length(find(intersect(active_observations{end},B.new_trans{temp_fs,temp_fs}(idx_obs,:)) == active_observations{end})) == length(active_observations{end}) | ...
+    %             B.new_trans{temp_fs,temp_fs} == Inf
+    %         flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+    %     end
+    % end
+    
+    for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
+        if B.new_trans{temp_fs,temp_fs} == Inf | ~isempty(intersect(idx_act_temp, B.trans{temp_fs,temp_fs}))
+            flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+        end
     end
-end
-
-end
-
-% print messages
-message = sprintf('%s\n\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
-
-message = sprintf('%s\n=======================================================',message);
-message = sprintf('%s\nProject the solution to the initial transition system with CPLEX',message);
-message = sprintf('%s\n=======================================================\n',message);
-
-% second MILP - project the solution
-
-[PreP,PostP] = rmt_construct_PN(data.T.adj);
-m0_ps = data.T.m0;
-nplaces = size(PostP,1);
-ntrans = size(PostP,2);
-steps = 1;
-message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0_ps>eps*10^5)),mat2str(m0_ps(m0_ps>eps*10^5)));
-
-tic;
-
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_project_sol(PreP,PostP,m0_ps, number_of_robots,...
-    possible_regions, nplaces, ntrans, data);
-
-time = toc;
-message = sprintf('%s\n\nTotal time to construct the second MILP (project the solution): %g secs', message,time);
-
-ctype='';
-for i = 1 : size(Aeq,1)
-    ctype = sprintf('%sS',ctype);
-end
-for i = 1 : size(A,1)
-    ctype = sprintf('%sU',ctype);
-end
-vartype = '';
-for i = 1 : size(Aeq,2)/(nplaces+ntrans)
-    for j = 1 : size(PreP,1)
-        vartype = sprintf('%sC',vartype); %put the markings as real
+    
+    % update initial marking for MILP 1.2
+    No_obstacles = data.Nobstacles;
+    
+    m0_fs = m0;
+    m0_fs(1:length(data.Tr.Cells)) = marking_new; %put the final marking for the Q_PN places
+    
+    %put the final active observations on 1
+    idx_obs = data.Tr.obs(find(marking_new));
+    temp_m0_fs = m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles);
+    temp_ao = [];
+    % idx_obs(idx_ao) = index from data.Tr.OBS_set with regards to the
+    % combination for one robot
+    for idx_ao = 1:length(idx_obs)
+        temp_ao = [temp_ao data.Tr.OBS_set(idx_obs(idx_ao),find(data.Tr.OBS_set(idx_obs(idx_ao),:)))];
     end
-    for j = 1 : size(PreP,2)
-        vartype = sprintf('%sI',vartype); %put the sigma as integer
-    end
-end
-
-
-tic;
-switch solver
-    case 'cplex'
-        [X,f,~] = cplexlp(cost,A,b,Aeq,beq,zeros(1,size(Aeq,2)),[]);
-    case 'glpk'
-        [X,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
-    case 'intlinprog'
-        [X,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+    real_temp_ao = temp_ao(find(temp_ao <= No_obstacles)); % the active observation need to be represented by ROI and not the free space (the free space = No_obstacles + 1)
+    temp_m0_fs(real_temp_ao) = 1;
+    m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles) = temp_m0_fs;
+    
+    %put the negated observations = number of robots
+    temp_m0_fs = m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles);
+    temp_m0_fs(real_temp_ao) = 0;
+    m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles) = temp_m0_fs;
+    
+    m0_fs(final_places(idx_fs)) = 1;
+    m0_fs(end - length(B.S) + 1) = 0;
+    
+    % if flag_act_obs == 0, solve MILP 1.2 for suffix
+    
+    if flag_act_obs == 0
+        [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_suffix(PreV,PostV,m0_fs, ntrans_orig, ...
+            data.optim.paramWith.interM, final_places(idx_fs),idxV);
         
-end
-time = toc;
-
-message = sprintf('%s\n\n --------------------\n\n',message);
-message = sprintf('%s\nFunction value second MILP: %g \n', message, f);
-message = sprintf('%s\nTotal number of variables in the LP problem (project the solution): %d',...
-    message,size(Aeq,2));
-message = sprintf('%s\nThe LP has %d equality contraints and %d inequality constraints (project the solution).',...
-    message, size(Aeq,1), size(A,1));
-
-
-total_time_MILP = total_time_MILP + time;
-message = sprintf('%s\nTotal time for solving LPP to project the solution: %g secs', message,time);
-total_time = total_time + time;
-message_c = sprintf('%sTime for projecting the solution on the full model: %g secs\n',message_c,time);
-message_c = sprintf('%sTotal time for MILPs: %g secs\n',message_c,total_time_MILP);
-time_c = time_c + time;
-
-if isempty(f)
-    uiwait(errordlg('Error solving LPP to project the solution!','Robot Motion Toolbox','modal'));
-    return;
-end
-
-% save all 
-vect_fmin = [vect_fmin f];
-cell_X{idx_fs} = X;
-
-if flag_opt == 0 && (~isempty(f) || ~isempty(f_suff))
-    break;
-end
-
-idx_fs = idx_fs + 1;
-
+        data = get(gcf,'UserData');
+        % Part about analysis with Buchi Automaton
+        %if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
+        %%%%%%%%%
+        ctype='';
+        for i = 1 : size(Aeq,1)
+            ctype = sprintf('%sS',ctype);
+        end
+        for i = 1 : size(A,1)
+            ctype = sprintf('%sU',ctype);
+        end
+        vartype = '';
+        for i = 1 : size(Aeq,2)/(size(PreV,1)+size(PreV,2))
+            for j = 1 : size(PreV,1)
+                vartype = sprintf('%sC',vartype); %put the markings as real
+            end
+            for j = 1 : size(PreV,2)
+                vartype = sprintf('%sI',vartype); %put the sigma as integer
+            end
+        end
+        
+        message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
+            message,size(Aeq,2),data.optim.paramWith.interM);
+        message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
+            message, size(Aeq,1), size(A,1));
+        
+        tic;
+        switch solver
+            case 'cplex'
+                [xmin_suff,f_suff,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+            case 'glpk'
+                [xmin_suff,f_suff,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+                % if it's no solution, f_suff == 0
+            case 'intlinprog'
+                [xmin_suff,f_suff,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+        end
+        time = toc;
+        total_time_MILP = total_time_MILP + time;
+        if isempty(f_suff) || f_suff == 0 % no solution
+            uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
+                'Robot Motion Toolbox','modal'));
+            return;
+        end
+        message = sprintf('%s\n\n---------------------- SUFFIX --------------------',message);
+        % message = sprintf('%s\nFunction value for first MILP - suffix: %g \n', message, f_suff);
+        message = sprintf('%s\nTime of solving the MILP - suffix (trajectory on quotient PN): %g secs\n', message, time);
+        total_time = total_time + time;
+        message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - suffix: %g secs\n',message_c,time);
+        time_c = time_c + time;
+        message = sprintf('%s\n=======================================================',message);
+        message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
+        message = sprintf('%s\n=======================================================\n',message);
+        
+        % check the active observations after suffix
+        [active_observations_suff, possible_regions_suff, number_of_robots_suff, marking_new, message] = rmt_check_active_observations(xmin_suff,PreV,PostV,m0_fs,data,nplaces_orig,ntrans_orig,message);
+        
+        possible_regions = [possible_regions possible_regions_suff];
+        active_observations = [active_observations active_observations_suff];
+        number_of_robots = [number_of_robots number_of_robots_suff];
+        
+        %remove eventually identical observations
+        for j = length(active_observations):-1:2
+            if (isempty(setxor(active_observations{j},active_observations{j-1})) && ...
+                    isempty(setxor(unique([possible_regions{j}{:}]),unique([possible_regions{j-1}{:}]))))
+                active_observations(j) = [];
+                possible_regions(j) = [];
+                number_of_robots(j) = [];
+            end
+        end
+        
+    end
+    
+    % print messages
+    message = sprintf('%s\n\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0>eps*10^5)),mat2str(m0(m0>eps*10^5)));
+    
+    message = sprintf('%s\n=======================================================',message);
+    message = sprintf('%s\nProject the solution to the initial transition system with CPLEX',message);
+    message = sprintf('%s\n=======================================================\n',message);
+    
+    % second MILP - project the solution
+    
+    [PreP,PostP] = rmt_construct_PN(data.T.adj);
+    m0_ps = data.T.m0;
+    nplaces = size(PostP,1);
+    ntrans = size(PostP,2);
+    steps = 1;
+    message = sprintf('%s\nInitial marking [ %s ] = %s\n',message,mat2str(find(m0_ps>eps*10^5)),mat2str(m0_ps(m0_ps>eps*10^5)));
+    
+    tic;
+    
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_project_sol(PreP,PostP,m0_ps, number_of_robots,...
+        possible_regions, nplaces, ntrans, data);
+    
+    time = toc;
+    message = sprintf('%s\n\nTotal time to construct the second MILP (project the solution): %g secs', message,time);
+    
+    ctype='';
+    for i = 1 : size(Aeq,1)
+        ctype = sprintf('%sS',ctype);
+    end
+    for i = 1 : size(A,1)
+        ctype = sprintf('%sU',ctype);
+    end
+    vartype = '';
+    for i = 1 : size(Aeq,2)/(nplaces+ntrans)
+        for j = 1 : size(PreP,1)
+            vartype = sprintf('%sC',vartype); %put the markings as real
+        end
+        for j = 1 : size(PreP,2)
+            vartype = sprintf('%sI',vartype); %put the sigma as integer
+        end
+    end
+    
+    
+    tic;
+    switch solver
+        case 'cplex'
+            [X,f,~] = cplexlp(cost,A,b,Aeq,beq,zeros(1,size(Aeq,2)),[]);
+        case 'glpk'
+            [X,f,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+        case 'intlinprog'
+            [X,f,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+            
+    end
+    time = toc;
+    
+    message = sprintf('%s\n\n --------------------\n\n',message);
+    message = sprintf('%s\nFunction value second MILP: %g \n', message, f);
+    message = sprintf('%s\nTotal number of variables in the LP problem (project the solution): %d',...
+        message,size(Aeq,2));
+    message = sprintf('%s\nThe LP has %d equality contraints and %d inequality constraints (project the solution).',...
+        message, size(Aeq,1), size(A,1));
+    
+    
+    total_time_MILP = total_time_MILP + time;
+    message = sprintf('%s\nTotal time for solving LPP to project the solution: %g secs', message,time);
+    total_time = total_time + time;
+    message_c = sprintf('%sTime for projecting the solution on the full model: %g secs\n',message_c,time);
+    message_c = sprintf('%sTotal time for MILPs: %g secs\n',message_c,total_time_MILP);
+    time_c = time_c + time;
+    
+    if isempty(f)
+        uiwait(errordlg('Error solving LPP to project the solution!','Robot Motion Toolbox','modal'));
+        return;
+    end
+    
+    % save all
+    vect_fmin = [vect_fmin f];
+    cell_X{idx_fs} = X;
+    
+    if ~isempty(f) && flag_sol == 0 && length(final_places) > 1
+        choiceMenu = questdlg(sprintf('One solution it is computed. Do you want to find a better solution by inspecting all final states of Buchi automaton? (The optimal solution is not guranteed)') ...
+            ,'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','No','Yes');
+        flag_sol = 1;
+        if strcmpi(choiceMenu,'Yes')
+            flag_opt = 1;
+        else
+            flag_opt = 0; %limit number of final places to one - the script will solve the path planing based on the first final state in Buchi
+        end
+    end
+    
+    if flag_opt == 0 && (~isempty(f) || ~isempty(f_suff)) % if one solution is found and the user doesn't want to compute a better solution, then the algorithm stops and returns the current solution
+        break;
+    end
+    
+    idx_fs = idx_fs + 1;
+    
 end
 
 % memorize final state with the minimum cost function value

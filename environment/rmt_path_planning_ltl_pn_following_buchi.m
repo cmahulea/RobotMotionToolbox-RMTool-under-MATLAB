@@ -60,7 +60,7 @@ message_c = sprintf('%sTime of generating the PN model of the team: %g secs\n',m
 time_c = time_c + tiempo;
 
 %nplaces = size(Pre,1);
-%ntrans = size(Pre,2); 
+%ntrans = size(Pre,2);
 
 %***Buchi automaton for formula, with elements of power set of \Pi (Obs) on transitions***%
 tic;
@@ -90,7 +90,7 @@ for ii = 1 : length(B.S0)
                 if (isempty(paths_B_pref) &&  length(union(B.S0(ii),B.F))==length(B.F)) %if the initial state is also final one
                     index_suffix(length(paths_B)+1) = 2;
                     paths_B{length(paths_B)+1} = [B.F(jj) B.F(jj)];
-                end                    
+                end
                 for ll = 1 : length(paths_B_pref)
                     index_suffix(length(paths_B)+1) = length(paths_B_pref{ll}) +1;
                     paths_B{length(paths_B)+1} = [paths_B_pref{ll} B.F(jj)];
@@ -116,7 +116,7 @@ for ii = 1 : length(B.S0)
                     end
                 end
             end
-        end 
+        end
     end
 end
 
@@ -133,8 +133,8 @@ time_paths = 0;
 for p_B=1:length(paths_B)
     message = sprintf('%s\nTrying to follow path %d in Buchi',message,p_B);
     path_B = paths_B{p_B};  %chosen path in Buchi
-    message2 = sprintf('\n\n PATH_%d in Buchi is: %s\n',p_B,num2str(path_B));
-    
+    %     message2 = sprintf('\n\n PATH_%d in Buchi is: %s\n',p_B,num2str(path_B));
+    message = sprintf('%s\n\n PATH_%d in Buchi is: %s\n',message,p_B,num2str(path_B));
     %initialization
     feasible_path_B=1;  %assume current path in Buchi is feasible
     Rob_positions = data.RO;   %initial (current) robot positions for testing optimization solutions
@@ -150,21 +150,25 @@ for p_B=1:length(paths_B)
     
     tic;
     for i=1:(length(path_B)-1)  %find traj in PN s.t. Buchi goes from state path_B(i) to path_B(i+1), without getting another observation that leaves path_B(i) to other state
-        message2 = sprintf('%s\n  Try to ENABLE the current transition of Buchi: %g -> %g.\n',...
-            message2,path_B(i),path_B(i+1));
+        %         message2 = sprintf('%s\n  Try to ENABLE the current transition of Buchi: %g -> %g.\n',...
+        %             message2,path_B(i),path_B(i+1));
+        message = sprintf('%s\n  Try to ENABLE the current transition of Buchi: %g -> %g.\n',...
+            message,path_B(i),path_B(i+1));
         obs_fin=B.trans{path_B(i),path_B(i+1)}; %row indices in Obs for desired observations in final marking
         % obs_feasible = union(B.trans{path_B(i),path_B(i)},B.trans{path_B(i),path_B(i+1)}); %not correct to take union; indices in Obs for all observations that do not leave sequence of states [path_B(i) -> path_B(i+1)] from Buchi
         obs_feasible = B.trans{path_B(i),path_B(i)};    %feasible observations on trajectory (self-loop in B); set of obs may not include set of final obs (otherwise, errors may result - e.g. formulas like '!p2 U (p1 & p3)')
         
         %*** 1) try only desired observations in final marking: those that enable transition path_B(i) -> path_B(i+1) in Buchi
-        message2 = sprintf('%s\n\t Solving ILP 1 with solver %s ... ',message2,solver);
+        %         message2 = sprintf('%s\n\t Solving ILP 1 with solver %s ... ',message2,solver);
+        message = sprintf('%s\n\t Solving ILP 1 with solver %s ... ',message,solver);
+        
         switch solver
             case 'glpk'
                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk'); %constraints for ILP for PN
                 [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with glpk
-        
+                
             case 'intlinprog'
                 [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
@@ -172,7 +176,7 @@ for p_B=1:length(paths_B)
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
-
+                
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
@@ -187,40 +191,51 @@ for p_B=1:length(paths_B)
         switch solver
             case 'glpk'
                 if (status == 5) && (max(matrix_A*xmin-vector_b)>prec || max(lb-xmin)>prec) %this happened for too large M in constraints_PN_obs, for x_i and x_i(t) variables
-                    message2 = sprintf('%s\nWrong solution returned by GLPK -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2); 
+                    message2 = sprintf('%s\nWrong solution returned by GLPK -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2);
                 end
             case 'intlinprog' %this didn't occur; at least an error signaled by Matlab in intlinprog, caused actually by too large M in constraints_PN_obs, for x_i and x_i(t) variables
                 if (status == 1) && (max(A*xmin-b)>prec || max(abs(Aeq*xmin-beq))>prec || max(lb-xmin)>prec || max(xmin-ub)>prec)
-                    message2 = sprintf('%s\nWrong solution returned by INTLINPROG -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2); 
+                    message2 = sprintf('%s\nWrong solution returned by INTLINPROG -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2);
                 end
-
+                
             case 'cplex' %this didn't occur
                 if (status >= 0) && (max(A*xmin-b)>prec || max(abs(Aeq*xmin-beq))>prec || max(lb-xmin)>prec)
-                    message2 = sprintf('%s\nWrong solution returned by CPLEX -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2); 
+                    message2 = sprintf('%s\nWrong solution returned by CPLEX -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2);
                 end
         end
-
+        message = [message message2];
+        
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
         [message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
             Rob_synchronize_temp, min_k1] = rmt_test_solution_feasibility(message2,Pre, Post, PN_marking, ...
             data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, solver, xmin, ...
             status, Rob_positions);
-        
+        message = [message message2];
+        if feasible_sol == 0
+            %         message2 = sprintf('%s\nUnfeasible solution with ILP1 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
+            %             message2,path_B(i),path_B(i+1));
+            message = sprintf('%s\nUnfeasible solution with ILP1 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
+                message,path_B(i),path_B(i+1));
+        end
         if feasible_sol==1 %ILP1 gives good result, go to next transition in Buchi
             Rob_positions = Rob_positions_final;
             PN_marking = marking_final;
             for j=1:N_r
+                
                 Rob_synchronize{j}=[Rob_synchronize{j} , Rob_synchronize_temp{j} + length(Rob_places{j})-1]; %when to synchronize (number of visited place)
                 Rob_places_temp{j}(1)=[];  %initial position already included
                 Rob_places{j}=[Rob_places{j} , Rob_places_temp{j}];
                 Rob_trans{j}=[Rob_trans{j} , Rob_trans_temp{j}];
             end
+            
             continue;
         end
         
         
         %*** 2) if feasible_sol==0: try feasible observations for reached markings given by sigma: those that either loop in path_B(i), or go from path_B(i) to path_B(i+1)
-        message2 = sprintf('%s\n\t Solving ILP 2 with solver %s ... ',message2,solver);
+        %         message2 = sprintf('%s\n\t Solving ILP 2 with solver %s ... ',message2,solver);
+        message = sprintf('%s\n\t Solving ILP 2 with solver %s ... ',message,solver);
+        
         switch solver
             case 'glpk'
                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
@@ -243,7 +258,7 @@ for p_B=1:length(paths_B)
                 Aeq_sparse=sparse(Aeq);
                 [xmin, fmin, status, extra] = cplexmilp(cost, A, b, Aeq, beq, [],[],[], lb, ub, vartype, [], []);   %optimization with cplexmilp
         end
-
+        
         prec=0.5e-5;    %additional tests for solution feasibility
         switch solver
             case 'glpk'
@@ -254,19 +269,26 @@ for p_B=1:length(paths_B)
                 if (status == 1) && (max(A*xmin-b)>prec || max(abs(Aeq*xmin-beq))>prec || max(lb-xmin)>prec || max(xmin-ub)>prec)
                     message2 = sprintf('%s\nWrong solution returned by INTLINPROG -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2);
                 end
-
+                
             case 'cplex' %this didn't occur
                 if (status >= 0) && (max(A*xmin-b)>prec || max(abs(Aeq*xmin-beq))>prec || max(lb-xmin)>prec)
                     message2 = sprintf('%s\nWrong solution returned by CPLEX -> It doesn''t satisfy constraints! Correctness of results is not guaranteed.\n',message2);
                 end
         end
-
+        message = [message message2];
+        
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
         [message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
             Rob_synchronize_temp, min_k2] = rmt_test_solution_feasibility(message2,Pre, Post, PN_marking, ...
             data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
             solver, xmin, status, Rob_positions);
-        
+        message = [message message2];
+        if feasible_sol == 0
+            %                 message2 = sprintf('%s\nUnfeasible solution with ILP2 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
+            %             message2,path_B(i),path_B(i+1));
+            message = sprintf('%s\nUnfeasible solution with ILP2 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
+                message,path_B(i),path_B(i+1));
+        end
         if feasible_sol==1 %ILP2 gives good result, go to next transition in Buchi
             Rob_positions = Rob_positions_final;
             PN_marking = marking_final;
@@ -278,23 +300,27 @@ for p_B=1:length(paths_B)
             end
             continue;
         end
-        message2 = sprintf('%s\nIMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
-            message2,path_B(i),path_B(i+1));
         feasible_path_B=0; %current path in Buchi is not feasible
         tiempo = toc;
         time_paths = time_paths + tiempo;
         total_time = total_time + tiempo;
-        message2 = sprintf('%s\n\t Path_%d NOT feasible. Time solving the ILPs trying to follow it: %g seconds. \n ',...
-            message2,p_B,tiempo);
-        message = sprintf('%s\n\t Path_%d NOT feasible. Time solving the ILPs trying to follow it: %g seconds. \n',...
+        %         message2 = sprintf('%s\n\t Path_%d NOT feasible. Time solving the ILPs trying to follow it: %g seconds. \n \n',...
+        %             message2,p_B,tiempo);
+        
+        
+        message = sprintf('%s\n\t Path_%d NOT feasible. Time solving the ILPs trying to follow it: %g seconds. \n \n',...
             message,p_B,tiempo);
+        %         for ii = 1:length(paths_B{p_B})
+        %              message = sprintf('%s\t %d  ',...
+        %             message,paths_B{p_B}(ii));
+        %         end
         break;
     end
     
     if feasible_path_B==1   %path in B was followed
         tiempo = toc;
-        message2 = sprintf('%s\n\t Path_%d is feasible. Time solving all ILPs: %g seconds. \n ',...
-            message2,p_B,tiempo);
+        %         message2 = sprintf('%s\n\t Path_%d is feasible. Time solving all ILPs: %g seconds. \n ',...
+        %             message2,p_B,tiempo);
         message = sprintf('%s\n\t Path_%d is feasible.\n \t Time solving all ILPs: %g seconds. \n ',...
             message,p_B,tiempo);
         time_paths = time_paths + tiempo;
@@ -304,20 +330,32 @@ end
 message_c = sprintf('%sTime of finding the path(s): %g secs\n',message_c,time_paths);
 
 if feasible_path_B==0   %no path in B could be followed
-    message2 = sprintf('%s\nNO SOLUTION! No path in B could be followed. \n\tPossible reasons:\n\t\t-the problem is unfeasible (impossible to satisfy task);\n\t\t-too few paths in Buchi;\n\t\t-too small number of intermediate PN markings.\n',message2);
-    message2 = sprintf('%s\nTotal time of solving all MILPS: %g seconds\n',message2,total_time);
+    %     message2 = sprintf('%s\nNO SOLUTION! No path in B could be followed. \n\tPossible reasons:\n\t\t-the problem is unfeasible (impossible to satisfy task);\n\t\t-too few paths in Buchi;\n\t\t-too small number of intermediate PN markings.\n',message2);
+    %     message2 = sprintf('%s\nTotal time of solving all MILPS: %g seconds\n',message2,total_time);
     message = sprintf('%sNO SOLUTION! No path in B could be followed.\nTotal time of solving all ILPs: %g seconds\n',...
         message,tiempo);
+    message = sprintf('%s\nTotal time of solving all MILPS: %g seconds\n',message,total_time);
+    
 else %plot robot trajectories
-    [rob_traj,synch_points] = rmt_rob_cont_traj_synch(data.T,Rob_places,Rob_synchronize,data.initial);    %continuous trajectory of each robot 
+    [rob_traj,synch_points] = rmt_rob_cont_traj_synch(data.T,Rob_places,Rob_synchronize,data.initial);    %continuous trajectory of each robot
     rob_color={'r','b','g','c','m','k','y'};    %colors of robots
     data.trajectory = rob_traj;
-    
+    f_value = 0;
+    for ii = 1:length(Rob_places)
+        f_value = f_value + length(Rob_places{ii});
+        message = sprintf('%s\n Path of robot %d: ',message,ii);
+        for jj = 1:length(Rob_places{ii})
+            message = sprintf('%s %d ',message, Rob_places{ii}(jj));
+        end
+    end
+    message = sprintf('%s \n\n Function value (movements of the robots): %d ', message, f_value - N_r);
     for r=1:N_r    %plot trajectories of robots
         plot(rob_traj{r}(1,1),rob_traj{r}(2,1),rob_color{mod(r-1,length(rob_color))+1},'Marker','o','LineWidth',1.5);
         plot(rob_traj{r}(1,:),rob_traj{r}(2,:),rob_color{mod(r-1,length(rob_color))+1},'LineWidth',1.5);
         plot(rob_traj{r}(1,end),rob_traj{r}(2,end),rob_color{mod(r-1,length(rob_color))+1},'Marker','x','LineWidth',1.5);
-        plot(synch_points{r}(1,:),synch_points{r}(2,:),'k','Marker','s','MarkerSize',5);
+        for jj = 1:size(synch_points{r},2)
+            plot(synch_points{r}(1,jj),synch_points{r}(2,jj),'k','Marker','s','MarkerSize',5);
+        end
     end
 end
 time_c = time_c + time_paths;
@@ -328,7 +366,8 @@ button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
 if strcmpi(button,'Yes')
     [filename, pathname] = uiputfile('*.txt', 'Save experiments as');
     fileID = fopen(fullfile(pathname, filename),'w');
-    fprintf(fileID,'%s\n\nDETAILED STEPS %s',message,message2);
+    %     fprintf(fileID,'%s\n\nDETAILED STEPS %s',message,message2);
+    fprintf(fileID,'\n\nDETAILED STEPS \n%s',message);
     fclose(fileID);
 end
 

@@ -59,16 +59,16 @@ for i = 2 : k
     if (i/2 == round(i/2))  %fire only transitions of the Buchi automaton
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model
         beq = [beq;0];
-        if i == 2 % j) force one transition in buchi from final state., but not the virtual one
+        if i == 2% j) force one transition in buchi from final state., but not the virtual one
+            
             trans_for_Buchi(idxV_Buchi) = 0;
             trans_BuchiB = [zeros(1,length(m0)) zeros(1,ntrans_orig) trans_for_Buchi];
+         else
+            trans_BuchiB = trans_Buchi;
+         end
             Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_BuchiB]; %fire one transition of Buchi
             beq = [beq;1];
-        else
-            Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi]; %fire one transition of Buchi
-            beq = [beq;1];
-        end
-        % f)
+        % g)
     else %fire only transitions of the robot model
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi];
         beq = [beq;0];
@@ -78,25 +78,6 @@ for i = 2 : k
     A = [A ; zeros(nplaces, (i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) zeros(nplaces,nplaces) Pre];
     b = [b ; zeros(nplaces,1)];
 end
-
-% j) force one transition in buchi from final state., but not the virtual
-% one
-% trans_for_Buchi(idxV_Buchi) = 0;
-% trans_Buchi = [zeros(1,length(m0)) zeros(1,ntrans_orig) trans_for_Buchi];
-% A = [A; zeros(1,size(A,2) - size(trans_Buchi,2)) trans_Buchi];
-% b = [b; 1];
-
-% this should not be used
-% % %put that an intermediate marking of Buchi is equal with a final one in the final
-% % interm = round(k/2);
-% % % m(interm) == m_final
-% %
-% % nplaces_buchi = nplaces-nplaces_orig-nplaces_observ;
-% %
-% % Aeq=[Aeq; zeros(nplaces_buchi,(interm-1)*(nplaces+ntrans)) zeros(nplaces_buchi,nplaces_orig+nplaces_observ) eye(nplaces_buchi) ...
-% %     zeros(nplaces_buchi,ntrans) zeros(nplaces_buchi,(k-interm-1)*(nplaces+ntrans)) zeros(nplaces_buchi,nplaces_orig+nplaces_observ) ...
-% %     -eye(nplaces_buchi) zeros(nplaces_buchi,ntrans)];
-% % beq = [beq ; zeros(nplaces_buchi,1)];
 
 % g) new f*mB = 1
 % -m_final * 1 <=-1
