@@ -156,3 +156,8 @@ end
 
 feasible_sol = 1; %if this point is reached, solution is feasible
 message = sprintf('%s\tCurrent solution is feasible!\n',message);
+message = sprintf('%s\t\tFinal regions of robots at this step: ',message,mat2str(Rob_positions_final));
+for i = i : length(Rob_positions_final)-1
+    message = sprintf('%s p%d,',message,Rob_positions_final(i));
+end
+message = sprintf('%s p%d.\n',message,Rob_positions_final(length(Rob_positions_final)));
