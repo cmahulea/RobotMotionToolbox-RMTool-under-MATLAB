@@ -25,7 +25,7 @@
 % ============================================================================
 
 
-function [varargout] = rmt_constraints_PN_obs_new(Pre, Post, m0, props, Obs, trans_buchi, obs_type, set_ind_fin, set_ind_traj, k, alpha, beta, gamma, solver)
+function [varargout] = rmt_constraints_PN_obs_new(Pre, Post, m0, props, trans_buchi, obs_type, k, alpha, beta, gamma, solver)
 %constraints for PN model based on desired observations
 %construct linear constraints s.t. a set of observations is satisfied (in final state and, if desired, along trajectory)
 
@@ -74,8 +74,7 @@ N_r = sum(m0); % number of robots
 N_p = length(props); %number of atomic props.
 trans_buchi_final = trans_buchi{1}; %formula for the transition to the new state in buchi
 trans_buchi_self = trans_buchi{2}; %formula for the selfloop on the initial state
-M = (N_r+1)^2; %big number for the optimization problems
-M = min(M,0.5e5); %for higher values errors in optimization may result (very small x can lead x*M being equal to 1, thus wrongly satisfying a constraint)
+M = min((N_r+1)^2,0.5e5); %big number for the optimization problems for higher values errors in optimization may result (very small x can lead x*M being equal to 1, thus wrongly satisfying a constraint)
 
 if ~strcmp(obs_type,'intermediate')
     k=1;    %for 'final' or 'trajectory'
@@ -131,7 +130,7 @@ if (trans_buchi_final ~= Inf) %if transition in Buchi is "True", don't add const
     for i = 1: length(indices)-1
         boolean_formula = sprintf('%s Y%d &',boolean_formula,trans_buchi_final(indices(i)));
     end
-    if (length(indices)>1)
+    if (length(indices)>=1)
         boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_final(indices(length(indices))));
     end
     indices = find(trans_buchi_final < 0);
@@ -141,7 +140,7 @@ if (trans_buchi_final ~= Inf) %if transition in Buchi is "True", don't add const
     for i = 1: length(indices)-1
         boolean_formula = sprintf('%s !Y%d &',boolean_formula,-trans_buchi_final(indices(i)));
     end
-    if (length(indices)>1)
+    if (length(indices)>=1)
         boolean_formula = sprintf('%s !Y%d',boolean_formula,-trans_buchi_final(indices(length(indices))));
     end
     [~,~,~,Ar,br] = rmt_formula2constraints(boolean_formula, [],[],length(props));
@@ -149,7 +148,6 @@ if (trans_buchi_final ~= Inf) %if transition in Buchi is "True", don't add const
 
     A = [A ; [ zeros(size(Ar,1),k*(nplaces+ntrans)) , Ar ]];  %all first N_p constraints: V for final marking, eye for big_M
     b = [b ; br];
-    
 end
 
 
@@ -159,19 +157,23 @@ end
 if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least once along all reached markings (trajectory)
     Aeq = [Aeq , zeros(size(Aeq,1),N_p)]; % add new columns to Aeq
     A = [A , zeros(size(A,1),N_p)]; % add new columns to A
-
     if (isempty(trans_buchi_self)) %if there is no selfloop transition in Buchi compute add contraint on the empty
         not_null_obs = [];
         for i = 1 : length(props)
             not_null_obs = union(not_null_obs,props{i});
         end
         null_obs = setdiff([1:nplaces],not_null_obs);
-        V_null = zeros(1,nplaces);    %characteristic vectors on null observations
+        V_null = zeros(1,nplaces);    %places corresponding to the empty space (placeses with null observations)
         V_null(null_obs) = 1;
         % Post*sigma \leq V_null - during the trajectory only through empty
         % space is possible to pass
-        A = [A ; [ zeros(nplaces,nplaces) , Post , zeros(nplaces,2*N_p) ]]; 
-        b = [b ; V_null'];
+        if (isempty(setdiff(find(m0),null_obs))) %if no selfloop and no observation active put that during the trajectory only empty observation is possible 
+            A = [A ; [ zeros(nplaces,nplaces) , Pre , zeros(nplaces,2*N_p) ]];
+            b = [b ; V_null'];
+            need_check_ILP2=0;
+        else
+            need_check_ILP2=1;
+        end
     elseif (trans_buchi_self ~= Inf) %if the selfloop transition in Buchi is "True", don't add constraints (leave unconstraint binary vars)
         %link boolean variables for trajectory with reached PN markings given by Post*sigma+m0-mf:
         %vi*(Post*sigma +m0-mf) \leq M*xi   , forall i=1,...,N_p
@@ -186,7 +188,7 @@ if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least onc
         for i = 1: length(indices)-1
             boolean_formula = sprintf('%s Y%d &',boolean_formula,trans_buchi_self(indices(i)));
         end
-        if (length(indices)>1)
+        if (length(indices)>=1)
             boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_self(indices(length(indices))));
         end
         indices = find(trans_buchi_self < 0);
@@ -196,7 +198,7 @@ if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least onc
         for i = 1: length(indices)-1
             boolean_formula = sprintf('%s !Y%d &',boolean_formula,-trans_buchi_self(indices(i)));
         end
-        if (length(indices)>1)
+        if (length(indices)>=1)
             boolean_formula = sprintf('%s !Y%d',boolean_formula,-trans_buchi_self(indices(length(indices))));
         end
         [~,~,~,Ar,br] = rmt_formula2constraints(boolean_formula, [],[],length(props));
@@ -314,6 +316,7 @@ switch solver
         varargout{6}=lb;
         varargout{7}=[];    %instead of upper bound, some vars are set binary
         varargout{8}=vartype;
+        %varargout{9}=need_check_ILP2;
     
     otherwise
         fprintf('\nERROR when constructing PN constraints: unknown or wrong indicated solver.\n')

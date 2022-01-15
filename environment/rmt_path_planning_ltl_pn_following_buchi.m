@@ -130,6 +130,35 @@ time_c = time_c + tiempo;
 feasible_path_B=0;
 message2 = '';
 time_paths = 0;
+Rob_positions = data.RO;   %initial (current) robot positions for testing optimization solutions
+message = sprintf('%s\n\nInitial regions of robots: ',message);
+for j = 1 : length(Rob_positions)-1
+    message = sprintf('%s p%d,',message,Rob_positions(j));
+end
+message = sprintf('%s p%d.\n',message,Rob_positions(length(Rob_positions)));
+
+active_obs=[];
+props = data.T.props;
+for j = 1 : length(Rob_positions)
+    for ll = 1 : length(props)
+        temp = props{ll};
+        if ~isempty(intersect(Rob_positions(j),temp))
+            active_obs = [active_obs ll];
+        end
+    end
+end
+active_obs = unique(active_obs);
+if isempty(active_obs)
+    message = sprintf('%sNo active observations at initial position.\n ',message);
+else
+    message = sprintf('%sActive observations at initial position: ',message);
+    for i = 1 : length(active_obs)-1
+        message = sprintf('%s y%d,',message,active_obs(i));
+    end
+    message = sprintf('%s y%d\n',message,active_obs(length(active_obs)));
+end
+
+
 for p_B=1:length(paths_B)
     message = sprintf('%s\nTrying to follow path %d in Buchi',message,p_B);
     path_B = paths_B{p_B};  %chosen path in Buchi
@@ -147,7 +176,6 @@ for p_B=1:length(paths_B)
         Rob_trans{j}=[];
         Rob_synchronize{j}=[];
     end
-    
     tic;
     for i=1:(length(path_B)-1)  %find traj in PN s.t. Buchi goes from state path_B(i) to path_B(i+1), without getting another observation that leaves path_B(i) to other state
         message = sprintf('%s\n  Try to ENABLE the current transition of Buchi: %g -> %g.\n',...
@@ -157,7 +185,7 @@ for p_B=1:length(paths_B)
         obs_feasible = B.trans{path_B(i),path_B(i)};    %feasible observations on trajectory (self-loop in B); set of obs may not include set of final obs (otherwise, errors may result - e.g. formulas like '!p2 U (p1 & p3)')
         
         %*** 1) try only desired observations in final marking: those that enable transition path_B(i) -> path_B(i+1) in Buchi
-        message = sprintf('%s\n\t Solving ILP 1 with solver %s ... ',message,solver);
+        message = sprintf('%s\n\tSolving ILP 1 with solver %s ... ',message,solver);
         
         switch solver
             case 'glpk'
@@ -176,7 +204,7 @@ for p_B=1:length(paths_B)
                 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs_new(Pre, Post, PN_marking, ...
-                    data.T.props, Obs,  {B.new_trans{path_B(i),path_B(i+1)},[]}, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...%B.new_trans,
+                    data.T.props, {B.new_trans{path_B(i),path_B(i+1)},[]}, 'final', data.optim.param.intMarkings, ...%B.new_trans,
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices            Pre, Post, m0,          props,       Obs, obs_type, set_ind_fin, set_ind_traj, k, alpha, beta, gamma, solver
                 Aeq_sparse=sparse(Aeq);
@@ -215,9 +243,7 @@ for p_B=1:length(paths_B)
             status, Rob_positions);
         message = [message message2];
         if (feasible_sol == 0)
-            %         message2 = sprintf('%s\nUnfeasible solution with ILP1 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
-            %             message2,path_B(i),path_B(i+1));
-            message = sprintf('%s\nUnfeasible solution with ILP1 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
+            message = sprintf('%s\tUnfeasible solution with ILP1 when trying to take current transition (s%g -> s%g) in Buchi automaton!\n',...
                 message,path_B(i),path_B(i+1));
         end
         if (feasible_sol==1) %ILP1 gives good result, go to next transition in Buchi
@@ -228,15 +254,14 @@ for p_B=1:length(paths_B)
                 Rob_places_temp{j}(1)=[];  %initial position already included
                 Rob_places{j}=[Rob_places{j} , Rob_places_temp{j}];
                 Rob_trans{j}=[Rob_trans{j} , Rob_trans_temp{j}];
-            end
-            
+            end            
             continue;
         end
         
         
         %*** 2) if feasible_sol==0: try feasible observations for reached markings given by sigma: those that either loop in path_B(i), or go from path_B(i) to path_B(i+1)
         %         message2 = sprintf('%s\n\t Solving ILP 2 with solver %s ... ',message2,solver);
-        message = sprintf('%s\n\t Solving ILP 2 with solver %s ... ',message,solver);
+        message = sprintf('%s\n\tSolving ILP 2 with solver %s ... ',message,solver);
         
         switch solver
             case 'glpk'
@@ -254,7 +279,7 @@ for p_B=1:length(paths_B)
                 
             case 'cplex'
                 [cost, A, b, Aeq, beq, lb, ub, vartype]  = rmt_constraints_PN_obs_new(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, {B.new_trans{path_B(i),path_B(i+1)},B.new_trans{path_B(i),path_B(i)}},'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings,...
+                    data.T.props, {B.new_trans{path_B(i),path_B(i+1)},B.new_trans{path_B(i),path_B(i)}},'trajectory', data.optim.param.intMarkings,...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex'); %constraints for ILP for PN
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);

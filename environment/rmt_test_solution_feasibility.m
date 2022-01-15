@@ -156,8 +156,31 @@ end
 
 feasible_sol = 1; %if this point is reached, solution is feasible
 message = sprintf('%s\tCurrent solution is feasible!\n',message);
-message = sprintf('%s\t\tFinal regions of robots at this step: ',message,mat2str(Rob_positions_final));
-for i = i : length(Rob_positions_final)-1
-    message = sprintf('%s p%d,',message,Rob_positions_final(i));
+message = sprintf('%s\tPaths of the robots at this step:\n',message);
+for i = 1 : N_r
+    trajj = Rob_places{i};
+    message = sprintf('%s\t  Robot %d: ',message,i);
+    for j = 1 : length(trajj)-1
+        message = sprintf('%s p%d,',message,trajj(j));
+    end
+    message = sprintf('%s p%d.\n',message,trajj(length(trajj)));
 end
-message = sprintf('%s p%d.\n',message,Rob_positions_final(length(Rob_positions_final)));
+active_obs=[];
+for i = 1 : length(Rob_positions_final)
+    for j = 1 : length(props)
+        temp = props{j};
+        if ~isempty(intersect(Rob_positions_final(i),temp))
+            active_obs = [active_obs j];
+        end
+    end
+end
+active_obs = unique(active_obs);
+if isempty(active_obs)
+    message = sprintf('%s\tNo active observations at this step.\n ',message);
+else
+    message = sprintf('%s\tActive observations at this step: ',message);
+    for i = 1 : length(active_obs)-1
+        message = sprintf('%s y%d,',message,active_obs(i));
+    end
+    message = sprintf('%s y%d\n',message,active_obs(length(active_obs)));
+end
