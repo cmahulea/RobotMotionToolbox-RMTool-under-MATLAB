@@ -134,7 +134,7 @@ if (trans_buchi_final ~= Inf) %if transition in Buchi is "True", don't add const
         boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_final(indices(length(indices))));
     end
     indices = find(trans_buchi_final < 0);
-    if ((length(indices) > 1) && ~isempty(boolean_formula))
+    if ((length(indices) >= 1) && ~isempty(boolean_formula))
         boolean_formula = sprintf('%s &',boolean_formula);
     end
     for i = 1: length(indices)-1
