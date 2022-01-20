@@ -71,6 +71,11 @@ message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi
 message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
 time_c = time_c + tiempo;
 
+% check if the initial positions of the robots violate the LTL formula
+[temp_message] = rmt_check_initial_active_obs(data,B,Obs,m0,Pre);
+
+message = sprintf('%s\n%s\n',message,temp_message);
+
 %%***solution's main part: choose a path in B and try to follow it with observations of PN
 tic;
 adj_B = rmt_graph_for_Buchi(B);

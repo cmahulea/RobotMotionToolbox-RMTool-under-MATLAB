@@ -159,21 +159,37 @@ if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least onc
     A = [A , zeros(size(A,1),N_p)]; % add new columns to A
     if (isempty(trans_buchi_self)) %if there is no selfloop transition in Buchi compute add contraint on the empty
         not_null_obs = [];
+        act_obst_cellsm0 = [];
+        V_act_obs_init = zeros(1,nplaces);
         for i = 1 : length(props)
             not_null_obs = union(not_null_obs,props{i});
+            obs_m0 = intersect(find(m0),props{i}); 
+            if ~isempty(obs_m0) %check if the initial pose of the robots activate any observation
+                act_obst_cellsm0 = [act_obst_cellsm0 obs_m0'];
+                V_act_obs_init = V_act_obs_init + V(i,:);
+            end
         end
         null_obs = setdiff([1:nplaces],not_null_obs);
         V_null = zeros(1,nplaces);    %places corresponding to the empty space (placeses with null observations)
         V_null(null_obs) = 1;
+        
+        if intersect(find(m0),null_obs) %if at least one robot is in the free space, update V_act_obs_init with the free observation
+            V_act_obs_init = V_act_obs_init + V_null;
+        end
         % Post*sigma \leq V_null - during the trajectory only through empty
         % space is possible to pass
+        
         if (isempty(setdiff(find(m0),null_obs))) %if no selfloop and no observation active put that during the trajectory only empty observation is possible 
             A = [A ; [ zeros(nplaces,nplaces) , Pre , zeros(nplaces,2*N_p) ]];
             b = [b ; V_null'];
             need_check_ILP2=0;
-        else
+        else %only the initial active observations are possible based on robots position
+            A = [A ; [ zeros(nplaces,nplaces) , Pre , zeros(nplaces,2*N_p)]];
+            b = [b ; V_act_obs_init'];
             need_check_ILP2=1;
         end
+        
+        
     elseif (trans_buchi_self ~= Inf) %if the selfloop transition in Buchi is "True", don't add constraints (leave unconstraint binary vars)
         %link boolean variables for trajectory with reached PN markings given by Post*sigma+m0-mf:
         %vi*(Post*sigma +m0-mf) \leq M*xi   , forall i=1,...,N_p
@@ -192,7 +208,7 @@ if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least onc
             boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_self(indices(length(indices))));
         end
         indices = find(trans_buchi_self < 0);
-        if ((length(indices) > 1) && ~isempty(boolean_formula))
+        if ((length(indices) >= 1) && ~isempty(boolean_formula))
             boolean_formula = sprintf('%s &',boolean_formula);
         end
         for i = 1: length(indices)-1
