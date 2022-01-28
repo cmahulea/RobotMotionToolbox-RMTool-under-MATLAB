@@ -106,55 +106,49 @@ data.trajectory = rob_traj;
 cla(data.handle_env);
 rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props and store handles
 
-message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
-for j = 1 : size(Run_cells,1)
-    message = sprintf('%s\nRobot %d: ',message,j);
-    temp = Run_cells(j,:);
-    for k = 1 : length(temp)-1
-        message = sprintf('%s%d,',message,temp(k));
+data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
+
+choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and the order of the robot, do you want to improve the solution by releasing in a dynamic manner the common cells of the paths?'), ...
+    'Robot Motion Toolbox - Path planning with dynamic release of common cells','All common cells','Common cells for paths of R_i, R_[i+1]','No','No');
+if strcmpi(choiceMenu,'All common cells')
+    % improved trajectories based on dynamic resource release
+    [new_run_cells, pos_rob, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, 'all',message);
+elseif strcmpi(choiceMenu,'Common cells for paths of R_i, R_[i+1]')
+    [new_run_cells, pos_rob, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, 'pairs',message);
+else % trajectories given by the result from CM & MK 2020 (Bool spec)
+    message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
+    for j = 1 : size(Run_cells,1)
+        message = sprintf('%s\nRobot %d: ',message,j);
+        temp = Run_cells(j,:);
+        for k = 1 : length(temp)-1
+            message = sprintf('%s%d,',message,temp(k));
+        end
+        message = sprintf('%s%d',message,temp(length(temp)));
     end
-    message = sprintf('%s%d',message,temp(length(temp)));
-end
-
-
-for r=1:length(rob_traj)    %plot trajectories of robots
-    plot(rob_traj{r}(1,1),rob_traj{r}(2,1),data.rob_plot.line_color{r},...
-        'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r});
-    plot(rob_traj{r}(1,:),rob_traj{r}(2,:),data.rob_plot.line_color{r},...
-        'LineWidth',data.rob_plot.line_width{r});
-    plot(rob_traj{r}(1,end),rob_traj{r}(2,end),data.rob_plot.line_color{r},...
-        'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','r');
-end
-
-for r=1:length(rob_traj)    %plot trajectories of robots
-    for tt = 1 : length(Sync_m)
-        plot(rob_traj{r}(1,Sync_m{tt}),rob_traj{r}(2,Sync_m{tt}),data.rob_plot.line_color{r},...
-            'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','b');
+    for r=1:length(rob_traj)    %plot trajectories of robots
+        plot(rob_traj{r}(1,1),rob_traj{r}(2,1),'Color',data.rob_plot.line_color{r},...
+            'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r});
+        plot(rob_traj{r}(1,:),rob_traj{r}(2,:),'Color',data.rob_plot.line_color{r},...
+            'LineWidth',data.rob_plot.line_width{r});
+        plot(rob_traj{r}(1,end),rob_traj{r}(2,end),'Color',data.rob_plot.line_color{r},...
+            'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','r');
     end
-end
 
-for r=1:length(rob_traj)    %plot trajectories of robots
-    for tt = 1 : length(Sync_m2)
-        plot(rob_traj{r}(1,Sync_m2{tt}),rob_traj{r}(2,Sync_m2{tt}),data.rob_plot.line_color{r},...
-            'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','b');
+    for r=1:length(rob_traj)    %plot trajectories of robots
+        for tt = 1 : length(Sync_m)
+            plot(rob_traj{r}(1,Sync_m{tt}),rob_traj{r}(2,Sync_m{tt}),'Color',data.rob_plot.line_color{r},...
+                'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','b');
+        end
     end
+
+    for r=1:length(rob_traj)    %plot trajectories of robots
+        for tt = 1 : length(Sync_m2)
+            plot(rob_traj{r}(1,Sync_m2{tt}),rob_traj{r}(2,Sync_m2{tt}),'Color',data.rob_plot.line_color{r},...
+                'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','b');
+        end
+    end
+
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
