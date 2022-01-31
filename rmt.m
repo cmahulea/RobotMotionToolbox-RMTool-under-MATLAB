@@ -183,6 +183,8 @@ switch action
             'Separator','on');
         uimenu(a,'Label','&Add a Robot','Callback','rmt_add_robot');
         uimenu(a,'Label','Re&move Robots','Callback','rmt_remove_robot');
+        uimenu(a,'Label','&Select size and name for cell''s label',...
+            'Callback',strcat(thisfile,'(''size_label_cells'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
             'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
@@ -497,6 +499,10 @@ switch action
             'Position',[0.87    0.005   0.1349    0.0235], ...
             'String','Time [s]');
         set(gcf,'UserData',data);
+        
+        data.label_cells.size = 6;
+        data.label_cells.name = 'p';
+        
         data.optim.cplex_variable='true';
         set(data.optim.menuGlpk,'Checked','off');
         set(data.optim.menuCplex,'Checked','on');
@@ -1139,10 +1145,10 @@ switch action
         end
         %%check if inside any region of interest /obstacles
         for i=1:length(data.obstacles)
-            if inpolygon(initial(1),initial(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
-                uiwait(errordlg('Initial point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
-                return;
-            end
+%             if inpolygon(initial(1),initial(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
+%                 uiwait(errordlg('Initial point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
+%                 return;
+%             end
             if (mission_task == 1)
                 if inpolygon(final(1),final(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
                     uiwait(errordlg('Final point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
@@ -1309,7 +1315,11 @@ switch action
                 set(gcf,'UserData',data2);
             end
         end
-      
+    %% Choose size and label for cells    
+    case 'size_label_cells'
+        data = get(gcf,'UserData');
+        data.label_cells = rmt_label_cells_setup(data.label_cells);
+        set(gcf,'UserData',data);
         %% Part of Menu 'Setup' CPLEX
     case 'menu_cplex'
         data = get(gcf,'UserData');

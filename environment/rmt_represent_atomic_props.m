@@ -36,6 +36,8 @@ end
 visible = get(data.menuViewLabels,'Checked');
 dummy_cells = setdiff(1:length(C),cell2mat(propositions)); %handles to cells that are not atomic propositions
 
+name_cells = strcat(data.label_cells.name, '_{%d}');
+
 at_pr_h=cell(1,length(propositions));   %handles for each atomic prop
 text_cells_h = zeros(1,length(C));
 %represent cells
@@ -44,7 +46,7 @@ for i=1:length(C)
     %write cell numbers to cells that are not atomic propositions
     if ~isempty(intersect(dummy_cells,i))
         centr=mean(C{i},2)';
-        text_cells_h(i) = text(centr(1),centr(2),sprintf('p_{%d}',i),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',14);
+        text_cells_h(i) = text(centr(1),centr(2),sprintf(name_cells,i),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',data.label_cells.size);
     end
 end
 
@@ -57,7 +59,7 @@ for i=1:length(propositions)
         cell_ind=propositions{i}(j);    %index of current cell
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
         centr=mean(C{cell_ind},2)';
-        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf('p_{%d}',cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',14);
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf(name_cells,cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',data.label_cells.size);
     end
 end
 
