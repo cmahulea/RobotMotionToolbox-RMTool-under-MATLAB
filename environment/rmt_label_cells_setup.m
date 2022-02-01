@@ -50,14 +50,14 @@ end
 
 %mu
 input_val = char(answer{2});
-if ischar(input_val)
+if isletter(input_val)
     todoOK = 1;
 else
     todoOK = 0;
 end
 
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid type for this parameter is char!'),'Robot Motion Toolbox','modal'));
+    uiwait(errordlg(sprintf('\nValid character for this parameter is char (letter between a and z)!'),'Robot Motion Toolbox','modal'));
     error('Valid type for this parameter is char!');
 else
     param.name = input_val;
