@@ -108,14 +108,12 @@ rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all ato
 
 data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
 
-% choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and the order of the robot, do you want to improve the solution by releasing in a dynamic manner the common cells of the paths?'), ...
-%     'Robot Motion Toolbox - Path planning with dynamic release of common cells','All common cells','Common cells for paths of R_i, R_[i+1]','No','No');
-% if strcmpi(choiceMenu,'All common cells')
-%     % improved trajectories based on dynamic resource release
-%     [new_run_cells, pos_rob, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, 'all',message);
-% elseif strcmpi(choiceMenu,'Common cells for paths of R_i, R_[i+1]')
-%     [new_run_cells, pos_rob, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, 'pairs',message);
-% else % trajectories given by the result from CM & MK 2020 (Bool spec)
+choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and the order of the robot, do you want to improve the solution by releasing in a dynamic manner the common cells of the paths?'), ...
+    'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
+if strcmpi(choiceMenu,'Yes')
+    % improved trajectories based on dynamic resource release
+    [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message);
+else % trajectories given by the result from CM & MK 2020 (Bool spec)
     message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
     for j = 1 : size(Run_cells,1)
         message = sprintf('%s\nRobot %d: ',message,j);
@@ -148,7 +146,7 @@ data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[
         end
     end
 
-% end
+end
 
 
 button = questdlg('Save the details to a text file?','Robot Motion Toolbox');

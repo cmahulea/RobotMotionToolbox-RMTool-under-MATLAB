@@ -500,7 +500,7 @@ switch action
             'String','Time [s]');
         set(gcf,'UserData',data);
         
-        data.label_cells.size = 6;
+        data.label_cells.size = 8;
         data.label_cells.name = 'p';
         
         data.optim.cplex_variable='true';
