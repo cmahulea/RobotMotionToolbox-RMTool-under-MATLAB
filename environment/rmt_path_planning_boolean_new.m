@@ -112,7 +112,7 @@ choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Base
     'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
 if strcmpi(choiceMenu,'Yes')
     % improved trajectories based on dynamic resource release
-    [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message);
+    [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message,'sametrajsameorder');
 else % trajectories given by the result from CM & MK 2020 (Bool spec)
     message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
     for j = 1 : size(Run_cells,1)

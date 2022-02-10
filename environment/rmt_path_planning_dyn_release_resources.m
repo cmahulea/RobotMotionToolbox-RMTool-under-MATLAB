@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [new_Run_cells, new_rob_traj, message2] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message)
+function [new_Run_cells, new_rob_traj, message2] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message, approach)
 % %dynamical release of resources
 % input data:
 %   Run_cells - cells crossed by each robot
@@ -40,122 +40,254 @@ function [new_Run_cells, new_rob_traj, message2] = rmt_path_planning_dyn_release
 %   pos_rob - new variable which stores the position of the robots in the
 %   trajectories, based on the considered idle states
 
-% find the orer of the robots
-idx_end_val = zeros(1,length(rob_traj));
-for r = 1:length(rob_traj)
-    end_value = Run_cells(r,end);
-    idx_end_val(1,r) = find(Run_cells(r,:) == end_value, 1,'first');
-end
-
-[idx_end_val, nr_rob] = sort(idx_end_val(1,:));
-idx_end_val = [idx_end_val; nr_rob];
-
-message2 = sprintf('%s===========\n The order of the robots is: ', message);
-for i = 1:size(idx_end_val,2)
-    message2 = sprintf('%s %d ', message2, idx_end_val(2,i));
-end
 
 No_r = size(Run_cells,1);
-
-order_rob = cell(1,size(data.Pre,1));
-empty_cells = [];
-for i = 1:size(data.Pre,1)
-    for j = 1:No_r % find the order in which the robots cross each cell
-        temp_idx = find(Run_cells(j,:) == i,1,'first');
-        if ~isempty(temp_idx)
-            order_rob{i} = [order_rob{i}; temp_idx j];
-        end
-    end
-    if ~isempty(order_rob{i})
-        idx = sortrows(order_rob{i});
-        order_rob{i} = idx; % first column represent the index in the robot trajectory, the second column represent the order of the robots through cell i along the trajectory
-        order_rob{i}(:,1) = []; % keep only the order of the robots in the current cell i
-    else
-        empty_cells = [empty_cells i]; % memorize the empty cells in which no robot cross
-    end
-end
-
-temp_rob_traj = rob_traj;
-% eliminate the duplicate cells in the robot trajectories for an easier
-% manipulation
-for i = 1:size(Run_cells,1)
-    temp_Run_cells = Run_cells(i,:);
-    for j = size(Run_cells,2):-1:2
-        if (isempty(setxor(Run_cells(i,j),Run_cells(i,j-1))))
-            temp_Run_cells(j) = [];
-            temp_rob_traj{i}(:,j) = [];
-        end
-    end
-    unique_Run_cells{i} = temp_Run_cells;
-end
-
 flag_end_traj = zeros(1,No_r);
 idx_rob_traj = 2*ones(1,No_r); % index in the robots trajectory for each robot
+temp_rob_traj = rob_traj;
 
-% memorize the final cells for each trajectory
-final_cell_traj = zeros(1,No_r);
-final_rob_traj = zeros(2,No_r);
-prev_final_rob_traj = zeros(2,No_r);
-for r = 1:No_r
-    final_cell_traj(r) = unique_Run_cells{r}(end);
-    final_rob_traj(:,r) = temp_rob_traj{r}(:,end);
-    prev_final_rob_traj(:,r) = temp_rob_traj{r}(:,end - 1);
-end
-
-current_pos_all_rob = [];
-
-% initial positions for the robots
-for r = 1:No_r
-    new_Run_cells{r}(1) = unique_Run_cells{r}(1);
-    unique_Run_cells{r}(1) = [];
-    current_pos_all_rob(r) = new_Run_cells{r}(1);
-    new_rob_traj{r}(:,1) = temp_rob_traj{r}(:,1);
-    temp_rob_traj{r}(:,1) = [];
-end
-
-% compute the updated positions of the robot considering their order
-% through the cells
-while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
-    for r = 1:length(unique_Run_cells)
-        if ~isempty(unique_Run_cells{r}) % the robot advance as long as it still has cells to cross
-            current_cell = unique_Run_cells{r}(1); % access the current index in the robot's trajectory
-            idx_current_cell = find(order_rob{current_cell} == r); % compute the order of the robot in the current cell
-            
-            if idx_current_cell == 1 % if is the first one to cross the current cell, then update with the new position
-                new_Run_cells{r}(idx_rob_traj(r)) = unique_Run_cells{r}(1); % the robot advance in the next cell
-                new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
-                unique_Run_cells{r}(1) = [];
-                temp_rob_traj{r}(:,1) = [];
-                if isempty(find(current_pos_all_rob(1:end) == current_cell, 1)) && ~isempty(setdiff(new_Run_cells{r}(idx_rob_traj(r)),new_Run_cells{r}(idx_rob_traj(r) - 1)))
-                    order_rob{new_Run_cells{r}(idx_rob_traj(r) - 1)}(1) = []; % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell 
+switch approach
+    case 'sametrajsameorder'
+        order_rob = cell(1,size(data.Pre,1));
+        empty_cells = [];
+        for i = 1:size(data.Pre,1)
+            for j = 1:No_r % find the order in which the robots cross each cell
+                temp_idx = find(Run_cells(j,:) == i,1,'first');
+                if ~isempty(temp_idx)
+                    order_rob{i} = [order_rob{i}; temp_idx j];
                 end
-            else % if the robot is not the first one in the current cell, the robot stays in the previous cell
-                new_Run_cells{r}(idx_rob_traj(r)) = new_Run_cells{r}(idx_rob_traj(r) - 1); % the robot stays in the same cell
-                new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
             end
-            
-            % update the screenshot based on the current position of all
-            % the team
-            current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
-            current_pos_all_rob(1) = [];
-
-            if new_Run_cells{r}(idx_rob_traj(r)) == final_cell_traj(r) && flag_end_traj(r) == 0
-                flag_end_traj(r) = 1; % checked if the robot arrived to the destination cell
+            if ~isempty(order_rob{i})
+                idx = sortrows(order_rob{i});
+                order_rob{i} = idx; % first column represent the index in the robot trajectory, the second column represent the order of the robots through cell i along the trajectory
+                order_rob{i}(:,1) = []; % keep only the order of the robots in the current cell i
+            else
+                empty_cells = [empty_cells i]; % memorize the empty cells in which no robot cross
             end
         end
-        if isempty(unique_Run_cells{r})  % if the robot does not move from is initial position, that means the robot is already in his final cell
-            flag_end_traj(r) = 1;
-        end
-        if flag_end_traj(r) == 1 
-            new_Run_cells{r}(idx_rob_traj(r)) = final_cell_traj(r);
-            new_rob_traj{r}(:,idx_rob_traj(r)) = final_rob_traj(:,r);
-            current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
-            current_pos_all_rob(1) = [];
+
+
+        % eliminate the duplicate cells in the robot trajectories for an easier
+        % manipulation
+        for i = 1:size(Run_cells,1)
+            temp_Run_cells = Run_cells(i,:);
+            for j = size(Run_cells,2):-1:2
+                if (isempty(setxor(Run_cells(i,j),Run_cells(i,j-1))))
+                    temp_Run_cells(j) = [];
+                    temp_rob_traj{i}(:,j) = [];
+                end
+            end
+            unique_Run_cells{i} = temp_Run_cells;
         end
 
-        idx_rob_traj(r) = idx_rob_traj(r) + 1; % increase index in robot's trajectory
+        % memorize the final cells for each trajectory
+        final_cell_traj = zeros(1,No_r);
+        final_rob_traj = zeros(2,No_r);
+        prev_final_rob_traj = zeros(2,No_r);
+        for r = 1:No_r
+            final_cell_traj(r) = unique_Run_cells{r}(end);
+            final_rob_traj(:,r) = temp_rob_traj{r}(:,end);
+            prev_final_rob_traj(:,r) = temp_rob_traj{r}(:,end - 1);
+        end
 
-    end
+        current_pos_all_rob = [];
+
+        % initial positions for the robots
+        for r = 1:No_r
+            new_Run_cells{r}(1) = unique_Run_cells{r}(1);
+            unique_Run_cells{r}(1) = [];
+            current_pos_all_rob(r) = new_Run_cells{r}(1);
+            new_rob_traj{r}(:,1) = temp_rob_traj{r}(:,1);
+            temp_rob_traj{r}(:,1) = [];
+        end
+
+        % compute the updated positions of the robot considering their order
+        % through the cells
+        while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
+            for r = 1:length(unique_Run_cells)
+                if ~isempty(unique_Run_cells{r}) % the robot advance as long as it still has cells to cross
+                    current_cell = unique_Run_cells{r}(1); % access the current index in the robot's trajectory
+                    idx_current_cell = find(order_rob{current_cell} == r); % compute the order of the robot in the current cell
+
+                    if idx_current_cell == 1 % if is the first one to cross the current cell, then update with the new position
+                        new_Run_cells{r}(idx_rob_traj(r)) = unique_Run_cells{r}(1); % the robot advance in the next cell
+                        new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
+                        unique_Run_cells{r}(1) = [];
+                        temp_rob_traj{r}(:,1) = [];
+                        if isempty(find(current_pos_all_rob(1:end) == current_cell, 1)) && ~isempty(setdiff(new_Run_cells{r}(idx_rob_traj(r)),new_Run_cells{r}(idx_rob_traj(r) - 1)))
+                            order_rob{new_Run_cells{r}(idx_rob_traj(r) - 1)}(1) = []; % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell
+                        end
+                    else % if the robot is not the first one in the current cell, the robot stays in the previous cell
+                        new_Run_cells{r}(idx_rob_traj(r)) = new_Run_cells{r}(idx_rob_traj(r) - 1); % the robot stays in the same cell
+                        new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
+                    end
+
+                    % update the screenshot based on the current position of all
+                    % the team
+                    current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
+                    current_pos_all_rob(1) = [];
+
+                    if new_Run_cells{r}(idx_rob_traj(r)) == final_cell_traj(r) && flag_end_traj(r) == 0
+                        flag_end_traj(r) = 1; % checked if the robot arrived to the destination cell
+                    end
+                end
+                if isempty(unique_Run_cells{r})  % if the robot does not move from is initial position, that means the robot is already in his final cell
+                    flag_end_traj(r) = 1;
+                end
+                if flag_end_traj(r) == 1
+                    new_Run_cells{r}(idx_rob_traj(r)) = final_cell_traj(r);
+                    new_rob_traj{r}(:,idx_rob_traj(r)) = final_rob_traj(:,r);
+                    current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
+                    current_pos_all_rob(1) = [];
+                end
+
+                idx_rob_traj(r) = idx_rob_traj(r) + 1; % increase index in robot's trajectory
+
+            end
+        end
+
+    case 'sametrajdiforder'
+        for i = 1:size(Run_cells,1)
+            temp_Run_cells = Run_cells(i,:);
+            for j = size(Run_cells,2):-1:2
+                if (isempty(setxor(Run_cells(i,j),Run_cells(i,j-1))))
+                    temp_Run_cells(j) = [];
+                    temp_rob_traj{i}(:,j) = [];
+                end
+            end
+            unique_Run_cells{i} = temp_Run_cells;
+        end
+
+        % find the order in which the robots cross each cell based on its unique
+        % trajectory
+        order_rob_cell= cell(1,size(data.Pre,1));
+        empty_cells = [];
+        common_resources = [];
+        for i = 1:size(data.Pre,1)
+            for j = 1:No_r
+                temp_idx = find(unique_Run_cells{j} == i,1,'first');
+                if ~isempty(temp_idx)
+                    order_rob_cell{i} = [order_rob_cell{i}; temp_idx j];
+                end
+            end
+            if ~isempty(order_rob_cell{i})
+                idx = sortrows(order_rob_cell{i}); % first column represent the index in the robot trajectory, the second column represent the order of the robots through cell i along the trajectory
+                unique_idx = unique(idx(:,1));
+                [frecv_idx, ~] = hist(idx(:,1),unique_idx);
+                frecv_idx(frecv_idx == 0) = [];
+                init = 1;
+                temp = 0;
+                temp_order_rob = zeros(length(frecv_idx), max(frecv_idx));
+                for k = 1:length(frecv_idx)
+                    temp = temp + frecv_idx(k);
+                    temp_order_rob(k,1:frecv_idx(k)) = idx(init:temp,2)';
+                    init = temp+1;
+                end
+                order_rob_cell{i} = temp_order_rob;
+                %         order_rob{i}(:,1) = []; % keep only the order of the robots in the current cell i
+            else
+                empty_cells = [empty_cells i]; % memorize the empty cells in which no robot cross
+            end
+            if size(order_rob_cell{i},1) >= 2
+                common_resources = [common_resources i];
+            end
+        end
+
+        % compute common resources shared along robot trajectories
+        no_res = [];
+        % length_traj = [];
+        for i = 1:No_r
+            no_res = [no_res; length(intersect(unique_Run_cells{i}, common_resources)) i];
+        end
+
+        order_rob_com_res = sortrows(no_res,'descend');
+        order_rob_com_res(:,1) = [];
+
+        flag_end_traj = zeros(1,No_r);
+        idx_rob_traj = 2*ones(1,No_r); % index in the robots trajectory for each robot
+
+        % memorize the final cells for each trajectory
+        final_cell_traj = zeros(1,No_r);
+        final_rob_traj = zeros(2,No_r);
+        prev_final_rob_traj = zeros(2,No_r);
+        for r = 1:No_r
+            final_cell_traj(r) = unique_Run_cells{r}(end);
+            final_rob_traj(:,r) = temp_rob_traj{r}(:,end);
+            prev_final_rob_traj(:,r) = temp_rob_traj{r}(:,end - 1);
+        end
+
+        current_pos_all_rob = [];
+
+        % initial positions for the robots
+        for r = 1:No_r
+            new_Run_cells{r}(1) = unique_Run_cells{r}(1);
+            unique_Run_cells{r}(1) = [];
+            current_pos_all_rob(r) = new_Run_cells{r}(1);
+            new_rob_traj{r}(:,1) = temp_rob_traj{r}(:,1);
+            temp_rob_traj{r}(:,1) = [];
+        end
+
+        % compute the updated positions of the robot considering their order
+        % through the cells
+        while ~isempty(setdiff(flag_end_traj, ones(1,length(No_r))))
+            for r = 1:length(unique_Run_cells)
+                if ~isempty(unique_Run_cells{r}) % the robot advance as long as it still has cells to cross
+                    current_cell = unique_Run_cells{r}(1); % access the current index in the robot's trajectory
+                    [idx_cc_line, ~] = find(order_rob_cell{current_cell} == r); % compute the order of the robot in the current cell
+                    previous_cell = new_Run_cells{r}(idx_rob_traj(r) - 1);
+                    if idx_cc_line == 1 & isempty(find(current_pos_all_rob(1:end) == current_cell, 1))% the robot is the first one to enter the current cell
+                        new_Run_cells{r}(idx_rob_traj(r)) = unique_Run_cells{r}(1); % the robot advances in the next cell
+                        new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
+                        unique_Run_cells{r}(1) = [];
+                        temp_rob_traj{r}(:,1) = [];
+
+                        % previous cell
+                        [prev_il,prev_ic] = find(order_rob_cell{previous_cell} == r);
+
+                        if size(order_rob_cell{previous_cell},2) == 1 % the robot is the only one who needs to pass through the previous cell
+                            flag_multiple = 0;
+                        else % multiple robots can cross the previous cell in the same time
+                            flag_multiple = 1;
+                        end
+                        % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell
+                        if ~isempty(setdiff(current_cell,previous_cell))
+                            if flag_multiple == 0
+
+                                order_rob_cell{previous_cell}(1) = [];
+                            else
+
+                                order_rob_cell{previous_cell}(prev_il,prev_ic) = 0;
+                                if order_rob_cell{previous_cell}(prev_il,:) == zeros(1,size(order_rob_cell{previous_cell},2))
+                                    order_rob_cell{previous_cell}(prev_il,:) = [];
+                                end
+                            end
+                        end
+
+                    else % if the robot is not the first one in the current cell, the robot stays in the previous cell
+                        new_Run_cells{r}(idx_rob_traj(r)) = previous_cell; % the robot stays in the same cell
+                        new_rob_traj{r}(:,idx_rob_traj(r)) = temp_rob_traj{r}(:,1);
+                    end
+                    current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
+                    current_pos_all_rob(1) = [];
+
+                    if new_Run_cells{r}(idx_rob_traj(r)) == final_cell_traj(r) && flag_end_traj(r) == 0
+                        flag_end_traj(r) = 1; % checked if the robot arrived to the destination cell
+                    end
+                end
+                if isempty(unique_Run_cells{r})  % if the robot does not move from is initial position, that means the robot is already in his final cell
+                    flag_end_traj(r) = 1;
+                end
+                if flag_end_traj(r) == 1
+                    new_Run_cells{r}(idx_rob_traj(r)) = final_cell_traj(r);
+                    new_rob_traj{r}(:,idx_rob_traj(r)) = final_rob_traj(:,r);
+                    current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
+                    current_pos_all_rob(1) = [];
+                end
+
+                idx_rob_traj(r) = idx_rob_traj(r) + 1; % increase index in robot's trajectory
+
+            end
+        end
 end
 
 % add the anterior position of the final position for the correct plot of the robot trajectories
@@ -167,13 +299,28 @@ for i = 1:No_r
             k = k + 1;
         end
     end
-    temp_length = length(new_rob_traj{i});   
+    temp_length = length(new_rob_traj{i});
     new_rob_traj{i}(:,end+1) = prev_final_rob_traj(:,i);
     aux = new_rob_traj{i};
     temp_length_run_cells = length(new_Run_cells{i});
     second_aux = repmat(final_rob_traj(:,i),1,temp_length_run_cells - temp_length);
     new_rob_traj{i} = [];
     new_rob_traj{i} = [aux second_aux];
+end
+
+% find the order of the robots
+idx_end_val = zeros(1,No_r);
+for r = 1:No_r
+    end_value = new_Run_cells{r}(end);
+    idx_end_val(1,r) = find(new_Run_cells{r} == end_value, 1,'first');
+end
+
+[idx_end_val, nr_rob] = sort(idx_end_val(1,:));
+idx_end_val = [idx_end_val; nr_rob];
+
+message2 = sprintf('%s===========\n The order of the robots is: ', message);
+for i = 1:size(idx_end_val,2)
+    message2 = sprintf('%s %d ', message2, idx_end_val(2,i));
 end
 
 % initial figures (empty environment)
