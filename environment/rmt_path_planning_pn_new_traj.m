@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [xmin, message] = rmt_path_planning_pn_new_traj(data,m0,Run_cells,message)
+function [xmin, Pre,Post, message] = rmt_path_planning_pn_new_traj(data,m0,mf,obstacles,message)
 %Path-planning with LTL specificaion and Petri net models (mathematical
 %programming approach), recomputing the robot trajectories by allocating
 %the common resources in an optimal way (first in, first served)
@@ -32,11 +32,21 @@ function [xmin, message] = rmt_path_planning_pn_new_traj(data,m0,Run_cells,messa
 Pre = data.Pre;
 Post = data.Post;
 
+cell_obs = cell2mat(data.T.props(obstacles)); % cells which are considered obstacles and should be avoided
+inhib_trans = [];
+for i = 1:length(cell_obs)
+   inhib_transPre = find(Pre(cell_obs(i),:));
+   inhib_transPost = find(Post(cell_obs(i),:));
+   inhib_trans = [inhib_trans inhib_transPost inhib_transPre];
+end
+
+inhib_trans = unique(inhib_trans);
+Pre(:,inhib_trans) = [];
+Post(:,inhib_trans) = [];
+
 nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); % number of transitions
-No_r = size(Run_cells,1);
-mf = zeros(nplaces,1);
-mf(Run_cells(:,end)) = 1; % final marking in PN
+No_r = length(data.RO);
 
 C = Post - Pre;
 
@@ -59,7 +69,8 @@ for i = 1:No_r
     Aeq = [Aeq; repmat(temp_zeros,[1, i-1]) eye(nplaces) -eye(nplaces) C repmat(temp_zeros,[1, No_r - i])];
     beq = [beq; zeros(nplaces,1)];
 
-    % b)
+    % b) The robot i considers that i-1 robots arrived in the final marking
+    % and the next i+1 robots are still in the  initial marking
     if i < No_r
         A = [A; repmat(temp_mi,[1,i-1]) zeros(nplaces,2*nplaces) Post repmat(temp_m0,[1, No_r - i])];
         b = [b; ones(nplaces,1)];
@@ -68,21 +79,21 @@ for i = 1:No_r
         b = [b; ones(nplaces,1)];
     end
 
-    % e)
+    % e) assures that only one robot moves
     Aeq = [Aeq; repmat(zeros(1,2*nplaces+ntrans),[1, i-1]) temp_m0_single repmat(zeros(1,2*nplaces+ntrans),[1, No_r - i])];
     beq = [beq; ones(1,1)];
 
-    % f)
+    % f) assures that only one robot moves - possible redundant
     Aeq = [Aeq; repmat(zeros(1,2*nplaces+ntrans),[1, i-1]) temp_mi_single repmat(zeros(1,2*nplaces+ntrans),[1, No_r - i])];
     beq = [beq; ones(1,1)];
 
 end
 
-% c)
+% c) all robots depart from the initial marking
 Aeq = [Aeq; repmat(temp_m0, [1,No_r])];
 beq = [beq; m0];
 
-% d)
+% d) all robots arrives in the final marking
 Aeq = [Aeq; repmat(temp_mi, [1,No_r])];
 beq = [beq; mf];
 
@@ -106,7 +117,7 @@ else
 end
 
 switch solver
-    case cplex
+    case 'cplex'
         message = sprintf('%s\n\nThe MILP solution is with CPLEX\n\n', message);
         vartype = '';
         for r = 1:No_r
@@ -149,7 +160,7 @@ switch solver
                 uiwait(errordlg('Limit reached.','Robot Motion Toolbox','modal'));
         end
         message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
-    case gplk
+    case 'gplk'
         % Solution with GLPK
         message = sprintf('%s\n\nThe MILP solution is with GLPK\n\n', message);
         ctype1='';
@@ -179,7 +190,7 @@ switch solver
         time = toc;
         message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
 
-    case intlinprog
+    case 'intlinprog'
         message = sprintf('%s\n\nThe MILP solution is with intlinprog\n\n', message);
         tic
         [xmin,fmin,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
@@ -192,4 +203,8 @@ message = sprintf('\n %s Cost function is: %d ',message, fmin);
 if (isempty(xmin)) %no solution
     uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution!','Robot Motion Toolbox','modal'));
     return;
+end
+
+% new trajectories of the robots and the new order
+
 end
