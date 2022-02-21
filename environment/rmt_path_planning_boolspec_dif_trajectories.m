@@ -76,7 +76,7 @@ for r = 1:N_r
     
 end
 time = toc;
-message=sprintf('%s\nTime to compute the new trajectories based on the new re-planned paths: %d \n',message,time);
+message=sprintf('\n%sTime to compute the new trajectories based on the new re-planned paths: %d \n',message,time);
 
 max_length = max(max_length);
 % make all trajectories with the same length, by maintaining the final
@@ -86,53 +86,9 @@ for r = 1:N_r
     Runs = [Runs; out_Run_cells{r}];
 end
 
-%% Stuff for the main script - re-planning the trajectories after an user input
-% data.new_traj.T.RO = Runs(:,1);
-% aux_x0 = cell(1,N_r);
-% init_cells = data.new_traj.T.RO;
-%
-% % align the initial position of the robots with the new order
-% for k = 1:N_r
-%     xx = data.new_traj.x0{k}(1); % take current position of one robot
-%     yy = data.new_traj.x0{k}(2);
-%     for kr = 1:N_r
-%         xp = [min(data.new_traj.T.Vert{init_cells(kr)}(1,:)) max(data.new_traj.T.Vert{init_cells(kr)}(1,:))]; % check in which cell the robot should enter
-%         yp = [min(data.new_traj.T.Vert{init_cells(kr)}(2,:)) max(data.new_traj.T.Vert{init_cells(kr)}(2,:))];
-%         if inpolygon(xx,yy,xp,yp)
-%             aux_x0{kr} = data.new_traj.x0{k};
-%         end
-%     end
-% end
-% data.new_traj.x0 = aux_x0;
-
 if nargout > 3
     rob_traj = rmt_rob_cont_traj_new(data.new_traj.T,Runs,data.new_traj.x0);    %continuous trajectory of each robot based on Run_cells
     varargout{1} = rob_traj;
     
 end
-%% check the trajectories in the environment
-% rob_traj = rmt_rob_cont_traj_new(data.T, Runs, data.initial);
-% %
-% % name_fig = 'InitTrajBoolSpec.fig';
-% % init_fig = openfig(name_fig)';
-% % data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
-% %
-% % new_rob_traj = rob_traj;
-% %
-% % % parallel movement of the robots
-% % for uu = 1:length(new_rob_traj{1})-1
-% %     for rr = 1:length(new_rob_traj)
-% %         plot(new_rob_traj{rr}(1,uu:uu+1),new_rob_traj{rr}(2,uu:uu+1),'Color',data.rob_plot.line_color{rr},'LineWidth',data.rob_plot.line_width{rr});
-% %         h = plot(new_rob_traj{rr}(1,uu+1),new_rob_traj{rr}(2,uu+1),'Color',data.rob_plot.line_color{rr},...
-% %             'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
-% %         if uu == 1 % mark the start point
-% %             plot(new_rob_traj{rr}(1,uu),new_rob_traj{rr}(2,uu),'Color',data.rob_plot.line_color{rr},...
-% %                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
-% %         elseif uu == size(new_rob_traj{1},2)-1 % mark the end point
-% %             plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
-% %                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
-% %         end
-% %     end
-% %     pause;
-% % end
 end

@@ -46,9 +46,9 @@ idx_rob_traj = ones(1,No_r); % index in the robots trajectory for each robot
 current_pos_all_rob = [];
 data.new_traj.rob_traj = rob_traj;
 if data.optim.param_boolean.UserCount == 0
-    message = sprintf('%s\n The selected approach is respected, without a re-planning of trajectories\n',message);
+    message = sprintf('\n%s The selected approach is respected, without a re-planning of trajectories',message);
 else
-    message = sprintf('%s\n Robot trajectories are re-computed for a number of %d robots waiting to cross a common cell among their trajectories.\n',message, data.optim.param_boolean.UserCount);
+    message = sprintf('\n%s Robot trajectories are re-computed for a number of %d robots waiting to cross a common cell among their trajectories.',message, data.optim.param_boolean.UserCount);
 end
 
 switch approach
@@ -73,7 +73,7 @@ switch approach
             unique_Run_cells{r}(1) = [];
             %             temp_rob_traj{r}(:,1) = [];
         end
-        message = sprintf('%s\n The selected approach is '' same trajectories same order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
+        message = sprintf('\n%s The selected approach is '' same trajectories same order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
 
     case 'sametrajdiforder'
         % eliminate the duplicate cells in the robot trajectories for an easier
@@ -114,7 +114,7 @@ switch approach
             unique_Run_cells{r}(1) = [];
             temp_rob_traj{r}(:,1) = [];
         end
-        message = sprintf('%s\n The selected approach is '' same trajectories but different order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
+        message = sprintf('\n%s The selected approach is '' same trajectories but different order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
 end
 Pre = data.Pre;
 mf = zeros(size(Pre,1),1);
@@ -222,8 +222,8 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 end
 time = toc;
 
-message = sprintf('%s\n The trajectories were re-planned by a number of %d times \n',message, another_count);
-message = sprintf('%s\n Time to follow the trajectories: %d \n',message, time);
+message = sprintf('\n%s The trajectories were re-planned by a number of %d times',message, another_count);
+message = sprintf('\n%s Time to follow the trajectories: %d ',message, time);
 
 % make all trajectories of the same length - necessary to plot in parallel
 Traj_runs = [];
@@ -256,7 +256,6 @@ end
 
 % name_fig = 'InitTrajBoolSpec.fig';
 % init_fig = openfig(name_fig)';
-% data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
 
 alpha_transparency = 0.5;
 color_transparency = {[1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1,0,1,alpha_transparency],...
