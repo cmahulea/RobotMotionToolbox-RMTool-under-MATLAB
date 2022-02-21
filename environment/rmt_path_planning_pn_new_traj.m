@@ -99,7 +99,7 @@ beq = [beq; mf];
 
 cost = [];
 for i = 1:No_r
-    cost = [cost zeros(1,2*nplaces) ones(1,ntrans)];
+    cost = [cost zeros(1,2*nplaces) i*ones(1,ntrans)];
 end
 time = toc;
 message = sprintf('\n %s Run time to construct the MILP is: %d , with %d number of variables ', message, time, No_r * (2*nplaces + ntrans));

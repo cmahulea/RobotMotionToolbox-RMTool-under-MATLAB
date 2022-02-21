@@ -516,6 +516,7 @@ switch action
         data.optim.param_boolean.lambda = 1;
         data.optim.param_boolean.mu = 1000;
         data.optim.param_boolean.kappa = 10;
+        data.optim.param_boolean.UserCount = 8; % for replanning robots trajectories
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
         data.optim.paramWith.interM = 10;

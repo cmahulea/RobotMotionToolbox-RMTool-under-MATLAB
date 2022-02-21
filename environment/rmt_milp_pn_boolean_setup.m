@@ -30,9 +30,10 @@ answer = inputdlg({...
     sprintf('Weight in cost function on number of fired transitions:'),...
     sprintf('Weight in cost function on soft contraints (of var. b) (for collision avoidance):'),...
     sprintf('Number of PN intermediate markings'),...    
+    sprintf('Number of robots which waits to enter a common cell'),...
     },...
     'Robot Motion Toolbox',...
-    [1;1;1],{num2str(param.lambda,3),num2str(param.mu,3),num2str(param.kappa,3)});
+    [1;1;1;1],{num2str(param.lambda,3),num2str(param.mu,3),num2str(param.kappa,3),num2str(param.UserCount,3)});
 if (isempty(answer))
     return;
 end
@@ -64,6 +65,16 @@ if (todoOK == 0)
     error('Valid range for kappa is betweeen 1 and 50!');
 else
     param.kappa = eval(input_val);
+end
+
+%UserCount
+input_val = char(answer{1});
+todoOK = rmt_detect_error(input_val,0,1000);
+if (todoOK == 0)
+    uiwait(errordlg(sprintf('\nValid range for UserCount is between 0 and 20!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for UserCount is betweeen 0 and 20!');
+else
+    param.UserCount = eval(input_val);
 end
 
 return;

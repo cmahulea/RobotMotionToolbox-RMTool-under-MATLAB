@@ -24,7 +24,7 @@
 %   Last modification November 10, 2018.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
-function [order_rob_cell,varargout] = rmt_find_order_trajectories(data,Run_cells,No_r,rob_traj)
+function [order_rob_cell,varargout] = rmt_find_order_trajectories(data,Run_cells,No_r,varargin)
 % order of the robots into cells based on their trajectories
 order_rob_cell = cell(1,size(data.Pre,1));
 for i = 1:size(data.Pre,1)
@@ -43,8 +43,11 @@ for i = 1:size(data.Pre,1)
 end
 
 
-if nargout > 1
+if nargout > 1 && nargin == 4
 
+    rob_traj = data.new_traj.rob_traj;
+    varargin{1} = rob_traj;
+    
     final_cell_traj = Run_cells(:,end);
     final_rob_traj = zeros(2,No_r);
     prev_final_rob_traj = zeros(2,No_r);
