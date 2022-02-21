@@ -160,7 +160,7 @@ switch solver
                 uiwait(errordlg('Limit reached.','Robot Motion Toolbox','modal'));
         end
         message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
-    case 'gplk'
+    case 'glpk'
         % Solution with GLPK
         message = sprintf('%s\n\nThe MILP solution is with GLPK\n\n', message);
         ctype1='';

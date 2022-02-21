@@ -68,7 +68,7 @@ else
 end
 
 %UserCount
-input_val = char(answer{1});
+input_val = char(answer{4});
 todoOK = rmt_detect_error(input_val,0,1000);
 if (todoOK == 0)
     uiwait(errordlg(sprintf('\nValid range for UserCount is between 0 and 20!'),'Robot Motion Toolbox','modal'));

@@ -37,7 +37,7 @@ tic
 for r = 1:N_r
     lefts = 2*nplaces+1;
     step = 2*nplaces + ntrans; % used also for each step
-    sigma = xmin(lefts + step* (r-1):step + step*(r-1)); %extract sigma from xmin
+    sigma = xmin(lefts + step*(r-1):step + step*(r-1)); %extract sigma from xmin
     
     left_mi = nplaces + 1;
     right_mi = 2*nplaces;
@@ -58,9 +58,7 @@ for r = 1:N_r
     % find the order of the fired transitions
     k = 1;
     while k <= length(fired_trans)
-        pre_cell = find(Pre(:,fired_trans(k)));
-        %         post_firedtrans = find(Post(find(out_Run_cells{r}(end)),:));
-        
+        pre_cell = find(Pre(:,fired_trans(k)));        
         if pre_cell == out_Run_cells{r}(end)
             out_Run_cells{r} = [out_Run_cells{r} find(Post(:,fired_trans(k)))];
             fired_trans(k) = [];
@@ -78,7 +76,7 @@ for r = 1:N_r
     
 end
 time = toc;
-message=sprintf('%s\nTime to compute the new trajectories: %d \n',message,time);
+message=sprintf('%s\nTime to compute the new trajectories based on the new re-planned paths: %d \n',message,time);
 
 max_length = max(max_length);
 % make all trajectories with the same length, by maintaining the final
