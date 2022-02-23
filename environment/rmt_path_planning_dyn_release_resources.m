@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message,obstacles, approach)
+% function [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message,obstacles, approach)
 % %dynamical release of resources
 % input data:
 %   Run_cells - cells crossed by each robot
@@ -43,7 +43,7 @@ function [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_
 No_r = size(Run_cells,1);
 flag_end_traj = zeros(1,No_r);
 idx_rob_traj = ones(1,No_r); % index in the robots trajectory for each robot
-current_pos_all_rob = [];
+current_pos_all_rob = Run_cells(:,1); % initial cell of all robots
 data.new_traj.rob_traj = rob_traj;
 
 temp_rob_traj = rob_traj;
@@ -54,31 +54,31 @@ else
     message = sprintf('\n%s Robot trajectories are re-computed for a number of %d robots waiting to cross a common cell among their trajectories.',message, data.optim.param_boolean.UserCount);
 end
 
-switch approach
-    case 'sametrajsameorder'
-        %compute the order of the robots in each cell
-        [order_rob_cell,~,final_cell_traj,~,~,new_Run_cells] = rmt_find_order_trajectories(data,Run_cells,No_r,rob_traj);
-        % eliminate the duplicate cells in the robot trajectories for an easier
-        % manipulation
-        for i = 1:size(Run_cells,1)
-            temp_Run_cells = Run_cells(i,:);
-            for j = size(Run_cells,2):-1:2
-                if (isempty(setxor(Run_cells(i,j),Run_cells(i,j-1))))
-                    temp_Run_cells(j) = [];
-                    %                     temp_rob_traj{i}(:,j) = [];
-                end
-            end
-            unique_Run_cells{i} = temp_Run_cells;
-        end
+% switch approach
+%     case 'sametrajsameorder'
+%         %compute the order of the robots in each cell
+%         [order_rob_cell,~,final_cell_traj,~,~,new_Run_cells] = rmt_find_order_trajectories(data,Run_cells,No_r,rob_traj);
+%         % eliminate the duplicate cells in the robot trajectories for an easier
+%         % manipulation
+%         for i = 1:size(Run_cells,1)
+%             temp_Run_cells = Run_cells(i,:);
+%             for j = size(Run_cells,2):-1:2
+%                 if (isempty(setxor(Run_cells(i,j),Run_cells(i,j-1))))
+%                     temp_Run_cells(j) = [];
+%                     %                     temp_rob_traj{i}(:,j) = [];
+%                 end
+%             end
+%             unique_Run_cells{i} = temp_Run_cells;
+%         end
+% 
+%         % initial positions for the robots
+%         for r = 1:No_r
+%             unique_Run_cells{r}(1) = [];
+%             %             temp_rob_traj{r}(:,1) = [];
+%         end
+%         message = sprintf('\n%s The selected approach is '' same trajectories same order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
 
-        % initial positions for the robots
-        for r = 1:No_r
-            unique_Run_cells{r}(1) = [];
-            %             temp_rob_traj{r}(:,1) = [];
-        end
-        message = sprintf('\n%s The selected approach is '' same trajectories same order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
-
-    case 'sametrajdiforder'
+%     case 'sametrajdiforder'
         % eliminate the duplicate cells in the robot trajectories for an easier
         % manipulation
         aux_Run_cells = [];
@@ -118,7 +118,7 @@ switch approach
             temp_rob_traj{r}(:,1) = [];
         end
         message = sprintf('\n%s The selected approach is '' same trajectories but different order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
-end
+% end
 Pre = data.Pre;
 mf = zeros(size(Pre,1),1);
 mf(Run_cells(:,end)) = 1; % final marking in PN
@@ -129,17 +129,20 @@ length_RunTraj = zeros(1,No_r);
 data.new_traj.x0 = data.initial;
 data.new_traj.T = data.T;
 
+time_to_replan = [];
+
+
 % compute the updated positions of the robot considering their order
 % through the cells
-another_count = 0;
+another_count = 1;
 tic
 while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
+    count = 0; % initialize at each step the number of robots which waits to enter a common cell
     for r = 1:length(unique_Run_cells)
         idx_rob_traj(r) = idx_rob_traj(r) + 1; % increase index in robot's trajectory
         cell_idx =[];
-        % update screen shot for each step &  check the cells in which the robots are on the same index
+        %  check the cells in which the robots are on the same index
         for k = 1:No_r
-            current_pos_all_rob(k) = new_Run_cells{k}(end);
             if length(new_Run_cells{k}) >= idx_rob_traj(r)
                 cell_idx = [cell_idx new_Run_cells{k}(idx_rob_traj(r))];
             end
@@ -159,60 +162,24 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 
             else % if the robot is not the first one in the current cell, the robot stays in the previous cell
                 new_Run_cells{r}(idx_rob_traj(r)) = previous_cell; % the robot stays in the same cell
-%                 count = count + 1; 
-
-                %% NEW TRAJECTORIES
-                if count == data.optim.param_boolean.UserCount &&  data.optim.param_boolean.UserCount ~= 0 % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
-                    % update the screenshot based on the current position of all
-                    % the team
-
-                    current_m0 = zeros(size(Pre,1),1); % update the initial marking based on the current position of the robots
-                    current_m0(current_pos_all_rob) = 1;
-
-                    % compute new trajectories for the robots
-                    [xmin, Pre,Post, message] = rmt_path_planning_pn_new_traj(data,current_m0,mf,obstacles,message);
-                    [unique_Run_cells, Runs, message] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,Pre,Post,No_r,message);
-
-                    % find new order of the robots with their new final
-                    % destination
-                    [order_rob_cell] = rmt_find_order_trajectories(data,Runs,No_r);
-
-                    % update order for new_Run_cells & new_rob_traj
-                    another_Run_cells = cell(1,No_r);
-                    another_flag_end = zeros(1,No_r);
-                    another_idx_rob_traj = zeros(1,No_r);
-                    current_pos_all_rob = [];
-                    for k = 1:No_r
-                        idx = find(new_Run_cells{k}(end) == Runs(:,1));
-                        another_Run_cells{idx} = new_Run_cells{k};
-                        another_idx_rob_traj(idx) = length(new_Run_cells{k});
-                        another_flag_end(idx) = flag_end_traj(k);
-                        final_cell_traj(k) = unique_Run_cells{k}(end);
-                        unique_Run_cells{k}(1) = [];
-                        current_pos_all_rob(k) = new_Run_cells{k}(end);
-                    end
-
-                    new_Run_cells = another_Run_cells;
-                    idx_rob_traj = another_idx_rob_traj;
-                    flag_end_traj = another_flag_end;
-                    count = 0;
-                    flag_count = 1; % flag used when the trajectories are re-computed
-                    another_count = another_count + 1;
-                end
-            count = count + 1; % number of robots which waits to enter a common cell
+                count = count + 1; % number of robots which waits to enter a common cell
             end
 
             if new_Run_cells{r}(idx_rob_traj(r)) == final_cell_traj(r) && flag_end_traj(r) == 0
                 flag_end_traj(r) = 1; % checked if the robot arrived to the destination cell
             end
         end
+
+        current_pos_all_rob(r) = new_Run_cells{r}(end); % update screen shot for each step (current position of robot r)
+
         if isempty(unique_Run_cells{r})  % if the robot does not move from is initial position, that means the robot is already in his final cell
             flag_end_traj(r) = 1;
         end
-        if flag_end_traj(r) == 1
+
+        if flag_end_traj(r) == 1 % if the robot arrives at the destination cell, it stays there until all robot reaches their destination
             new_Run_cells{r}(idx_rob_traj(r)) = final_cell_traj(r);
-            current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
-            current_pos_all_rob(1) = [];
+%             current_pos_all_rob(No_r + 1) = new_Run_cells{r}(idx_rob_traj(r));
+%             current_pos_all_rob(1) = [];
         end
         length_RunTraj(r) = length(new_Run_cells{r});
 
@@ -221,6 +188,47 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
             flag_count = 0;
         end
 
+    end
+    %% NEW TRAJECTORIES
+    if count == data.optim.param_boolean.UserCount &&  data.optim.param_boolean.UserCount ~= 0 % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
+        % update the screenshot based on the current position of all
+        % the team
+
+        current_m0 = zeros(size(Pre,1),1); % update the initial marking based on the current position of the robots
+        current_m0(current_pos_all_rob) = 1;
+
+        % compute new trajectories for the robots
+        tic
+        [xmin, Pre,Post, message] = rmt_path_planning_pn_new_traj(data,current_m0,mf,obstacles,message);
+        [unique_Run_cells, Runs, message] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,Pre,Post,No_r,message);
+        tt = toc;
+
+        time_to_replan(another_count) = tt; % memorize the time to compute the new trajectories for all iterations
+
+        % find new order of the robots with their new final
+        % destination
+        [order_rob_cell] = rmt_find_order_trajectories(data,Runs,No_r);
+
+        % update order for new_Run_cells & new_rob_traj
+        another_Run_cells = cell(1,No_r);
+        another_flag_end = zeros(1,No_r);
+        another_idx_rob_traj = zeros(1,No_r);
+        current_pos_all_rob = [];
+        for k = 1:No_r
+            idx = find(new_Run_cells{k}(end) == Runs(:,1));
+            another_Run_cells{idx} = new_Run_cells{k};
+            another_idx_rob_traj(idx) = length(new_Run_cells{k});
+            another_flag_end(idx) = flag_end_traj(k);
+            final_cell_traj(k) = unique_Run_cells{k}(end);
+            unique_Run_cells{k}(1) = [];
+            current_pos_all_rob(k) = new_Run_cells{k}(end);
+        end
+
+        new_Run_cells = another_Run_cells;
+        idx_rob_traj = another_idx_rob_traj;
+        flag_end_traj = another_flag_end;
+        flag_count = 1; % flag used when the trajectories are re-computed
+        another_count = another_count + 1;
     end
 end
 time = toc;
@@ -257,8 +265,8 @@ end
 %% plot trajectories
 % initial figures (empty environment)
 
-% name_fig = 'InitTrajBoolSpec.fig';
-% init_fig = openfig(name_fig)';
+name_fig = 'InitTrajBoolSpec.fig';
+init_fig = openfig(name_fig)';
 
 alpha_transparency = 0.5;
 color_transparency = {[1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1,0,1,alpha_transparency],...
