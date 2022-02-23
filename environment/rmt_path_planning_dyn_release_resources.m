@@ -45,6 +45,9 @@ flag_end_traj = zeros(1,No_r);
 idx_rob_traj = ones(1,No_r); % index in the robots trajectory for each robot
 current_pos_all_rob = [];
 data.new_traj.rob_traj = rob_traj;
+
+temp_rob_traj = rob_traj;
+
 if data.optim.param_boolean.UserCount == 0
     message = sprintf('\n%s The selected approach is respected, without a re-planning of trajectories',message);
 else
@@ -98,7 +101,7 @@ switch approach
         % the robot in the final cell
         max_length_cell = max(max_length_cell);
         max_length_rob_traj = max(max_length_rob_traj);
-        for r = 1:N_r
+        for r = 1:No_r
             unique_Run_cells{r}(end:end+max_length_cell - length(unique_Run_cells{r})) = unique_Run_cells{r}(end);
             aux_Run_cells = [aux_Run_cells; unique_Run_cells{r}];
             add_length = max_length_rob_traj - length(temp_rob_traj{r}) + 1;
@@ -222,8 +225,8 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 end
 time = toc;
 
-message = sprintf('\n%s The trajectories were re-planned by a number of %d times',message, another_count);
-message = sprintf('\n%s Time to follow the trajectories: %d ',message, time);
+message = sprintf('\n%s The trajectories were re-planned by a number of %d times\n',message, another_count);
+message = sprintf('\n%s Time to follow the trajectories: %d \n',message, time);
 
 % make all trajectories of the same length - necessary to plot in parallel
 Traj_runs = [];
