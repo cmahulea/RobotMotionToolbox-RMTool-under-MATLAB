@@ -24,11 +24,23 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [out_Run_cells, Runs, message, rob_traj] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,Pre,Post,N_r,message)
+function [out_Run_cells, Runs, message] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,N_r,message)
 % interpret xmin to obtain robots trajectories and their final destination
+% inputs: data - Pre, Post
+%         xmin - solution returned by MILP for re-planning the trajectories
+%       N_r - number of robots
+%       message - update message with info about run time and number of
+%       variables
+%outputs: out_Run_Cells - new trajectory for each robot
+%       Runs - each line from matrix Runs contains the trajectory cells for
+%       each robot
+
 out_Run_cells = cell(N_r,1);
 Runs = [];
 max_length = [];
+
+Pre = data.relres.Pre;
+Post = data.relres.Post;
 
 nplaces = size(Pre,1);
 ntrans = size(Pre,2);
@@ -58,16 +70,16 @@ for r = 1:N_r
     % find the order of the fired transitions
     k = 1;
     while k <= length(fired_trans)
-        pre_cell = find(Pre(:,fired_trans(k)));        
+        pre_cell = find(Pre(:,fired_trans(k))); % fire the transition which enables the robot to move from its initial position    
         if pre_cell == out_Run_cells{r}(end)
-            out_Run_cells{r} = [out_Run_cells{r} find(Post(:,fired_trans(k)))];
+            out_Run_cells{r} = [out_Run_cells{r} find(Post(:,fired_trans(k)))]; % move to the next cell
             fired_trans(k) = [];
             k = 1;
         else
             k = k + 1;
         end
-        if length(fired_trans) == 1 & fired_trans(k) == mi_f
-            out_Run_cells{r} = [out_Run_cells{r} mi_f];
+        if length(fired_trans) == 1 %& fired_trans(k) == mi_f % for the case when the robot must fire only one transition to reach its final cell
+            out_Run_cells{r} = [out_Run_cells{r} find(mi_f)];
             fired_trans(k) = [];
         end
     end
@@ -86,9 +98,4 @@ for r = 1:N_r
     Runs = [Runs; out_Run_cells{r}];
 end
 
-if nargout > 3
-    rob_traj = rmt_rob_cont_traj_new(data.new_traj.T,Runs,data.new_traj.x0);    %continuous trajectory of each robot based on Run_cells
-    varargout{1} = rob_traj;
-    
-end
 end

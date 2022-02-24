@@ -24,8 +24,16 @@
 %   Last modification November 10, 2018.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
-function [order_rob_cell,varargout] = rmt_find_order_trajectories(data,Run_cells,No_r,varargin)
+function [order_rob_cell,final_cell_traj,new_Run_cells] = rmt_find_order_trajectories(data,Run_cells,No_r)
 % order of the robots into cells based on their trajectories
+%input: data for total number of cells
+%       Run_cells for robot trajectories
+%       No_r number of robots
+%output: order_rob_cell - for each cell is stored the order in which the
+%robots should cross
+%       final_cell_traj - memorize the destination cell
+%       new_Run_cells - store the initial cell for all robots
+
 order_rob_cell = cell(1,size(data.Pre,1));
 for i = 1:size(data.Pre,1)
     for j = 1:No_r % find the order in which the robots cross each cell
@@ -39,42 +47,13 @@ for i = 1:size(data.Pre,1)
         order_rob_cell{i} = idx; % first column represent the index in the robot trajectory, the second column represent the order of the robots through cell i along the trajectory
         order_rob_cell{i}(:,1) = []; % keep only the order of the robots in the current cell i
     end
-
+    
 end
 
-
-if nargout > 1 && nargin == 4
-
-    rob_traj = data.new_traj.rob_traj;
-    varargin{1} = rob_traj;
-    
-    final_cell_traj = Run_cells(:,end);
-    final_rob_traj = zeros(2,No_r);
-    prev_final_rob_traj = zeros(2,No_r);
-    new_rob_traj = cell(size(rob_traj));
-
-    for r = 1:No_r
-        % memorize the final cells for each trajectory
-        final_rob_traj(:,r) = rob_traj{r}(:,end);
-
-        % memorize the previous from the end point trajectory
-        for i = 1:size(rob_traj{r},2)
-            verif = ismember(rob_traj{r}(:,i),rob_traj{r}(:,end));
-            if isempty(setdiff(double(verif),ones(2,1)))
-                prev_final_rob_traj(:,r) = rob_traj{r}(:,i-1);
-                break;
-            end
-        end
-
-        % initial positions for the robots
-        new_rob_traj{r}(:,1) = rob_traj{r}(:,1);
-        new_Run_cells{r}(1) = Run_cells(r,1);
-
-    end
-    varargout{1} = final_rob_traj;
-    varargout{2} = final_cell_traj;
-    varargout{3} = prev_final_rob_traj;
-    varargout{4} = new_rob_traj;
-    varargout{5} = new_Run_cells;
+% final cell for rob traj
+final_cell_traj = Run_cells(:,end);
+for r = 1:No_r
+    % initial positions for the robots
+    new_Run_cells{r}(1) = Run_cells(r,1);
 end
 end

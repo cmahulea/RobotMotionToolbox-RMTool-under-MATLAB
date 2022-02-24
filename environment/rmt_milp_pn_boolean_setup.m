@@ -71,8 +71,8 @@ end
 input_val = char(answer{4});
 todoOK = rmt_detect_error(input_val,0,1000);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for UserCount is between 0 and 20!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for UserCount is betweeen 0 and 20!');
+    uiwait(errordlg(sprintf('\nValid range for UserCount is between 1 and the number of robots!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for UserCount is betweeen 1 and the number of robots!');
 else
     param.UserCount = eval(input_val);
 end

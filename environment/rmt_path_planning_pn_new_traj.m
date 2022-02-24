@@ -24,25 +24,18 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [xmin, Pre,Post, message] = rmt_path_planning_pn_new_traj(data,m0,mf,obstacles,message)
-%Path-planning with LTL specificaion and Petri net models (mathematical
-%programming approach), recomputing the robot trajectories by allocating
+function [xmin, message] = rmt_path_planning_pn_new_traj(data,m0,mf,message)
+%Path-planning with LTL specificaion and Petri net models, recomputing the robot trajectories by allocating
 %the common resources in an optimal way (first in, first served)
+%input: data - extract info about matrices Pre, Post, and solver
+%       m0 - initial marking
+%       mf  - final marking
+%       message - update message with info about run time and number of
+%       variables
+% output: xmin - solution to MILP for re-planning trajectories 
 
-Pre = data.Pre;
-Post = data.Post;
-
-cell_obs = cell2mat(data.T.props(obstacles)); % cells which are considered obstacles and should be avoided
-inhib_trans = [];
-for i = 1:length(cell_obs)
-   inhib_transPre = find(Pre(cell_obs(i),:));
-   inhib_transPost = find(Post(cell_obs(i),:));
-   inhib_trans = [inhib_trans inhib_transPost inhib_transPre];
-end
-
-inhib_trans = unique(inhib_trans);
-Pre(:,inhib_trans) = [];
-Post(:,inhib_trans) = [];
+Pre = data.relres.Pre;
+Post = data.relres.Post;
 
 nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); % number of transitions

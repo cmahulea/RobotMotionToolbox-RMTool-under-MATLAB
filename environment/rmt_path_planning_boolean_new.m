@@ -108,11 +108,11 @@ rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all ato
 
 data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
 
-choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and the order of the robot, do you want to improve the solution by releasing in a dynamic manner the common cells of the paths?'), ...
+choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and robot''s order, do you want to improve the solution by releasing the common cells in a dynamic manner?'), ...
     'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
 if strcmpi(choiceMenu,'Yes')
     % improved trajectories based on dynamic resource release
-    [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, rob_traj, data, message,obstacles,'sametrajdiforder');
+    [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, data, message,obstacles);
 else % trajectories given by the result from CM & MK 2020 (Bool spec)
     message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
     for j = 1 : size(Run_cells,1)
@@ -123,6 +123,23 @@ else % trajectories given by the result from CM & MK 2020 (Bool spec)
         end
         message = sprintf('%s%d',message,temp(length(temp)));
     end
+    
+    % compute the order of robots
+    idx_end_val = zeros(1,N_r);
+    for r = 1:N_r
+        end_value = Run_cells(r,end);
+        idx_end_val(1,r) = find(Run_cells(r,:) == end_value, 1,'first');
+    end
+    
+    [idx_end_val, nr_rob] = sort(idx_end_val(1,:));
+    idx_end_val = [idx_end_val; nr_rob];
+    
+    message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Run_cells,2));
+    message = sprintf('%s===========\n The order of the robots is: ', message);
+    for i = 1:N_r
+        message = sprintf('%s %d ', message, idx_end_val(2,i));
+    end
+    
     for r=1:length(rob_traj)    %plot trajectories of robots
         plot(rob_traj{r}(1,1),rob_traj{r}(2,1),'Color',data.rob_plot.line_color{r},...
             'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r});
