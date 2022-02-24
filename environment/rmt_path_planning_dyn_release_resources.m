@@ -104,7 +104,7 @@ end
 for r = 1:No_r
     unique_Run_cells{r}(1) = [];
 end
-message = sprintf('\n%s The selected approach is '' same trajectories but different order of robots crossing the common cells'', as long as the selected number of robots waiting to enter a common cell is 0. \n',message);
+message = sprintf('\n%s The selected approach is '' same trajectories same order''\n. The order is maintained until a re-planning of trajectories is enabled \n',message);
 % end
 mf = zeros(size(Pre,1),1);
 mf(Run_cells(:,end)) = 1; % final marking in PN
