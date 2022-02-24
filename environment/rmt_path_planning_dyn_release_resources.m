@@ -173,7 +173,7 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
         
     end
     %% NEW TRAJECTORIES
-    if count == data.optim.param_boolean.UserCount &&  data.optim.param_boolean.UserCount ~= 0 % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
+    if count >= data.optim.param_boolean.UserCount % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
         % update the screenshot based on the current position of all
         % the team
         
@@ -274,7 +274,7 @@ for uu = 1:length(new_rob_traj{1})-1
         % color last 2 cells of each trajectory and add the current
         % position of the robot
         current_cell_traj = Traj_runs(rr,uu);
-        hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr});
+        hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
         set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
         
         hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
@@ -289,10 +289,11 @@ for uu = 1:length(new_rob_traj{1})-1
         elseif uu == size(new_rob_traj{rr},2)-1 % mark the end point
             plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
+            
         elseif ~isempty(find(ss_replan == uu,1)) % plot the moments where the replanning is made
             fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.1,'EdgeColor',data.rob_plot.line_color{rr});
             plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
-                'Marker','d','LineWidth',data.rob_plot.line_width{rr});
+                'Marker','d','LineWidth',1);
         end
         hh_v{rr} = hh;
     end

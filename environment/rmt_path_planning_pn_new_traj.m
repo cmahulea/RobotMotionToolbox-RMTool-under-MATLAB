@@ -116,7 +116,7 @@ switch solver
         for r = 1:No_r
 
             for j = 1 : 2*nplaces
-                vartype = sprintf('%sC',vartype); %put the markings as real
+                vartype = sprintf('%sI',vartype); %put the markings as real
             end
             for j = 1 : ntrans
                 vartype = sprintf('%sI',vartype); %put the sigma as integer
@@ -168,7 +168,7 @@ switch solver
         vartype = '';
         for i = 1 : No_r
             for j = 1 : 2*nplaces
-                vartype = sprintf('%sC',vartype); %put the markings as real
+                vartype = sprintf('%sI',vartype); %put the markings as real
             end
             for j = 1 : ntrans
                 vartype = sprintf('%sI',vartype); %put the sigma as integer
