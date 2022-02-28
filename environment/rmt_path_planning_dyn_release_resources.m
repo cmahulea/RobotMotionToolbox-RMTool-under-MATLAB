@@ -147,7 +147,9 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
                 
             else % if the robot is not the first one in the current cell, the robot stays in the previous cell
                 new_Run_cells{r}(idx_rob_traj(r)) = previous_cell; % the robot stays in the same cell
+                if new_Run_cells{r}(idx_rob_traj(r)) ~= unique_Run_cells{r}(end)
                 count = count + 1; % number of robots which waits to enter a common cell
+                end
             end
             
             if new_Run_cells{r}(idx_rob_traj(r)) == final_cell_traj(r) && flag_end_traj(r) == 0
@@ -185,7 +187,7 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
         
         % compute new trajectories for the robots
         tic
-        [xmin, message] = rmt_path_planning_pn_new_traj(data,current_m0,mf,message);
+        [xmin, message] = rmt_path_planning_pn_bool_new_traj(data,current_m0,mf,message);
         [unique_Run_cells, Runs, message] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,No_r,message);
         tt = toc;
         

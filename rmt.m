@@ -1349,7 +1349,7 @@ switch action
         set(gcf,'UserData',data);%to save data
     case 'parameter_MILP_pn_boolean'
         data = get(gcf,'UserData');
-        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data.optim.param_boolean);
+        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data);
         set(gcf,'UserData',data);
     case 'parameter_MILP_pn_following_buchi'
         data = get(gcf,'UserData');

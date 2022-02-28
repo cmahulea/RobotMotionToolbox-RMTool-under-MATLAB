@@ -24,7 +24,8 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function param=rmt_milp_pn_boolean_setup(param)
+function param=rmt_milp_pn_boolean_setup(data)
+param = data.optim.param_boolean;
 
 answer = inputdlg({...
     sprintf('Weight in cost function on number of fired transitions:'),...
@@ -37,6 +38,7 @@ answer = inputdlg({...
 if (isempty(answer))
     return;
 end
+
 %lambda
 input_val = char(answer{1});
 todoOK = rmt_detect_error(input_val,0,1000);
@@ -69,7 +71,7 @@ end
 
 %UserCount
 input_val = char(answer{4});
-todoOK = rmt_detect_error(input_val,0,1000);
+todoOK = rmt_detect_error(input_val,0,length(data.RO));
 if (todoOK == 0)
     uiwait(errordlg(sprintf('\nValid range for UserCount is between 1 and the number of robots!'),'Robot Motion Toolbox','modal'));
     error('Valid range for UserCount is betweeen 1 and the number of robots!');

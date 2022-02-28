@@ -203,7 +203,7 @@ while idx_fs <= length(final_places)
     end
     
     message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
-    % message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, f);
+    message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, fp);
     message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
     total_time = total_time + time;
     total_time_MILP = total_time_MILP + time;
@@ -215,16 +215,11 @@ while idx_fs <= length(final_places)
     
     % After the optimization problem was solved, an
     % initial solution was obtained on the reduced system
-    
-    % TO DO!!!! *clean xmin_pref if it used PreV and PostV
-    
     % check the active observations after prefix
-    % ?? - use here Pre and Post instead of PreV and PostV
     [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
     % [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
     
     % modify the last active observations to combinations from temp_obs
-    % act_temp = [];
     idx_act_temp = [];
     for idx_tempobs = 1:size(temp_obs,1)
         if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
@@ -238,12 +233,6 @@ while idx_fs <= length(final_places)
     % self-loop of the final state
     flag_act_obs = 0;
     temp_fs = B.F(idx_fs);
-    % for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
-    %     if length(find(intersect(active_observations{end},B.new_trans{temp_fs,temp_fs}(idx_obs,:)) == active_observations{end})) == length(active_observations{end}) | ...
-    %             B.new_trans{temp_fs,temp_fs} == Inf
-    %         flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
-    %     end
-    % end
     
     for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
         if B.new_trans{temp_fs,temp_fs} == Inf | ~isempty(intersect(idx_act_temp, B.trans{temp_fs,temp_fs}))
@@ -328,7 +317,7 @@ while idx_fs <= length(final_places)
             return;
         end
         message = sprintf('%s\n\n---------------------- SUFFIX --------------------',message);
-        % message = sprintf('%s\nFunction value for first MILP - suffix: %g \n', message, f_suff);
+        message = sprintf('%s\nFunction value for first MILP - suffix: %g \n', message, f_suff);
         message = sprintf('%s\nTime of solving the MILP - suffix (trajectory on quotient PN): %g secs\n', message, time);
         total_time = total_time + time;
         message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - suffix: %g secs\n',message_c,time);

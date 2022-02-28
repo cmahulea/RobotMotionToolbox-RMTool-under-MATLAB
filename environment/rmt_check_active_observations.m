@@ -1,6 +1,6 @@
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
-%    Copyright (C) 2016 RMTool developing team. For people, details and citing 
+%    Copyright (C) 2016 RMTool developing team. For people, details and citing
 %    information, please see: http://webdiis.unizar.es/RMTool/index.html.
 %
 %    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on September, 2014. 
+%   First version released on September, 2014.
 %   Last modification Enero, 2020.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
@@ -47,14 +47,30 @@ for i = 1 : length(temp)
 end
 possible_regions{1} = pos_regions;
 number_of_robots{1} = marking_temp;
+flagF = 0; % flag to mark when the final state in Buchi was reached
+% sum_transQ = 0; %count the fired transition in Quotient PN
+sum_transB = 0; %count the real fired transition in Buchi PN 
 for i = 1 : data.optim.paramWith.interM
+%     if mod(i,2) == 1 && flagF == 0 % i is odd
+%         trans_Q = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+1: ...
+%             (i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1) + ntrans_orig)] > eps*1e9);
+%         sum_transQ = sum_transQ + length(trans_Q);
+%     end
+    
     if (i/2 == round(i/2))
         trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
         input_place = find(Pre(:,trans_buchi+ntrans_orig));
         input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
         output_place = find(Post(:,trans_buchi+ntrans_orig));
         output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
-        message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
+
+        if flagF == 0
+        sum_transB = sum_transB + length(trans_buchi);
+        end
+        if find(data.B.F == output_place)
+            flagF = 1;
+        end
+             message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
             input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9)));
         message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
             mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
@@ -83,6 +99,9 @@ for i = 1 : data.optim.paramWith.interM
         end
     end
 end
+
+message = sprintf('\n ****** %s ****** \n The sum of all the fired transitions in Buchi PN is: %d',message,sum_transB);
+
 %remove eventually identical observations
 for j = length(active_observations):-1:2
     if (isempty(setxor(active_observations{j},active_observations{j-1})) && ...

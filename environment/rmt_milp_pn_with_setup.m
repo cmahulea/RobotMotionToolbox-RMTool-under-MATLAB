@@ -35,10 +35,10 @@ if (isempty(answer))
 end
 %intermediate markings
 input_val = char(answer{1});
-todoOK = rmt_detect_error(input_val,1,50);
+todoOK = rmt_detect_error(input_val,1,200);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for number of intermediate markings is betweeen 1 and 50!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for kappa is betweeen 1 and 50!');
+    uiwait(errordlg(sprintf('\nValid range for number of intermediate markings is betweeen 1 and 200!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for kappa is betweeen 1 and 200!');
 else
     param.interM = eval(input_val);
 end

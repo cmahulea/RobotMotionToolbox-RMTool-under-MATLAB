@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [xmin, message] = rmt_path_planning_pn_new_traj(data,m0,mf,message)
+function [xmin, message] = rmt_path_planning_pn_bool_new_traj(data,m0,mf,message)
 %Path-planning with LTL specificaion and Petri net models, recomputing the robot trajectories by allocating
 %the common resources in an optimal way (first in, first served)
 %input: data - extract info about matrices Pre, Post, and solver
@@ -115,8 +115,12 @@ switch solver
         vartype = '';
         for r = 1:No_r
 
-            for j = 1 : 2*nplaces
-                vartype = sprintf('%sI',vartype); %put the markings as real
+            for j = 1 : nplaces
+                vartype = sprintf('%sI',vartype); %put the initial markings as integer
+            end
+            
+             for j = 1 : nplaces
+                vartype = sprintf('%sC',vartype); %put the final markings as real
             end
             for j = 1 : ntrans
                 vartype = sprintf('%sI',vartype); %put the sigma as integer
@@ -167,8 +171,12 @@ switch solver
 
         vartype = '';
         for i = 1 : No_r
-            for j = 1 : 2*nplaces
-                vartype = sprintf('%sI',vartype); %put the markings as real
+            for j = 1 : nplaces
+                vartype = sprintf('%sI',vartype); %put the initial markings as integer
+            end
+            
+             for j = 1 : nplaces
+                vartype = sprintf('%sC',vartype); %put the final markings as real
             end
             for j = 1 : ntrans
                 vartype = sprintf('%sI',vartype); %put the sigma as integer
