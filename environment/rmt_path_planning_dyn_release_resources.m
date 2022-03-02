@@ -250,7 +250,7 @@ for r = 1:No_r
    new_order_rob = [new_order_rob find(new_init_cells(r) == Run_cells(:,1))];
 end
 
-message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, count_steps);
+message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Traj_runs,2));
 message = sprintf('%s===========\n The order of the robots is: ', message);
 for i = 1:length(new_order_rob)
     message = sprintf('%s %d ', message, new_order_rob(i));
