@@ -57,9 +57,20 @@ for i=1:length(propositions)
     at_pr_h{i}=zeros(1,length(propositions{i}));
     for j=1:length(propositions{i})
         cell_ind=propositions{i}(j);    %index of current cell
+        if mod(i,8) == 0 % for the colors orage and purple (index 8 and 9), which don't have a shortcut in matlab - can be represented only as RGB code
+             at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),[0.8500 0.3250 0.0980],'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',[0.8500 0.3250 0.0980]);
+        centr=mean(C{cell_ind},2)';
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf(name_cells,cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',data.label_cells.size);
+        elseif mod(i,9) == 0 
+             at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),[0.4940 0.1840 0.5560],'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',[0.4940 0.1840 0.5560]);
+        centr=mean(C{cell_ind},2)';
+        text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf(name_cells,cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',data.label_cells.size);
+        else
+        
         at_pr_h{i}(j) = fill(C{cell_ind}(1,:),C{cell_ind}(2,:),colors(i),'LineStyle','-.','FaceAlpha',0.4,'EdgeColor',colors(i));
         centr=mean(C{cell_ind},2)';
         text_cells_h(cell_ind) = text(centr(1),centr(2),sprintf(name_cells,cell_ind),'HorizontalAlignment','center','Color','k','Visible',visible,'FontSize',data.label_cells.size);
+        end
     end
 end
 

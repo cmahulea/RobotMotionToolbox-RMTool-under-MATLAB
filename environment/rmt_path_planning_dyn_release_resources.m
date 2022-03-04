@@ -304,7 +304,11 @@ color_transparency = {[1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1
 hh_v = [];
 hh_m = [];
 no_cell_plot = 0;
-% parallel movement of the robots
+flag_h_text = 0;% parallel movement of the robots
+count_replan_text = 0;
+
+text(0,data.handle_env.YLim(end) + 1,'The paths are re-computed!');
+
 for uu = 1:length(new_rob_traj{1})-1
     for rr = 1:length(new_rob_traj)
         % color last 2 cells of each trajectory and add the current
@@ -326,12 +330,15 @@ for uu = 1:length(new_rob_traj{1})-1
             plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
 
-        elseif ~isempty(find(ss_replan == uu,1)) % plot the moments where the replanning is made
-            fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.1,'EdgeColor',data.rob_plot.line_color{rr});
-            plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
-                'Marker','d','LineWidth',1);
         end
         hh_v{rr} = hh;
+    end
+    if ~isempty(find(ss_replan == uu,1)) % plot the moments where the replanning is made
+        flag_h_text = 1;
+        count_replan_text = count_replan_text + 1;
+        str_text_static = strcat(num2str(count_replan_text),' times');
+        h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
+        
     end
     if uu >= 2
         for kr = 1:length(new_rob_traj)
@@ -345,13 +352,23 @@ for uu = 1:length(new_rob_traj{1})-1
     end
     drawnow;
     pause(0.5);
+    if flag_h_text == 1
+        pause(1);
+    end
     % update
     for kr = 1:length(new_rob_traj)
         delete(hh_m{kr});
         delete(hh_v{kr});
     end
-
+    if flag_h_text == 1
+        delete(h_text);
+        flag_h_text = 0;
+    end
 end
+
+str_text_static = strcat(num2str(count_replan_text),' times');
+h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
+
 
 % save the robot trajectories to save it in the txt file
 message = sprintf('%s\n\nSOLUTION - runs of robots: \n',message);

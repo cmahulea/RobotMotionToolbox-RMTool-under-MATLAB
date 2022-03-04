@@ -48,54 +48,47 @@ end
 possible_regions{1} = pos_regions;
 number_of_robots{1} = marking_temp;
 flagF = 0; % flag to mark when the final state in Buchi was reached
-% sum_transQ = 0; %count the fired transition in Quotient PN
-sum_transB = 0; %count the real fired transition in Buchi PN 
-for i = 1 : data.optim.paramWith.interM
-%     if mod(i,2) == 1 && flagF == 0 % i is odd
-%         trans_Q = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+1: ...
-%             (i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1) + ntrans_orig)] > eps*1e9);
-%         sum_transQ = sum_transQ + length(trans_Q);
-%     end
-    
-    if (i/2 == round(i/2))
-        trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
-        input_place = find(Pre(:,trans_buchi+ntrans_orig));
-        input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
-        output_place = find(Post(:,trans_buchi+ntrans_orig));
-        output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
+sum_transB = 0; %count the real fired transition in Buchi PN
 
-        if flagF == 0
-        sum_transB = sum_transB + length(trans_buchi);
+for i = 1 : data.optim.paramWith.interM
+    if (i/2 == round(i/2))
+        if flagF == 0 % compute the active observations and the possible regions until the final state in Buchi is reached
+            trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
+            input_place = find(Pre(:,trans_buchi+ntrans_orig));
+            input_place = input_place(input_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props); %take only the place of the buchi
+            output_place = find(Post(:,trans_buchi+ntrans_orig));
+            output_place = output_place(output_place>nplaces_orig+2*length(data.Tr.props))-nplaces_orig-2*length(data.Tr.props);
+            sum_transB = sum_transB + length(trans_buchi); % count fired transitions in Buchi until final state is reached
+
+            message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
+                input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9)));
+
+            active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9);
+            if isempty(active_observations{length(active_observations)})
+                message = sprintf('%s\n\t No active observations at step %d',message,i/2);
+            else
+                message = sprintf('%s\n\t Active observations at step %d = %s',message,i/2,mat2str(active_observations{length(active_observations)}));
+            end
+
+            %take the new marking of the robot model
+            marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
+            temp = find(marking_new > eps*1e9);%marking of places modeling the team; condition > eps necessary for gplk solution
+            pos_regions={};
+            marking_temp = zeros(1,length(temp));
+            for j = 1 : length(temp)
+                pos_regions{j} = data.Tr.Cells{temp(j)};
+                marking_temp(j) = marking_new(temp(j));
+            end
+
+            possible_regions{length(possible_regions)+1} = pos_regions;
+            number_of_robots{length(number_of_robots)+1} = marking_temp; %number of robots in each macro region
+            message = sprintf('%s\n\t Possible regions for the robots',message);
+            for k = 1 : length(pos_regions)
+                message = sprintf('%s\n\t\t --- %s',message,mat2str(pos_regions{k}));
+            end
         end
         if find(data.B.F == output_place)
             flagF = 1;
-        end
-             message = sprintf('%s\n Transition in Buchi from state %d to state %d with observation (%s)',message,...
-            input_place,output_place,mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9)));
-        message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
-            mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
-        
-        active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)] > eps*1e9);
-        if isempty(active_observations{length(active_observations)})
-            message = sprintf('%s\n\t No active observations at step %d',message,i/2);
-        else
-            message = sprintf('%s\n\t Active observations at step %d = %s',message,i/2,mat2str(active_observations{length(active_observations)}));
-        end
-        %take the new marking of the robot model
-        marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
-        temp = find(marking_new > eps*1e9);%marking of places modeling the team; condition > eps necessary for gplk solution
-        pos_regions={};
-        marking_temp = zeros(1,length(temp));
-        for j = 1 : length(temp)
-            pos_regions{j} = data.Tr.Cells{temp(j)};
-            marking_temp(j) = marking_new(temp(j));
-        end
-        
-        possible_regions{length(possible_regions)+1} = pos_regions;
-        number_of_robots{length(number_of_robots)+1} = marking_temp; %number of robots in each macro region
-        message = sprintf('%s\n\t Possible regions for the robots',message);
-        for k = 1 : length(pos_regions)
-            message = sprintf('%s\n\t\t --- %s',message,mat2str(pos_regions{k}));
         end
     end
 end
