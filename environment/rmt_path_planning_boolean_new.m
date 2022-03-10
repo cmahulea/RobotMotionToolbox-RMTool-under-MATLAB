@@ -29,6 +29,7 @@ function rmt_path_planning_boolean_new
 %Collisions will be considered as hard constraints
 
 data = get(gcf,'UserData');
+
 %Takes the string containing the Boolean formula inserted
 data.Bool_formula = get(findobj(gcf,'Tag','booleanformula'),'String');
 tic;
@@ -134,7 +135,7 @@ else % trajectories given by the result from CM & MK 2020 (Bool spec)
     [idx_end_val, nr_rob] = sort(idx_end_val(1,:));
     idx_end_val = [idx_end_val; nr_rob];
     
-    message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Run_cells,2));
+    message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Run_cells,2)-1); % from cell i -> cell i+1 is considered one step
     message = sprintf('%s===========\n The order of the robots is: ', message);
     for i = 1:N_r
         message = sprintf('%s %d ', message, idx_end_val(2,i));

@@ -100,37 +100,38 @@ for r = 1:No_r
 end
 
 % short check for parallel movement of robots based on their unique cells
-check_flag = 0;
-check_allRuns = [];
-for i = 1:size(aux_Run_cells,2)
-    check_allRuns = [check_allRuns; histc(aux_Run_cells(:,i),unique(aux_Run_cells(:,i)))]; % check if at least 2 robots have one cell in commun at step i
-    if ~isempty(find(check_allRuns > 1))
-        check_flag = 1;
-        break;
-    end
-end
-
-if check_flag == 0
-    new_rob_traj = rmt_rob_cont_traj_new(data.T,aux_Run_cells,data.initial);
-    Traj_runs = aux_Run_cells;
-    for r = 1:No_r
-        new_Run_cells{r} = unique_Run_cells{r};
-    end
-
-    if data.optim.param_boolean.UserCount < No_r
-        message = sprintf('\n%s The robots follow their original trajectories! \n',message);
-        choiceMenu = questdlg(sprintf('The robots can follow their original trajectories without synchronization! Do you want to compute other trajectories?'), ...
-            'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
-        if strcmpi(choiceMenu,'Yes')
-            check_flag = 1;
-        else
-            check_flag = 0;
-        end
-    end
-end
+% check_flag = 0;
+% check_allRuns = [];
+% for i = 1:size(aux_Run_cells,2)
+%     check_allRuns = [check_allRuns; histc(aux_Run_cells(:,i),unique(aux_Run_cells(:,i)))]; % check if at least 2 robots have one cell in commun at step i
+%     if ~isempty(find(check_allRuns > 1))
+%         check_flag = 1;
+%         break;
+%     end
+% end
+% 
+% if check_flag == 0
+%     new_rob_traj = rmt_rob_cont_traj_new(data.T,aux_Run_cells,data.initial);
+%     Traj_runs = aux_Run_cells;
+%     for r = 1:No_r
+%         new_Run_cells{r} = unique_Run_cells{r};
+%     end
+% 
+%     if data.optim.param_boolean.UserCount < No_r
+%         message = sprintf('\n%s The robots follow their original trajectories! \n',message);
+%         choiceMenu = questdlg(sprintf('The robots can follow their original trajectories without synchronization! Do you want to compute other trajectories?'), ...
+%             'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
+%         if strcmpi(choiceMenu,'Yes')
+%             check_flag = 1;
+%         else
+%             check_flag = 0;
+%         end
+%     end
+% end
 
 % for flag == 1, the trajectories are re-planned
-if check_flag == 1
+% if check_flag == 1
+
     % find the order in which the robots cross each cell based on its unique
     % trajectory
     [order_rob_cell,final_cell_traj,new_Run_cells] = rmt_find_order_trajectories(data,aux_Run_cells,No_r);
@@ -153,6 +154,7 @@ if check_flag == 1
     count_steps = 0;
     tic
     while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
+        flag_release = zeros(1,No_r); % mark the cells which need to be release for each iteration
         count_steps = count_steps + 1;% count total number of steps for all robots to reach their destination
         count = 0; % initialize at each step the number of robots which waits to enter a common cell
         for r = 1:length(unique_Run_cells)
@@ -174,7 +176,7 @@ if check_flag == 1
                     new_Run_cells{r}(idx_rob_traj(r)) = current_cell; % the robot advance in the next cell
                     unique_Run_cells{r}(1) = [];
                     if  ~isempty(setdiff(current_cell,previous_cell)) && ~isempty(order_rob_cell{previous_cell})
-                        order_rob_cell{previous_cell}(1) = []; % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell
+                        flag_release(r) = 1;
                     end
 
                 else % if the robot is not the first one in the current cell, the robot stays in the previous cell
@@ -206,6 +208,14 @@ if check_flag == 1
             end
 
         end
+        % release common resources
+        for rr = 1:No_r
+            if flag_release(rr) == 1
+                previous_cell = new_Run_cells{rr}(end-1);
+                order_rob_cell{previous_cell}(1) = []; % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell
+            end
+        end
+
         %% NEW TRAJECTORIES
         if count >= data.optim.param_boolean.UserCount % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
             % update the screenshot based on the current position of all
@@ -265,7 +275,7 @@ if check_flag == 1
     end
 
     new_rob_traj = rmt_rob_cont_traj_new(data.T,Traj_runs,data.initial);
-end
+% end
 
 % find the order of the robots based on their original position, useful for
 % when the trajectories are re-planned
@@ -284,7 +294,7 @@ for r = 1:No_r
     new_order_rob = [new_order_rob find(new_init_cells(r) == Run_cells(:,1))];
 end
 
-message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Traj_runs,2));
+message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Traj_runs,2)-1);
 message = sprintf('%s===========\n The order of the robots is: ', message);
 for i = 1:length(new_order_rob)
     message = sprintf('%s %d ', message, new_order_rob(i));
