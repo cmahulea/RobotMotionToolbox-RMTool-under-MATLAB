@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [new_Run_cells, new_rob_traj, message] = rmt_path_planning_dyn_release_resources(Run_cells, data, message,obstacles)
+function [new_Run_cells, new_rob_traj,Traj_runs, message] = rmt_path_planning_dyn_release_resources(Run_cells, data, message,obstacles)
 % %dynamical release of resources
 % input data:
 %   Run_cells - cells crossed by each robot
@@ -66,12 +66,6 @@ data.relres.Post = Post;
 
 nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); % number of transitions
-
-if data.optim.param_boolean.UserCount == 0
-    message = sprintf('\n%s The selected approach is respected, without a re-planning of trajectories',message);
-else
-    message = sprintf('\n%s Robot trajectories are re-computed for a number of %d robots waiting to cross a common cell among their trajectories.',message, data.optim.param_boolean.UserCount);
-end
 
 % eliminate the duplicate cells in the robot trajectories for an easier
 % manipulation
@@ -230,9 +224,9 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 end
 time = toc;
 
-message = sprintf('\n%s The trajectories were re-planned by a number of %d times\n',message, count_replan-1);
+message = sprintf('%s\n The trajectories were re-planned by a number of %d times\n',message, count_replan-1);
 % message = sprintf('\n%s Time to follow the trajectories: %d \n',message, time);
-message = sprintf('\n%s Re-plan trajectories: mean time: %d and standard deviation time: %d \n',message, mean(time_to_replan),std(time_to_replan));
+message = sprintf('%s\n Re-plan trajectories: mean time: %d and standard deviation time: %d \n',message, mean(time_to_replan),std(time_to_replan));
 
 % make all trajectories of the same length - necessary to plot in parallel
 Traj_runs = [];
@@ -242,118 +236,7 @@ for r = 1:No_r
 end
 
 new_rob_traj = rmt_rob_cont_traj_new(data.T,Traj_runs,data.initial);
-% end
 
-% find the order of the robots based on their original position, useful for
-% when the trajectories are re-planned
-idx_end_val = zeros(1,No_r);
-for r = 1:No_r
-    end_value = new_Run_cells{r}(end);
-    idx_end_val(1,r) = find(new_Run_cells{r} == end_value, 1,'first');
-end
-
-[idx_end_val, nr_rob] = sort(idx_end_val(1,:));
-idx_end_val = [idx_end_val; nr_rob];
-new_init_cells = Traj_runs(idx_end_val(2,:),1);
-
-new_order_rob = [];
-for r = 1:No_r
-    new_order_rob = [new_order_rob find(new_init_cells(r) == Run_cells(:,1))];
-end
-
-message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Traj_runs,2)-1);
-message = sprintf('%s===========\n The order of the robots is: ', message);
-for i = 1:length(new_order_rob)
-    message = sprintf('%s %d ', message, new_order_rob(i));
-end
-
-%% plot trajectories
-% initial figures (empty environment)
-%
-% name_fig = 'Dummy_BoolSpec.fig';
-% init_fig = openfig(name_fig)';
-
-alpha_transparency = 0.5;
-color_transparency = {[1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1,0,1,alpha_transparency],...
-    [0,1,0,alpha_transparency], [0,1,1,alpha_transparency], [0,0,0,alpha_transparency], [1,1,0,alpha_transparency],...
-    [0.8500 0.3250 0.0980,alpha_transparency],[0.4940 0.1840 0.5560,alpha_transparency],...
-    [0.6350 0.0780 0.1840,alpha_transparency],[0 0.4470 0.7410,alpha_transparency]};
-hh_v = [];
-hh_m = [];
-no_cell_plot = 0;
-flag_h_text = 0;% parallel movement of the robots
-count_replan_text = 0;
-
+% plot trajectories
 text(0,data.handle_env.YLim(end) + 1,'The paths are re-computed!');
-
-for uu = 1:length(new_rob_traj{1})-1
-    for rr = 1:length(new_rob_traj)
-        % color last 2 cells of each trajectory and add the current
-        % position of the robot
-        current_cell_traj = Traj_runs(rr,uu);
-        hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
-        set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
-
-        hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
-            'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
-        set(hh_marker,'XData', mean(data.T.Vert{current_cell_traj}(1,:)), 'YData',mean( data.T.Vert{current_cell_traj}(2,:)),'Marker',data.rob_plot.marker{rr});
-        hh_v{rr} = hh;
-        hh_m{rr} = hh_marker;
-        if uu == 1 % mark the start point
-            plot(new_rob_traj{rr}(1,uu),new_rob_traj{rr}(2,uu),'Color',data.rob_plot.line_color{rr},...
-                'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
-
-        elseif uu == size(new_rob_traj{rr},2)-1 % mark the end point
-            plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
-                'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
-
-        end
-        hh_v{rr} = hh;
-    end
-    if ~isempty(find(ss_replan == uu,1)) % plot the moments where the replanning is made
-        flag_h_text = 1;
-        count_replan_text = count_replan_text + 1;
-        str_text_static = strcat(num2str(count_replan_text),' times');
-        h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
-
-    end
-    if uu >= 2
-        for kr = 1:length(new_rob_traj)
-            plot(new_rob_traj{kr}(1,uu-1:uu),new_rob_traj{kr}(2,uu-1:uu),'Color',color_transparency{kr},'LineWidth',2,'LineStyle','-.');
-        end
-        if uu == length(new_rob_traj{1}) - 1 % compute the last segment from trajectories
-            for kr = 1:length(new_rob_traj)
-                plot(new_rob_traj{kr}(1,uu:uu+1),new_rob_traj{kr}(2,uu:uu+1),'Color',color_transparency{kr},'LineWidth',2,'LineStyle','-.');
-            end
-        end
-    end
-    drawnow;
-    pause(0.5);
-    if flag_h_text == 1
-        pause(1);
-    end
-    % update
-    for kr = 1:length(new_rob_traj)
-        delete(hh_m{kr});
-        delete(hh_v{kr});
-    end
-    if flag_h_text == 1
-        delete(h_text);
-        flag_h_text = 0;
-    end
-end
-
-str_text_static = strcat(num2str(count_replan_text),' times');
-h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
-
-
-% save the robot trajectories to save it in the txt file
-message = sprintf('%s\n\nSOLUTION - runs of robots: \n',message);
-for j = 1 : length(new_Run_cells)
-    message = sprintf('%s\nRobot %d: ',message,j);
-    temp = new_Run_cells{j};
-    for k = 1 : length(temp)-1
-        message = sprintf('%s%d,',message,temp(k));
-    end
-    message = sprintf('%s%d',message,temp(length(temp)));
-end
+message = rmt_plot_paths(Traj_runs,new_rob_traj,data,message,ss_replan);

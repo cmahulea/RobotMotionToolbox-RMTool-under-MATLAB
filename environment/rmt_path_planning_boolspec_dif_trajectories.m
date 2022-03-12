@@ -88,7 +88,7 @@ for r = 1:N_r
     
 end
 time = toc;
-message=sprintf('\n%sTime to compute the new trajectories based on the new re-planned paths: %d \n',message,time);
+message=sprintf('%s\nTime to compute the new trajectories based on the new re-planned paths: %d \n',message,time);
 
 max_length = max(max_length);
 % make all trajectories with the same length, by maintaining the final

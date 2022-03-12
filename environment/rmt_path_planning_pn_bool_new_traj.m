@@ -95,7 +95,7 @@ for i = 1:No_r
     cost = [cost zeros(1,2*nplaces) i*ones(1,ntrans)];
 end
 time = toc;
-message = sprintf('\n %s Run time to construct the MILP is: %d , with %d number of variables ', message, time, No_r * (2*nplaces + ntrans));
+message = sprintf('%s\n  Run time to construct the MILP is: %d , with %d number of variables ', message, time, No_r * (2*nplaces + ntrans));
 
 data = get(gcf,'UserData');
 if strcmp(get(data.optim.menuCplex,'Checked'),'on')
@@ -156,7 +156,7 @@ switch solver
             case -9
                 uiwait(errordlg('Limit reached.','Robot Motion Toolbox','modal'));
         end
-        message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
+        message = sprintf(' %s\n Run time to solve the MILP is: ',message, time);
     case 'glpk'
         % Solution with GLPK
         message = sprintf('%s\n\nThe MILP solution is with GLPK\n\n', message);
@@ -189,17 +189,17 @@ switch solver
         tic
         [xmin,fmin,~] = glpk(cost,Atot,btot,zeros(1,size(A,2)),[],ctype,vartype);
         time = toc;
-        message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
+        message = sprintf(' %s\n Run time to solve the MILP is: ',message, time);
 
     case 'intlinprog'
         message = sprintf('%s\n\nThe MILP solution is with intlinprog\n\n', message);
         tic
         [xmin,fmin,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
         toc
-        message = sprintf('\n %s Run time to solve the MILP is: ',message, time);
+        message = sprintf(' %s\n Run time to solve the MILP is: ',message, time);
 
 end
-message = sprintf('\n %s Cost function is: %d ',message, fmin);
+message = sprintf(' %s\n Cost function is: %d ',message, fmin);
 
 if (isempty(xmin)) %no solution
     uiwait(errordlg('Error solving the ILP. The problem may have no feasible solution!','Robot Motion Toolbox','modal'));
