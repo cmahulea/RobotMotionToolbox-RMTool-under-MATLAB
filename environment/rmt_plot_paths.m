@@ -33,24 +33,33 @@ function message = rmt_plot_paths(Run_cells,new_rob_traj,data,message,ss_replan)
 % output data:
 %   message - update message with info about results
 
-N_r = length(data.RO);
+message = sprintf('%s\nSOLUTION - runs of robots: \n',message);
+for j = 1 : size(Run_cells,1)
+    message = sprintf('%s\nRobot %d: ',message,j);
+    temp = Run_cells(j,:);
+    for k = 1 : length(temp)-1
+        message = sprintf('%s%d,',message,temp(k));
+    end
+    message = sprintf('%s%d',message,temp(length(temp)));
+end
 
+N_r = length(data.RO);
 % find the order of the robots based on their original position, useful for
 % when the trajectories are re-planned compute the order of robots
-    idx_end_val = zeros(1,N_r);
-    for r = 1:N_r
-        end_value = Run_cells(r,end);
-        idx_end_val(1,r) = find(Run_cells(r,:) == end_value, 1,'first');
-    end
-    
-    [idx_end_val, nr_rob] = sort(idx_end_val(1,:));
-    idx_end_val = [idx_end_val; nr_rob];
-    
-    message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Run_cells,2)-1); % from cell i -> cell i+1 is considered one step
-    message = sprintf('%s===========\n The order of the robots is: ', message);
-    for i = 1:N_r
-        message = sprintf('%s %d ', message, idx_end_val(2,i));
-    end
+idx_end_val = zeros(1,N_r);
+for r = 1:N_r
+    end_value = Run_cells(r,end);
+    idx_end_val(1,r) = find(Run_cells(r,:) == end_value, 1,'first');
+end
+
+[idx_end_val, nr_rob] = sort(idx_end_val(1,:));
+idx_end_val = [idx_end_val; nr_rob];
+
+message = sprintf('%s======\n Number of steps for all robots is: %d \n', message, size(Run_cells,2)-1); % from cell i -> cell i+1 is considered one step
+message = sprintf('%s===========\n The order of the robots is: ', message);
+for i = 1:N_r
+    message = sprintf('%s %d ', message, idx_end_val(2,i));
+end
 
 
 %% plot trajectories
@@ -77,7 +86,7 @@ for uu = 1:length(new_rob_traj{1})-1
         current_cell_traj = Run_cells(rr,uu);
         hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
         set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
-
+        
         hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
             'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
         set(hh_marker,'XData', mean(data.T.Vert{current_cell_traj}(1,:)), 'YData',mean( data.T.Vert{current_cell_traj}(2,:)),'Marker',data.rob_plot.marker{rr});
@@ -89,7 +98,7 @@ for uu = 1:length(new_rob_traj{1})-1
         elseif uu == size(new_rob_traj{rr},2)-1 % mark the end point
             plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
-
+            
         end
         hh_v{rr} = hh;
     end
@@ -98,7 +107,7 @@ for uu = 1:length(new_rob_traj{1})-1
         count_replan_text = count_replan_text + 1;
         str_text_static = strcat(num2str(count_replan_text),' times');
         h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
-
+        
     end
     if uu == 1
         pause % for screen recording
@@ -132,5 +141,7 @@ end
 % add text in GUI with the number of replanning
 str_text_static = strcat(num2str(count_replan_text),' times');
 h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
+
+
 
 end

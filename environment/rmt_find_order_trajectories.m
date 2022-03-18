@@ -1,5 +1,3 @@
-
-
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
 %    Copyright (C) 2016 RMTool developing team. For people, details and citing
@@ -37,9 +35,9 @@ function [order_rob_cell,final_cell_traj,new_Run_cells] = rmt_find_order_traject
 order_rob_cell = cell(1,size(data.Pre,1));
 for i = 1:size(data.Pre,1)
     for j = 1:No_r % find the order in which the robots cross each cell
-        temp_idx = find(Run_cells(j,:) == i,1,'first');
+        temp_idx = find(Run_cells(j,:) == i); % one cell can be used multiple times throughout a path of a robot
         if ~isempty(temp_idx)
-            order_rob_cell{i} = [order_rob_cell{i}; temp_idx j];
+            order_rob_cell{i} = [order_rob_cell{i}; temp_idx' repmat(j,length(temp_idx),1)];
         end
     end
     if ~isempty(order_rob_cell{i})

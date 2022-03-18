@@ -113,6 +113,8 @@ length_RunTraj = zeros(1,No_r);
 % through the cells
 count_replan = 1;
 count_steps = 0;
+label_NoRobMove = 0;
+label_NoUserCount_rob_wait = 0;
 tic
 while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
     flag_release = zeros(1,No_r); % mark the cells which need to be release for each iteration
@@ -130,10 +132,9 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 
         if ~isempty(unique_Run_cells{r}) % the robot advance as long as it still has cells to cross
             current_cell = unique_Run_cells{r}(1); % access the current index in the robot's trajectory
-            idx_current_cell = find(order_rob_cell{current_cell} == r); % compute the order of the robot in the current cell
+            idx_current_cell = find(order_rob_cell{current_cell} == r,1,'first'); % compute the order of the robot in the current cell
             previous_cell = new_Run_cells{r}(idx_rob_traj(r) - 1);
-
-            if idx_current_cell == 1 && isempty(find(current_pos_all_rob(1:end) == current_cell, 1)) &&  isempty(find(cell_idx == current_cell)) % if is the first one to cross the current cell, then update with the new position
+            if idx_current_cell == 1  && isempty(find(cell_idx == current_cell)) % if is the first one to cross the current cell, then update with the new position
                 new_Run_cells{r}(idx_rob_traj(r)) = current_cell; % the robot advance in the next cell
                 unique_Run_cells{r}(1) = [];
                 if  ~isempty(setdiff(current_cell,previous_cell)) && ~isempty(order_rob_cell{previous_cell})
@@ -156,6 +157,8 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 
         if isempty(unique_Run_cells{r})  % if the robot does not move from is initial position, that means the robot is already in his final cell
             flag_end_traj(r) = 1;
+        else 
+            flag_end_traj(r) = 0;
         end
 
         if flag_end_traj(r) == 1 % if the robot arrives at the destination cell, it stays there until all robot reaches their destination
@@ -176,12 +179,19 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
             order_rob_cell{previous_cell}(1) = []; % the previous cell is released only when no other robot occupies the current cell and the first robot of that cell moved into a new cell
         end
     end
-
+%   count how many times the re-routing is made, and what is the trigger
+    if count >= data.optim.param_boolean.UserCount
+        label_NoUserCount_rob_wait = label_NoUserCount_rob_wait + 1;
+    end
+    if (count == length(find(flag_end_traj == 0)) && count ~= 0)
+            label_NoRobMove = label_NoRobMove + 1;
+     end
     %% NEW TRAJECTORIES
-    if count >= data.optim.param_boolean.UserCount % if the number of robots which waits to enter a common cell is equal with UserCount, then the trajectories are re-planned
+    if count >= data.optim.param_boolean.UserCount || (count == length(find(flag_end_traj == 0)) && count ~= 0) % if the number of robots which waits to enter a common cell is equal with UserCount...
+        %OR all the robots which didn't arrived to the final cell are not moving, then the trajectories are re-planned
+        
         % update the screenshot based on the current position of all
         % the team
-
         current_m0 = zeros(size(Pre,1),1); % update the initial marking based on the current position of the robots
         current_m0(current_pos_all_rob) = 1;
 
@@ -202,14 +212,14 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 
         % update order for new_Run_cells & new_rob_traj
         another_Run_cells = cell(1,No_r);
-        another_flag_end = zeros(1,No_r);
+%         another_flag_end = zeros(1,No_r);
         another_idx_rob_traj = zeros(1,No_r);
         current_pos_all_rob = [];
         for k = 1:No_r
             idx = find(new_Run_cells{k}(end) == Runs(:,1));
             another_Run_cells{idx} = new_Run_cells{k};
             another_idx_rob_traj(idx) = length(new_Run_cells{k});
-            another_flag_end(idx) = flag_end_traj(k);
+%             another_flag_end(idx) = flag_end_traj(k);
             final_cell_traj(k) = unique_Run_cells{k}(end);
             unique_Run_cells{k}(1) = [];
             current_pos_all_rob(k) = new_Run_cells{k}(end);
@@ -217,13 +227,14 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
 
         new_Run_cells = another_Run_cells;
         idx_rob_traj = another_idx_rob_traj;
-        flag_end_traj = another_flag_end;
+%         flag_end_traj = another_flag_end;
         flag_count = 1; % flag used when the trajectories are re-computed
         count_replan = count_replan + 1;
     end
 end
 time = toc;
-
+message = sprintf('%s\n The path were re-planned based on %d times based on user''s count input %d for robots which wait.',message, label_NoUserCount_rob_wait, data.optim.param_boolean.UserCount);
+message = sprintf('%s\n The path were re-planned based on %d times based on all the robots which don''t move.',message, label_NoRobMove);
 message = sprintf('%s\n The trajectories were re-planned by a number of %d times\n',message, count_replan-1);
 % message = sprintf('\n%s Time to follow the trajectories: %d \n',message, time);
 message = sprintf('%s\n Re-plan trajectories: mean time: %d and standard deviation time: %d \n',message, mean(time_to_replan),std(time_to_replan));
@@ -234,7 +245,7 @@ Traj_runs = [];
 for r = 1:No_r
     Traj_runs = [Traj_runs; new_Run_cells{r}];
 end
-
+Traj_runs = sortrows(Traj_runs);
 new_rob_traj = rmt_rob_cont_traj_new(data.T,Traj_runs,data.initial);
 
 % plot trajectories
