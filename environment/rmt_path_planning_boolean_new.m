@@ -107,7 +107,8 @@ data.trajectory = rob_traj;
 cla(data.handle_env);
 rmt_represent_atomic_props(data.T.Vert,data.propositions);    %represent all atomic props and store handles
 
-data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
+data.rob_plot.line_color = {'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410],...
+    'r','b','m','g','c','k','y',[0.8500 0.3250 0.0980],[0.4940 0.1840 0.5560],[0.6350 0.0780 0.1840],[0 0.4470 0.7410]};
 
 choiceMenu = questdlg(sprintf('A solution for robot trajectories was found. Based on the returned trajectories and robot''s order, do you want to improve the solution by releasing the common cells in a dynamic manner?'), ...
     'Robot Motion Toolbox - Path planning with dynamic release of common cells','Yes','No','No');
@@ -117,15 +118,14 @@ if strcmpi(choiceMenu,'Yes')
 else % trajectories given by the result from CM & MK 2020 (Bool spec)
     text(0,data.handle_env.YLim(end) + 1,'Sequential movement of paths!');
     message = rmt_plot_paths(Run_cells,rob_traj,data,message,[]);
-    
 end
 
-% button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
-% if strcmpi(button,'Yes')
-%     [filename, pathname] = uiputfile('*.txt', 'Save experiments as');
-%     fileID = fopen(fullfile(pathname, filename),'w');
-%     fprintf(fileID,'%s',message);
-%     fclose(fileID);
-% end
+button = questdlg('Save the details to a text file?','Robot Motion Toolbox');
+if strcmpi(button,'Yes')
+    [filename, pathname] = uiputfile('*.txt', 'Save experiments as');
+    fileID = fopen(fullfile(pathname, filename),'w');
+    fprintf(fileID,'%s',message);
+    fclose(fileID);
+end
 
 set(gcf,'UserData',data);%to save data

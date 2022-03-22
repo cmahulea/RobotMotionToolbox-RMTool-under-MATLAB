@@ -77,8 +77,8 @@ for i = 1:No_r
     beq = [beq; ones(1,1)];
 
     % f) assures that only one robot moves - possible redundant
-    Aeq = [Aeq; repmat(zeros(1,2*nplaces+ntrans),[1, i-1]) temp_mi_single repmat(zeros(1,2*nplaces+ntrans),[1, No_r - i])];
-    beq = [beq; ones(1,1)];
+%     Aeq = [Aeq; repmat(zeros(1,2*nplaces+ntrans),[1, i-1]) temp_mi_single repmat(zeros(1,2*nplaces+ntrans),[1, No_r - i])];
+%     beq = [beq; ones(1,1)];
 
 end
 
