@@ -72,6 +72,10 @@ alpha_transparency = 0.5;
 color_transparency = {[1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1,0,1,alpha_transparency],...
     [0,1,0,alpha_transparency], [0,1,1,alpha_transparency], [0,0,0,alpha_transparency], [1,1,0,alpha_transparency],...
     [0.8500 0.3250 0.0980,alpha_transparency],[0.4940 0.1840 0.5560,alpha_transparency],...
+    [0.6350 0.0780 0.1840,alpha_transparency],[0 0.4470 0.7410,alpha_transparency],...
+    [1,0,0,alpha_transparency], [0,0,1,alpha_transparency], [1,0,1,alpha_transparency],...
+    [0,1,0,alpha_transparency], [0,1,1,alpha_transparency], [0,0,0,alpha_transparency], [1,1,0,alpha_transparency],...
+    [0.8500 0.3250 0.0980,alpha_transparency],[0.4940 0.1840 0.5560,alpha_transparency],...
     [0.6350 0.0780 0.1840,alpha_transparency],[0 0.4470 0.7410,alpha_transparency]};
 hh_v = [];
 hh_m = [];
@@ -79,14 +83,46 @@ no_cell_plot = 0;
 flag_h_text = 0;% parallel movement of the robots
 count_replan_text = 0;
 
+% read images
+files = dir('examples\Rob_Images\rob*.png');      % as example : only tiff files with "handheld" in the filename
+% main loop
+for ck = 1:length(files)
+    image_name = files(ck).name
+    temp_image = imread(['examples\Rob_Images\',image_name]);
+    for i=1:size(temp_image,1)
+    for j = 1:size(temp_image,2)
+        if temp_image(i,j,2:3) == 0 & temp_image(i,j,1) == 0
+            temp_image(i,j,:) = 255;
+        end
+    end
+   
+end
+     Images{ck} = temp_image;
+end
+% put images in order: r1, r2, etc... (switch r2 - r10)
+aux1 = Images{2};
+aux2 = Images{10};
+
+Images{2} = aux2;
+Images{10} = aux1;
+
 for uu = 1:length(new_rob_traj{1})-1
     for rr = 1:length(new_rob_traj)
         % color last 2 cells of each trajectory and add the current
         % position of the robot
         current_cell_traj = Run_cells(rr,uu);
-        hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
-        set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
-        
+%         if rr == 1
+            x1im1 = max(data.T.Vert{current_cell_traj}(1,:));
+            x2im1 = min(data.T.Vert{current_cell_traj}(1,:));
+            y1im1 = max(data.T.Vert{current_cell_traj}(2,:));
+            y2im1 = min(data.T.Vert{current_cell_traj}(2,:));
+
+            hh = image('CData',Images{rr},'XData',[x1im1 x2im1],'YData',[y1im1 y2im1]);
+
+%         else
+%         hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
+%         set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
+%     end
         hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
             'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
         set(hh_marker,'XData', mean(data.T.Vert{current_cell_traj}(1,:)), 'YData',mean( data.T.Vert{current_cell_traj}(2,:)),'Marker',data.rob_plot.marker{rr});
