@@ -73,6 +73,7 @@ aux_Run_cells = [];
 max_length_cell = [];
 ss_replan = [];
 time_to_replan = [];
+time_to_compute_milprerouting = [];
 
 for i = 1:size(Run_cells,1)
     temp_Run_cells = Run_cells(i,:);
@@ -199,12 +200,14 @@ while ~isempty(setdiff(flag_end_traj, ones(1,length(unique_Run_cells))))
         ss_replan = [ss_replan count_steps]; % necessary for plot
 
         % compute new trajectories for the robots
-        tic
+        t1 = cputime; 
         [xmin, message] = rmt_path_planning_pn_bool_new_traj(data,current_m0,mf,message);
+        t2 = cputime - t1;
+        time_to_compute_milprerouting(count_replan) = t2;
+        t1 = cputime;
         [unique_Run_cells, Runs, message] = rmt_path_planning_boolspec_dif_trajectories(data,xmin,No_r,message);
-        tt = toc;
-
-        time_to_replan(count_replan) = tt; % memorize the time to compute the new trajectories for all iterations
+        t3 = cputime - t1;
+        time_to_replan(count_replan) = t3; % memorize the time to compute the new trajectories for all iterations
 
         % find new order of the robots with their new final
         % destination
@@ -237,7 +240,8 @@ message = sprintf('%s\n The path were re-planned based on %d times based on user
 message = sprintf('%s\n The path were re-planned based on %d times based on all the robots which don''t move.',message, label_NoRobMove);
 message = sprintf('%s\n The trajectories were re-planned by a number of %d times\n',message, count_replan-1);
 % message = sprintf('\n%s Time to follow the trajectories: %d \n',message, time);
-message = sprintf('%s\n Re-plan trajectories: mean time: %d and standard deviation time: %d \n',message, mean(time_to_replan),std(time_to_replan));
+message = sprintf('%s\n Compute MILP for rerouting: mean time: %d and standard deviation time: %d \n',message, mean(time_to_compute_milprerouting),std(time_to_compute_milprerouting));
+message = sprintf('%s\n Solve MILP for rerouting: mean time: %d and standard deviation time: %d \n',message, mean(time_to_replan),std(time_to_replan));
 
 % make all trajectories of the same length - necessary to plot in parallel
 Traj_runs = [];

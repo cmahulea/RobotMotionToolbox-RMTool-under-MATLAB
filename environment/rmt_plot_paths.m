@@ -86,25 +86,29 @@ count_replan_text = 0;
 % read images
 files = dir('examples\Rob_Images\rob*.png');      % as example : only tiff files with "handheld" in the filename
 % main loop
+idx_img = 1;
 for ck = 1:length(files)
-    image_name = files(ck).name
+    image_name = files(ck).name;
     temp_image = imread(['examples\Rob_Images\',image_name]);
-    for i=1:size(temp_image,1)
+    for i = 1:size(temp_image,1)
     for j = 1:size(temp_image,2)
         if temp_image(i,j,2:3) == 0 & temp_image(i,j,1) == 0
             temp_image(i,j,:) = 255;
         end
     end
    
+    end
+    % put images in order: r1, r2, etc... (switch r2 - r10)
+if ck ~= 2
+     Images{idx_img} = temp_image;
+     idx_img = idx_img + 1;
+else
+    aux_temp_img = temp_image;
 end
-     Images{ck} = temp_image;
 end
-% put images in order: r1, r2, etc... (switch r2 - r10)
-aux1 = Images{2};
-aux2 = Images{10};
 
-Images{2} = aux2;
-Images{10} = aux1;
+Images{end + 1} = aux_temp_img;
+
 
 for uu = 1:length(new_rob_traj{1})-1
     for rr = 1:length(new_rob_traj)
