@@ -62,8 +62,8 @@ for r = 1:N_r
     message=sprintf('%s\nMarking [ %s ] = %s\n',message,mat2str(find(mi_f>eps*10^5)),mat2str(mi_f(mi_f>eps*10^5)));
     message = sprintf('%s\nSigma [ %s ] = %s\n',message,mat2str(find(sigma>eps*10^5)),mat2str(sigma(sigma>eps*10^5)));
     
-    out_Run_cells{r} = find(m0_i > eps*10^5);
-    fired_trans = find(sigma > eps*10^5);
+    out_Run_cells{r} = find(m0_i > eps*10^10);
+    fired_trans = find(sigma > eps*10^10);
     post_cell = [];
     pre_cell = [];
     
@@ -72,14 +72,14 @@ for r = 1:N_r
     while k <= length(fired_trans)
         pre_cell = find(Pre(:,fired_trans(k))); % fire the transition which enables the robot to move from its initial position    
         if pre_cell == out_Run_cells{r}(end)
-            out_Run_cells{r} = [out_Run_cells{r} find(Post(:,fired_trans(k))>eps*10^5)]; % move to the next cell
+            out_Run_cells{r} = [out_Run_cells{r} find(Post(:,fired_trans(k)))]; % move to the next cell
             fired_trans(k) = [];
             k = 1;
         else
             k = k + 1;
         end
         if length(fired_trans) == 1 %& fired_trans(k) == mi_f % for the case when the robot must fire only one transition to reach its final cell
-            out_Run_cells{r} = [out_Run_cells{r} find(mi_f>eps*10^5)];
+            out_Run_cells{r} = [out_Run_cells{r} find(mi_f>eps*10^10)];
             fired_trans(k) = [];
         end
     end

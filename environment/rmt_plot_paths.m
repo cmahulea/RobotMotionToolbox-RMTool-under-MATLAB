@@ -91,20 +91,20 @@ for ck = 1:length(files)
     image_name = files(ck).name;
     temp_image = imread(['examples\Rob_Images\',image_name]);
     for i = 1:size(temp_image,1)
-    for j = 1:size(temp_image,2)
-        if temp_image(i,j,2:3) == 0 & temp_image(i,j,1) == 0
-            temp_image(i,j,:) = 255;
+        for j = 1:size(temp_image,2)
+            if temp_image(i,j,2:3) == 0 & temp_image(i,j,1) == 0
+                temp_image(i,j,:) = 255;
+            end
         end
-    end
-   
+
     end
     % put images in order: r1, r2, etc... (switch r2 - r10)
-if ck ~= 2
-     Images{idx_img} = temp_image;
-     idx_img = idx_img + 1;
-else
-    aux_temp_img = temp_image;
-end
+    if ck ~= 2
+        Images{idx_img} = temp_image;
+        idx_img = idx_img + 1;
+    else
+        aux_temp_img = temp_image;
+    end
 end
 
 Images{end + 1} = aux_temp_img;
@@ -115,7 +115,7 @@ for uu = 1:length(new_rob_traj{1})-1
         % color last 2 cells of each trajectory and add the current
         % position of the robot
         current_cell_traj = Run_cells(rr,uu);
-%         if rr == 1
+        if 1:length(new_rob_traj) <= 10
             x1im1 = max(data.T.Vert{current_cell_traj}(1,:));
             x2im1 = min(data.T.Vert{current_cell_traj}(1,:));
             y1im1 = max(data.T.Vert{current_cell_traj}(2,:));
@@ -123,10 +123,10 @@ for uu = 1:length(new_rob_traj{1})-1
 
             hh = image('CData',Images{rr},'XData',[x1im1 x2im1],'YData',[y1im1 y2im1]);
 
-%         else
-%         hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
-%         set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
-%     end
+        else
+            hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
+            set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
+        end
         hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
             'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
         set(hh_marker,'XData', mean(data.T.Vert{current_cell_traj}(1,:)), 'YData',mean( data.T.Vert{current_cell_traj}(2,:)),'Marker',data.rob_plot.marker{rr});
@@ -138,7 +138,7 @@ for uu = 1:length(new_rob_traj{1})-1
         elseif uu == size(new_rob_traj{rr},2)-1 % mark the end point
             plot(new_rob_traj{rr}(1,end),new_rob_traj{rr}(2,end),'Color',data.rob_plot.line_color{rr},...
                 'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr},'Color','r');
-            
+
         end
         hh_v{rr} = hh;
     end
@@ -147,7 +147,7 @@ for uu = 1:length(new_rob_traj{1})-1
         count_replan_text = count_replan_text + 1;
         str_text_static = strcat(num2str(count_replan_text),' times');
         h_text = text(0,data.handle_env.YLim(end) + 0.5,str_text_static);
-        
+
     end
     if uu == 1
         pause % for screen recording
