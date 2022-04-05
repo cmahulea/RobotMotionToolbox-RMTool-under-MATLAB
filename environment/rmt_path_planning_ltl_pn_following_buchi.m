@@ -376,7 +376,8 @@ if feasible_path_B==0   %no path in B could be followed
     
 else %plot robot trajectories
     [rob_traj,synch_points] = rmt_rob_cont_traj_synch(data.T,Rob_places,Rob_synchronize,data.initial);    %continuous trajectory of each robot
-    rob_color={'r','b','g','c','m','k','y'};    %colors of robots
+    
+    rob_color={'g','r','b','m','k','y','c','g','r','b','m','k','y','c','g','r','b','m','k','y','c'};  %colors of robots
     data.trajectory = rob_traj;
     f_value = 0;
     for ii = 1:length(Rob_places)
@@ -388,11 +389,11 @@ else %plot robot trajectories
     end
     message = sprintf('%s \n\n Function value (movements of the robots): %d ', message, f_value - N_r);
     for r=1:N_r    %plot trajectories of robots
-        plot(rob_traj{r}(1,1),rob_traj{r}(2,1),rob_color{mod(r-1,length(rob_color))+1},'Marker','o','LineWidth',1.5);
-        plot(rob_traj{r}(1,:),rob_traj{r}(2,:),rob_color{mod(r-1,length(rob_color))+1},'LineWidth',1.5);
-        plot(rob_traj{r}(1,end),rob_traj{r}(2,end),rob_color{mod(r-1,length(rob_color))+1},'Marker','x','LineWidth',1.5);
+        plot(rob_traj{r}(1,1),rob_traj{r}(2,1),rob_color{mod(r-1,length(rob_color))+1},'Marker','o','LineWidth',2);
+        plot(rob_traj{r}(1,:),rob_traj{r}(2,:),rob_color{mod(r-1,length(rob_color))+1},'LineWidth',4);
+        plot(rob_traj{r}(1,end),rob_traj{r}(2,end),rob_color{mod(r-1,length(rob_color))+1},'Marker','x','LineWidth',2);
         for jj = 1:size(synch_points{r},2)
-            plot(synch_points{r}(1,jj),synch_points{r}(2,jj),'k','Marker','s','MarkerSize',5);
+            plot(synch_points{r}(1,jj),synch_points{r}(2,jj),'k','Marker','*','MarkerSize',5);
         end
     end
 end
