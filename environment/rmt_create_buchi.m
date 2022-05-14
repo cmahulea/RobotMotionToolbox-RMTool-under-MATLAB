@@ -170,6 +170,7 @@ B.F=find( cellfun( 'isempty', regexp(S_names,'accept') ) == 0 );    %find indice
 
 %find transitions (search succesors for each state and atomic proposition) 
 B.trans=cell(states_no,states_no);  %trans(i,next_state) gives the indices of elements from Obs that enable transition s_i -> s_{next_state}
+B.new_trans=cell(states_no,states_no);    %new_trans(i,next_state) gives the boolean formula that enable transition s_i -> s_{next_state}
 for i=1:states_no
     if i~=states_no
         str=r((e_ind(i)+1): (s_ind(i+1)-1));   %select string containing transitions of current state (y1 -> . . .); r(e_ind(i)) is newline
@@ -185,6 +186,7 @@ for i=1:states_no
         if strcmp(row{j},'skip')    %self-loop for all inputs
             B.trans{i,i}=1:size(Obs,1);   %for all observables there is loop s_i -> s_i
             B.trans{i,i}=B.trans{i,i}(:);   %force column vector (or "B.trans{i,i}=reshape(B.trans{i,i},[],1)")
+            B.new_trans{i,i} = Inf;
             continue; %end current tests for this row, continue with next row or next state
         end
         
@@ -204,9 +206,10 @@ for i=1:states_no
             
             %ONLY {& (and), ! (not), 1 (any=True)} can appear on each row with respect to propositions (|| (OR) operator results in 2 rows)
             %if 1 appears, it is the first element and there is no atomic proposition on current row
-            if prop(1)==1
+            if str2num(prop(1))==1
                 B.trans{i,next_state}=1:size(Obs,1);   %for all observables there is transition s_i -> s_{next_state}
                 B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
+                B.new_trans{i,next_state} = Inf; % add True for self loop in the final state
                 continue
             end
 
@@ -215,26 +218,42 @@ for i=1:states_no
             atom_pr=regexp(prop,'([!y]+\d+)','tokens'); %separate in atomic propositions (possibly preceded by !)
             atom_pr=[atom_pr{:}];
             labels=1:size(Obs,1);  %will store indices of observables (alphabet elements) that enable the current transition
-                         %start with all labels, and at each step keep (intersect with) those "accepted" by the current atomic prop
-                         %(if atomic prop is not negated, observables should contain it and vice-cersa)
-        
+            %start with all labels, and at each step keep (intersect with) those "accepted" by the current atomic prop
+            %(if atomic prop is not negated, observables should contain it and vice-cersa)
+            new_labels = []; %contain the boolean formula
+                         
             for ap=1:length(atom_pr) %for each atomic prop, modify vector "labels"
                 if isempty(strfind(atom_pr{ap},'!'))   %same as (atom_pr{ap}(1)~='!') %current atomic prop is not negated, so we keep ALL subsets that contain it
                                 %use intersections because atomic propositions (possibly negated) are linked only by & (AND) operator
                     ap_num=str2double(atom_pr{ap}(2:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate 'y' from beginning)
                     labels_temp=find(sum(ap_num==Obs,2));    %indices of rows from Obs (observables) containing current atomic proposition
                     labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)
+                    new_labels = union(new_labels,str2double(atom_pr{ap}(2:end)));
 
                 else    %same as (atom_pr{ap}(1)=='!') %negated, find all subsets NOT containing the current atomic proposition
                     ap_num=str2double(atom_pr{ap}(3:end));  %numeric value of current atomic proposition (in range 1,...,N_s) (elimintate '!y' from beginning)
                     labels_temp=find(sum(ap_num==Obs,2)==0);    %indices of rows from Obs (observables) NOT containing current atomic proposition
                     labels=intersect(labels, labels_temp);    %update set of feasible indices (until now)
+                    new_labels = union(new_labels,-str2double(atom_pr{ap}(3:end)));
                 end
             end
 
             B.trans{i,next_state}=union(B.trans{i,next_state},labels);    %add current labels to current transitions (transition s_i -> s_{next_state} can be captured by more rows
                                                          %(equivalent with OR operator between propositions)
             B.trans{i,next_state}=B.trans{i,next_state}(:);   %force column vector
+            
+            temp = B.new_trans{i,next_state}; % each line from B.new_trans is a DNF
+            % the negated observation !y_i are expressed as negative
+            % observations -y_i
+            if (size(temp,2) < length(new_labels))
+                temp = [temp zeros(size(temp,1), length(new_labels) - size(temp,2))];
+            else
+                new_labels = [new_labels zeros(1,size(temp,2) - length(new_labels))];
+            end
+            temp = [temp ; new_labels];
+            B.new_trans{i,next_state}=temp;
+            % e.g.,for formula !y1 | (!y2 & !y3), B.new_trans = [-1 0; -2
+            % -3]
         end
     end
 end

@@ -25,7 +25,7 @@
 % ============================================================================
 
 
-function [varargout] = rmt_constraints_PN_obs(Pre, Post, m0, props, Obs, obs_type, set_ind_fin, set_ind_traj, k, alpha, beta, gamma, solver)
+function [varargout] = rmt_constraints_PN_obs_new(Pre, Post, m0, props, trans_buchi, obs_type, k, alpha, beta, gamma, solver)
 %constraints for PN model based on desired observations
 %construct linear constraints s.t. a set of observations is satisfied (in final state and, if desired, along trajectory)
 
@@ -72,6 +72,9 @@ nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); %number of transitions
 N_r = sum(m0); % number of robots
 N_p = length(props); %number of atomic props.
+trans_buchi_final = trans_buchi{1}; %formula for the transition to the new state in buchi
+trans_buchi_self = trans_buchi{2}; %formula for the selfloop on the initial state
+M = min((N_r+1)^2,0.5e5); %big number for the optimization problems for higher values errors in optimization may result (very small x can lead x*M being equal to 1, thus wrongly satisfying a constraint)
 
 if ~strcmp(obs_type,'intermediate')
     k=1;    %for 'final' or 'trajectory'
@@ -107,75 +110,87 @@ end
 
 %%***(F)define the boolean variables for final states (first N_p binary variables) and link them with final PN marking and with set to be observed
 Aeq = [Aeq , zeros(size(Aeq,1),N_p)]; % add new columns to Aeq
-if strcmp(obs_type,'intermediate')
-    A = [A , zeros(size(A,1),N_p)]; %add new columns to A
-else
-    A=[];   %so far no constraints in A,b for 'final' or 'trajectory'
-    b=[];
-end
+A=[];   
+b=[];
 
-if ~isempty(setdiff( (1:size(Obs,1))' , set_ind_fin))    %if set_ind_fin is the power set of propositions, don't add constraints for F.1 or F.2 (leave unconstraint binary vars)
+if (trans_buchi_final ~= Inf) %if transition in Buchi is "True", don't add constraints (leave unconstraint binary vars)
     %F.1)link boolean variables for final state with final PN marking: same for any obs_type ('intermediate','trajectory','final')
     %xi=1 if proposition i is true at last marking
-    % M = N_r; %big_M: # of robots
     %vi*(m_final) \leq M*xi   , forall i=1,...,N_p
-    A = [A ; [ zeros(N_p,(k-1)*(nplaces+ntrans)) , V , zeros(N_p,ntrans) , -N_r*eye(N_p) ]];  %all first N_p constraints: V for final marking, eye for big_M
+    A = [A ; [ zeros(N_p,(k-1)*(nplaces+ntrans)) , V , zeros(N_p,ntrans) , -M*eye(N_p) ]];  %all first N_p constraints: V for final marking, eye for big_M
     b = [b ; zeros(N_p,1)];
     %vi*(m_final) \geq xi   , forall i=1,...,N_p
     A = [A ; [ zeros(N_p,(k-1)*(nplaces+ntrans)) , -V , zeros(N_p,ntrans) , eye(N_p) ]];
     b = [b ; zeros(N_p,1)];
     
-    %F.2)link boolean variables for final state with observation set given by set_ind_fin - see algorithm: same for any obs_type ('intermediate','trajectory','final')
-    complement_set = setdiff( (1:size(Obs,1))' , set_ind_fin);   %complement of set to be observed
-    % if complement_set is empty nothing will be added to constraints
-    if ismember(size(Obs,1),complement_set) %last observation is for free space - ("empty" observation)
-        %add constraint: sum_{i=1}^N_p xi \geq 1:
-        A = [A ; [ zeros(1,k*(nplaces+ntrans)) , -ones(1,N_p) ]];
-        b = [b ; -1];
+    %F.2)link boolean variables for final state with boolean formula on the transition from Buchi: same for any obs_type ('intermediate','trajectory','final')
+    
+    boolean_formula='';
+    indices = find(trans_buchi_final>0);
+    for i = 1: length(indices)-1
+        boolean_formula = sprintf('%s Y%d &',boolean_formula,trans_buchi_final(indices(i)));
     end
-    complement_set = setdiff( complement_set , size(Obs,1));   %remove (if it was there) "empty" observation
-    for i=1:length(complement_set)
-        appear_props = setdiff( Obs(complement_set(i),:) , 0);  %propositions appearing in current subset (remove zero, from padding with zeros in Obs)
-        %add constraint: sum_{i\in appear_props} xi  - sum_{i\notin appear_props} xi \leq |appear_props| - 1:
-        vect = -ones(1,N_p);    %for constraints on appeared props
-        vect(appear_props) = 1; %only appear with "+", others with "-"
-        A = [A ; [ zeros(1,k*(nplaces+ntrans)) , vect ]];
-        b = [b ; length(appear_props)-1];
+    if (length(indices)>=1)
+        boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_final(indices(length(indices))));
     end
+    indices = find(trans_buchi_final < 0);
+    if ((length(indices) >= 1) && ~isempty(boolean_formula))
+        boolean_formula = sprintf('%s &',boolean_formula);
+    end
+    for i = 1: length(indices)-1
+        boolean_formula = sprintf('%s !Y%d &',boolean_formula,-trans_buchi_final(indices(i)));
+    end
+    if (length(indices)>=1)
+        boolean_formula = sprintf('%s !Y%d',boolean_formula,-trans_buchi_final(indices(length(indices))));
+    end
+    [~,~,~,Ar,br] = rmt_formula2constraints(boolean_formula, [],[],length(props));
+    Ar = Ar(1:size(Ar,1),1:length(props));
+
+    A = [A ; [ zeros(size(Ar,1),k*(nplaces+ntrans)) , Ar ]];  %all first N_p constraints: V for final marking, eye for big_M
+    b = [b ; br];
 end
 
 
 %%***(T)define the boolean variables for trajectory (last N_p binary variables) and link them with PN markings and with set to be observed
 %T.1)link boolean variables for trajectory with PN markings
-if strcmp(obs_type,'intermediate')    %xi=1 if proposition i was true at least once along the k-1 intermediate markings (without final one)
+
+if strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least once along all reached markings (trajectory)
     Aeq = [Aeq , zeros(size(Aeq,1),N_p)]; % add new columns to Aeq
-    A = [A , zeros(size(A,1),N_p)]; %add new columns to A
-    if ~isempty(setdiff( (1:size(Obs,1))' , set_ind_traj))    %if set_ind_traj is the power set of propositions, don't add constraints for T.1 or T.2 (leave unconstraint binary vars)
-        M = N_r*k; %big_M: maximum cummulative number of tokens that were in a place (from 0 to k-1 trajectory markings -> k markings)
-        %link boolean variables for trajectory with intermediate PN markings:
-        %vi*sum_{j=0}^{k-1} (m_j) \leq M*xi   =>   sum_{j=0}^{k-1} (vi*m_j) - M*xi \leq -vi*m_0   , forall i=1,...,N_p
-        A = [A ; [ repmat([V, zeros(N_p,ntrans)] , 1,k-1) , zeros(N_p,nplaces+ntrans) , zeros(N_p) , -M*eye(N_p) ]];  %all first N_p constraints: repmat for sum(vi*m_j) , zeros for final binary vars, eye for big_M
-        b = [b ; -V*m0];
-        %xi \leq vi*sum_{j=0}^{k-1} (m_j)   =>   -sum_{j=0}^{k-1} (vi*m_j) + xi \leq vi*m_0   , forall i=1,...,N_p
-        A = [A ; [ repmat([-V, zeros(N_p,ntrans)] , 1,k-1) , zeros(N_p,nplaces+ntrans) , zeros(N_p) , eye(N_p) ]];
-        b = [b ; V*m0];
-    end
-    
-elseif strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least once along all reached markings (trajectory)
-    Aeq = [Aeq , zeros(size(Aeq,1),N_p)]; % add new columns to Aeq
-    A = [A , zeros(size(A,1),N_p)]; %add new columns to A
-    if ~isempty(setdiff( (1:size(Obs,1))' , set_ind_traj))    %if set_ind_traj is the power set of propositions, don't add constraints for T.1 or T.2 (leave unconstraint binary vars)
-        %         M = N_r*(ntrans+1); %maximum cummulative number of tokens that were in a place
-        %         %link boolean variables for trajectory with reached PN markings given by Post*sigma:
-        %         %vi*Post*sigma \leq M*xi   , forall i=1,...,N_p
-        %         A = [A ; [ zeros(N_p,nplaces) , V*Post , zeros(N_p) , -M*eye(N_p) ]];  %all first N_p constraints: zeros for m_final,  V*Post for sigma , zeros for final binary vars, eye for big_M
-        %         b = [b ; zeros(N_p,1)];
-        %         % xi \leq vi*Post*sigma   , forall i=1,...,N_p
-        %         A = [A ; [ zeros(N_p,nplaces) , -V*Post , zeros(N_p) , eye(N_p) ]];
-        %         b = [b ; zeros(N_p,1)];
+    A = [A , zeros(size(A,1),N_p)]; % add new columns to A
+    if (isempty(trans_buchi_self)) %if there is no selfloop transition in Buchi compute add contraint on the empty
+        not_null_obs = [];
+        act_obst_cellsm0 = [];
+        V_act_obs_init = zeros(1,nplaces);
+        for i = 1 : length(props)
+            not_null_obs = union(not_null_obs,props{i});
+            obs_m0 = intersect(find(m0),props{i}); 
+            if ~isempty(obs_m0) %check if the initial pose of the robots activate any observation
+                act_obst_cellsm0 = [act_obst_cellsm0 obs_m0'];
+                V_act_obs_init = V_act_obs_init + V(i,:);
+            end
+        end
+        null_obs = setdiff([1:nplaces],not_null_obs);
+        V_null = zeros(1,nplaces);    %places corresponding to the empty space (placeses with null observations)
+        V_null(null_obs) = 1;
         
-        M = (N_r+1)*(ntrans^2+1); %maximum cummulative number of tokens that were in a place
-        M = min(M,0.5e5); %for higher values errors in optimization may result (very small x can lead x*M being equal to 1, thus wrongly satisfying a constraint)
+        if intersect(find(m0),null_obs) %if at least one robot is in the free space, update V_act_obs_init with the free observation
+            V_act_obs_init = V_act_obs_init + V_null;
+        end
+        % Post*sigma \leq V_null - during the trajectory only through empty
+        % space is possible to pass
+        
+        if (isempty(setdiff(find(m0),null_obs))) %if no selfloop and no observation active put that during the trajectory only empty observation is possible 
+            A = [A ; [ zeros(nplaces,nplaces) , Pre , zeros(nplaces,2*N_p) ]];
+            b = [b ; V_null'];
+            need_check_ILP2=0;
+        else %only the initial active observations are possible based on robots position
+            A = [A ; [ zeros(nplaces,nplaces) , Pre , zeros(nplaces,2*N_p)]];
+            b = [b ; V_act_obs_init'];
+            need_check_ILP2=1;
+        end
+        
+        
+    elseif (trans_buchi_self ~= Inf) %if the selfloop transition in Buchi is "True", don't add constraints (leave unconstraint binary vars)
         %link boolean variables for trajectory with reached PN markings given by Post*sigma+m0-mf:
         %vi*(Post*sigma +m0-mf) \leq M*xi   , forall i=1,...,N_p
         A = [A ; [ -V , V*Post , zeros(N_p) , -M*eye(N_p) ]];  %all first N_p constraints: -V for m_final,  V*Post for sigma , zeros for final binary vars, eye for big_M
@@ -183,34 +198,33 @@ elseif strcmp(obs_type,'trajectory')    %xi=1 if proposition i was true at least
         % xi \leq vi*(Post*sigma +m0-mf)  , forall i=1,...,N_p
         A = [A ; [ V , -V*Post , zeros(N_p) , eye(N_p) ]];
         b = [b ; V*m0];
+        
+        boolean_formula='';
+        indices = find(trans_buchi_self>0);
+        for i = 1: length(indices)-1
+            boolean_formula = sprintf('%s Y%d &',boolean_formula,trans_buchi_self(indices(i)));
+        end
+        if (length(indices)>=1)
+            boolean_formula = sprintf('%s Y%d',boolean_formula,trans_buchi_self(indices(length(indices))));
+        end
+        indices = find(trans_buchi_self < 0);
+        if ((length(indices) >= 1) && ~isempty(boolean_formula))
+            boolean_formula = sprintf('%s &',boolean_formula);
+        end
+        for i = 1: length(indices)-1
+            boolean_formula = sprintf('%s !Y%d &',boolean_formula,-trans_buchi_self(indices(i)));
+        end
+        if (length(indices)>=1)
+            boolean_formula = sprintf('%s !Y%d',boolean_formula,-trans_buchi_self(indices(length(indices))));
+        end
+        [~,~,~,Ar,br] = rmt_formula2constraints(boolean_formula, [],[],length(props));
+        Ar = Ar(1:size(Ar,1),1:length(props));
+        
+        A = [A ; [ zeros(size(Ar,1),k*(nplaces+ntrans)), zeros(size(Ar,1),N_p) , Ar ]];  %all first N_p constraints: V for final marking, eye for big_M
+        b = [b ; br];
     end
+
     
-%else    %xi=1 if propositon i is true in final marking
-    %no binary variables for trajectory, do not extend matrices Aeq,A
-    %M = N_r; %maximum # of robots is a place in final marking
-    %nothing to do about intermediate binary variables
-end
-
-
-%T.2)link boolean variables for trajectory with observation set given by set_ind_traj - see algorithm
-if ( (strcmp(obs_type,'intermediate') || strcmp(obs_type,'trajectory')) ) && ~isempty(setdiff( (1:size(Obs,1))' , set_ind_traj))   %otherwise, no constraints on trajectory
-    complement_set = setdiff( (1:size(Obs,1))' , set_ind_traj);   %complement of set to be observed
-    % if complement_set is empty nothing will be added to constraints
-    if ismember(size(Obs,1),complement_set) %last observation is for free space - ("empty" observation)
-        %add constraint: sum_{i=1}^N_p xi \geq 1:
-        A = [A ; [ zeros(1,k*(nplaces+ntrans)) , zeros(1,N_p) , -ones(1,N_p) ]];
-        b = [b ; -1];
-    end
-    complement_set = setdiff( complement_set , size(Obs,1));   %remove (if it was there) "empty" observation
-    for i=1:length(complement_set)
-        appear_props = setdiff( Obs(complement_set(i),:) , 0);  %propositions appearing in current subset (remove zero, from padding with zeros in Obs)
-        %add constraint: sum_{i\in appear_props} xi  - sum_{i\notin appear_props} xi \leq |appear_props| - 1:
-        %(this was not right: add constraint: sum_{i\in appear_props} xi \leq |appear_props| - 1:)
-        vect = -ones(1,N_p);    %for constraints on appeared props
-        vect(appear_props) = 1; %only appear with "+", others with "-"
-        A = [A ; [ zeros(1,k*(nplaces+ntrans)) , zeros(1,N_p) , vect ]];
-        b = [b ; length(appear_props)-1];
-    end
 end
 
 
@@ -318,6 +332,7 @@ switch solver
         varargout{6}=lb;
         varargout{7}=[];    %instead of upper bound, some vars are set binary
         varargout{8}=vartype;
+        %varargout{9}=need_check_ILP2;
     
     otherwise
         fprintf('\nERROR when constructing PN constraints: unknown or wrong indicated solver.\n')

@@ -19,31 +19,49 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on May, 2020.
-%   Last modification May, 2020.
+%   First version released on May, 2021.
+%   Last modification May 07, 2021.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function param=rmt_milp_pn_with_setup(param)
+function param=rmt_label_cells_setup(param)
+% This function is responsible to setup the parameters necessary for
+% labelling correctly the cells
 
 answer = inputdlg({...
-    sprintf('Number of PN intermediate markings')},...
+    sprintf('Font size for labelling the cells. Please select a font size between 6 and 20: '),...
+    sprintf('Label of the cells (by default is denoted with "p_i"): '),...   
+    },...
     'Robot Motion Toolbox',...
-    [1],{num2str(param.interM,3)});
+    [1;1],{num2str(param.size,3),num2str(param.name,3)});
 if (isempty(answer))
     return;
 end
-%intermediate markings
+
+%size
 input_val = char(answer{1});
-todoOK = rmt_detect_error(input_val,1,200);
+todoOK = rmt_detect_error(input_val,6,20);
 if (todoOK == 0)
-    uiwait(errordlg(sprintf('\nValid range for number of intermediate markings is betweeen 1 and 200!'),'Robot Motion Toolbox','modal'));
-    error('Valid range for kappa is betweeen 1 and 200!');
+    uiwait(errordlg(sprintf('\nValid range for \\size is betweeen 6 and 20!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for size is betweeen 6 and 20!');
 else
-    param.interM = eval(input_val);
+    param.size = eval(input_val);
 end
 
+%mu
+input_val = char(answer{2});
+if ischar(input_val)
+    todoOK = 1;
+else
+    todoOK = 0;
+end
 
+if (todoOK == 0)
+    uiwait(errordlg(sprintf('\nValid type for this parameter is char!'),'Robot Motion Toolbox','modal'));
+    error('Valid type for this parameter is char!');
+else
+    param.name = input_val;
+end
 
 
 return;

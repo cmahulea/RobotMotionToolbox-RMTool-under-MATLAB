@@ -1,6 +1,6 @@
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
-%    Copyright (C) 2016 RMTool developing team. For people, details and citing 
+%    Copyright (C) 2016 RMTool developing team. For people, details and citing
 %    information, please see: http://webdiis.unizar.es/RMTool/index.html.
 %
 %    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 %% ============================================================================
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
-%   First version released on January, 2019. 
+%   First version released on January, 2019.
 %   Last modification May, 2020.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
@@ -29,7 +29,7 @@ function [message,feasible_sol , marking_final, Rob_positions_final, Rob_places,
 %this is done in two steps:
 %1. sigma should be feasible (non-spurious)
 %2. (ony for ILP1:) if 1. is true, all possible generated team observations during unsynchronized robot movements should be included in a desired set (that does not leave desired traj. in Buchi)
-    %the movement are unsynchronized until entering the final marking -> the moving robots synchronize when ENTERING the final marking, NOT INSIDE the final marking (otherwise formulas with synchronous movements couldn't become true)
+%the movement are unsynchronized until entering the final marking -> the moving robots synchronize when ENTERING the final marking, NOT INSIDE the final marking (otherwise formulas with synchronous movements couldn't become true)
 %"xmin" is the solution returned by ILP solver, "status" is the optimization status
 %Rob_positions is the vector with current initial robot positions (for constructing their runs, when feasible solution is obtained)
 %the other input arguments are as in function "constraints_PN_obs"
@@ -46,6 +46,7 @@ function [message,feasible_sol , marking_final, Rob_positions_final, Rob_places,
 %tr_number is the number of transitions that fired; if optimization did not succeeded, is zero; it is useful for finding minimum value of k for ILP3, when first running this function for ILPs 1 and 2
 
 %%initialization
+message = ' ';
 nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); %number of transitions
 N_r = sum(m0); % number of robots
@@ -111,7 +112,7 @@ for i=1:k
     %for feasible sigma, update:
     Rob_positions = Rob_positions_next;
     m0 = xmin((i-1)*(nplaces+ntrans)+1 : (i-1)*(nplaces+ntrans)+nplaces); %update initial marking with marking_{i-1} for i^th iteration
-    if sum(sigma)>0 %at least one transition fires
+    if sum(sigma)>eps*10^9 %at least one transition fires
         for j=1:N_r
             Rob_places_i{j}(1)=[];  %initial position already included
             Rob_places{j} = [Rob_places{j} , Rob_places_i{j}];
@@ -130,7 +131,7 @@ Rob_positions_final = Rob_positions; %if for loop finished
 % %test 2 may be more time consuming (it has a cartesian product);
 % %for ILP3, test1 and test2 are not needed (they are true); test1 was run to get robot trajectories
 % %test2 is not run for ILP3, since it's anyway true
-% 
+%
 % if ~strcmp(obs_type,'intermediate') %ILP1 or ILP2
 %     team_observ = traj2observ(Rob_places , props , Obs); %construct possible team observations resulting from unsynchronized robot movements
 %     if ~isempty(setdiff(team_observ , set_ind_traj)) %it is possible to generate undesired observations -> not feasible solution; set_ind_traj includes set_ind_fin
@@ -142,7 +143,7 @@ Rob_positions_final = Rob_positions; %if for loop finished
 %%test 2: for non-spurious sigma, construct generated team observables to test if PN markings satisfy observations for path_B(i) -> path_B(i+1) (with possible loops in path_B(i))
 %test 2 may be more time consuming (it has a cartesian product);
 %for ILP3, test1 and test2 are not needed (they are true); test1 was run to get robot trajectories
-%test2 is run nly for ILP1
+%test2 is run only for ILP1
 
 if strcmp(obs_type,'final') %ILP1
     team_observ = rmt_traj2observ(Rob_places , props , Obs); %construct possible team observations resulting from unsynchronized robot movements
@@ -155,3 +156,31 @@ end
 
 feasible_sol = 1; %if this point is reached, solution is feasible
 message = sprintf('%s\tCurrent solution is feasible!\n',message);
+message = sprintf('%s\tPaths of the robots at this step:\n',message);
+for i = 1 : N_r
+    trajj = Rob_places{i};
+    message = sprintf('%s\t  Robot %d: ',message,i);
+    for j = 1 : length(trajj)-1
+        message = sprintf('%s p%d,',message,trajj(j));
+    end
+    message = sprintf('%s p%d.\n',message,trajj(length(trajj)));
+end
+active_obs=[];
+for i = 1 : length(Rob_positions_final)
+    for j = 1 : length(props)
+        temp = props{j};
+        if ~isempty(intersect(Rob_positions_final(i),temp))
+            active_obs = [active_obs j];
+        end
+    end
+end
+active_obs = unique(active_obs);
+if isempty(active_obs)
+    message = sprintf('%s\tNo active observations at this step.\n ',message);
+else
+    message = sprintf('%s\tActive observations at this step: ',message);
+    for i = 1 : length(active_obs)-1
+        message = sprintf('%s y%d,',message,active_obs(i));
+    end
+    message = sprintf('%s y%d\n',message,active_obs(length(active_obs)));
+end
