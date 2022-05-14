@@ -120,6 +120,7 @@ tiempo = toc;
 message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
 time_c = time_c + tiempo;
 
+<<<<<<< Updated upstream
 data = get(gcf,'UserData');
 % Part about analysis with Buchi Automaton
 %if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
@@ -135,6 +136,105 @@ vartype = '';
 for i = 1 : size(Aeq,2)/(size(Pre,1)+size(Pre,2))
     for j = 1 : size(Pre,1)
         vartype = sprintf('%sC',vartype); %put the markings as real
+=======
+while idx_fs <= length(final_places)
+    % old call of the function
+    % [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
+    %     length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
+    
+    % compute prefix for final state idx_fs
+    tic;
+    [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_prefix(PreV,PostV,m0, ntrans_orig, ...
+        data.optim.paramWith.interM, final_places(idx_fs), idxV, flag_sisf_actobs);
+    tiempo = toc;
+    
+    message = sprintf('%s\n*****************************************************************',message);
+    message = sprintf('%s\n\nFinal state %g\n',message, B.F(idx_fs));
+    
+    message_c = sprintf('%s-----------------------------------------------------------\n',message_c);
+    message_c = sprintf('%s\nFinal state: %g\n',message_c,B.F(idx_fs));
+    message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
+    time_c = time_c + tiempo;
+    
+    data = get(gcf,'UserData');
+    % Part about analysis with Buchi Automaton
+    %if strcmpi(get(data.optim.menuCplex,'Checked'),'on')
+    %%%%%%%%%
+    ctype='';
+    for i = 1 : size(Aeq,1)
+        ctype = sprintf('%sS',ctype);
+    end
+    for i = 1 : size(A,1)
+        ctype = sprintf('%sU',ctype);
+    end
+    vartype = '';
+    for i = 1 : size(Aeq,2)/(size(PreV,1)+size(PreV,2))
+        for j = 1 : size(PreV,1)
+            vartype = sprintf('%sC',vartype); %put the markings as real
+        end
+        for j = 1 : size(PreV,2)
+            vartype = sprintf('%sI',vartype); %put the sigma as integer
+        end
+    end
+    
+    message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
+        message,size(Aeq,2),data.optim.paramWith.interM);
+    message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
+        message, size(Aeq,1), size(A,1));
+    
+    tic;
+    switch solver 
+        case 'cplex'
+            [xmin_pref,fp,exitflag,output] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+        case 'glpk'
+            [xmin_pref,fp,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+        case 'intlinprog'
+            [xmin_pref,fp,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+    end
+    time = toc;
+    if isempty(fp)%no solution
+        uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution. Increase k(Setup -> Parameters for MILP PN with Buchi)!',...
+            'Robot Motion Toolbox','modal'));
+        return;
+    end
+    
+    message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
+    message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, fp);
+    message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
+    total_time = total_time + time;
+    total_time_MILP = total_time_MILP + time;
+    message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - prefix: %g secs\n',message_c,time);
+    time_c = time_c + time;
+    message = sprintf('%s\n=======================================================',message);
+    message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
+    message = sprintf('%s\n=======================================================\n',message);
+    
+    % After the optimization problem was solved, an
+    % initial solution was obtained on the reduced system
+    % check the active observations after prefix
+    [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+    % [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+    
+    % modify the last active observations to combinations from temp_obs
+    idx_act_temp = [];
+    for idx_tempobs = 1:size(temp_obs,1)
+        if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
+                length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
+            %         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
+            idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
+        end
+    end
+    
+    % check if the last active observations are a subset of observations in the
+    % self-loop of the final state
+    flag_act_obs = 0;
+    temp_fs = B.F(idx_fs);
+    
+    for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
+        if B.new_trans{temp_fs,temp_fs} == Inf | ~isempty(intersect(idx_act_temp, B.trans{temp_fs,temp_fs}))
+            flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+        end
+>>>>>>> Stashed changes
     end
     for j = 1 : size(Pre,2)
         vartype = sprintf('%sI',vartype); %put the sigma as integer
@@ -201,11 +301,23 @@ for i = 1 : 2*data.optim.paramWith.interM
         message = sprintf('%s\n\t State of Buchi in step %d = %s',message,i/2,...
             mat2str(find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+2*length(data.Tr.props)+1:(i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1))])));
         
+<<<<<<< Updated upstream
         active_observations{length(active_observations)+1} = find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig+1:(i-1)*(size(Pre,1)+size(Pre,2))+length(data.Tr.props)+nplaces_orig)]);
         if isempty(active_observations{length(active_observations)})
             message = sprintf('%s\n\t No active observations at step %d',message,i/2);
         else
             message = sprintf('%s\n\t Active observations at step %d = %s',message,i/2,mat2str(active_observations{length(active_observations)}));
+=======
+        tic;
+        switch solver
+            case 'cplex'
+                [xmin_suff,f_suff,exitflag,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+            case 'glpk'
+                [xmin_suff,f_suff,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
+                % if it's no solution, f_suff == 0
+            case 'intlinprog'
+                [xmin_suff,f_suff,~] = intlinprog(cost, 1:length(cost), A, b, Aeq, beq, zeros(1,length(cost)), []);
+>>>>>>> Stashed changes
         end
         %take the new marking of the robot model
         marking_new = [xmin((i-1)*(size(Pre,1)+size(Pre,2))+1:(i-1)*(size(Pre,1)+size(Pre,2))+nplaces_orig)];
@@ -435,11 +547,10 @@ end
 
 for r=1:length(rob_traj)    %plot trajectories of robots
     plot(rob_traj{r}(1,1),rob_traj{r}(2,1),data.rob_plot.line_color{r},...
-        'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r});
+        'Marker','o','LineWidth',4);
     plot(rob_traj{r}(1,:),rob_traj{r}(2,:),data.rob_plot.line_color{r},...
-        'LineWidth',data.rob_plot.line_width{r});
-    plot(rob_traj{r}(1,end),rob_traj{r}(2,end),data.rob_plot.line_color{r},...
-        'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','r');
+        'LineWidth',4);
+    plot(rob_traj{r}(1,end),rob_traj{r}(2,end),data.rob_plot.line_color{r},'Marker','x','LineWidth',2);
 end
 
 % compute synchronizations
@@ -462,10 +573,15 @@ duplicate_ind = setdiff(1:length(Synch), ind);
 Synch = unique(Synch(duplicate_ind));
 disp(Synch);
 
+<<<<<<< Updated upstream
+=======
+rob_color={'g','r','b','m','k','y','c','g','r','b','m','k','y','c','g','r','b','m','k','y','c'};
+data.rob_plot.line_color = rob_color;
+
+>>>>>>> Stashed changes
 for r=1:length(rob_traj)    %plot trajectories of robots
     for tt = 1 : length(Synch)
-        plot(rob_traj{r}(1,Synch(tt)),rob_traj{r}(2,Synch(tt)),data.rob_plot.line_color{r},...
-            'Marker',data.rob_plot.marker{r},'LineWidth',data.rob_plot.line_width{r},'Color','b');
+        plot(rob_traj{r}(1,Synch(tt)),rob_traj{r}(2,Synch(tt)),'k','Marker','*','MarkerSize',5);
     end
 end
 
