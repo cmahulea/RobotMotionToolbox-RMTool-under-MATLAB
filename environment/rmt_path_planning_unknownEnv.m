@@ -17,11 +17,11 @@ function rmt_path_planning_unknownEnv()
         return;
     end
 
-    %% Se pregunta por el tipo de estimacion (1,2 o 3)
-    prompt = {'Estimation type (1:independent, 2:centralized, 3:consensus)', 'Communication radius', 'Tau', 'Tau_obs'};
+    %% Se pregunta por los parámetros
+    prompt = {'Estimation type (1:independent, 2:centralized, 3:consensus)', 'Communication radius', 'Tau', 'Tau_obs', 'MAXITERS'};
     dlg_title = 'Robot Motion Toolbox';
     num_lines = 1;
-    defaultans = {'3', '25', '0.75', '0.25'};
+    defaultans = {'3', '25', '0.75', '0.25', '100'};
 
     input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
     if isempty(input_user)
@@ -31,6 +31,7 @@ function rmt_path_planning_unknownEnv()
     radio = char(input_user(2)); % Reading of comm radius from input interface
     tau = char(input_user(3)); % Reading of tau from input interface
     tau_obs = char(input_user(4)); % Reading of tau_obs type from input interface
+    MAXITERS = char(input_user(5)); % Reading of MAXITERS type from input interface
     if (isempty(EstimationType) || isempty(radio) || isempty(tau) || isempty(tau_obs))
         return;
     end
@@ -39,13 +40,14 @@ function rmt_path_planning_unknownEnv()
         radio = str2double(radio);
         tau = str2double(tau);
         tau_obs = str2double(tau_obs);
+        MAXITERS = str2double(MAXITERS);
     catch
-        uiwait(errordlg(sprintf('\nEstimation type should be a natural number between 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!'),'Robot Motion Toolbox','modal'));
+        uiwait(errordlg(sprintf('\nEstimation type should be a natural number between 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!\nMAXITERS should be a positive number!'),'Robot Motion Toolbox','modal'));
         error('Estimation type should be a natural numberbetween 1 and 3!');
     end
-    if (EstimationType < 1 || EstimationType > 3 || radio < 0 || tau > 1 || tau < 0 || tau_obs > 1 || tau_obs < 0)
-        uiwait(errordlg(sprintf('\nEstimation type should be a natural number between 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!'),'Robot Motion Toolbox','modal'));
-        error('Estimation type should be a natural numberbetween 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!');
+    if (EstimationType < 1 || EstimationType > 3 || radio < 0 || tau > 1 || tau < 0 || tau_obs > 1 || tau_obs < 0 || MAXITERS <= 0)
+        uiwait(errordlg(sprintf('\nEstimation type should be a natural number between 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!\nMAXITERS should be a positive number!'),'Robot Motion Toolbox','modal'));
+        error('Estimation type should be a natural numberbetween 1 and 3!\nRadius should be a non negative number!\nTau and tau_obs should be numbers between 0 and 1!\nMAXITERS should be a positive number!');
     end
 
     data.CommRadius = radio;
@@ -140,7 +142,7 @@ function rmt_path_planning_unknownEnv()
     metaAlcanzada = false;
     % while ~(sum(stopped_data.Robots) == data.N_r) && (data.PN.T<data.numIterations)
     %while (numItStopped < 5 && iterations<data.numIterations)
-    while (iterations<100 && ~metaAlcanzada)
+    while (iterations<MAXITERS && ~metaAlcanzada)
         iterations= iterations+1;
         fprintf(1,'\nIteration: %d - ',iterations);
         data.RobotsRegItAnterior = [];
