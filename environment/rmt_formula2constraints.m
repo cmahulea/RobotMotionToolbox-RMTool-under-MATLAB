@@ -35,11 +35,6 @@ function [A,b,negated_trajectory_alone,A_r,b_r] = rmt_formula2constraints(F, A,b
 % literals: small or caps letters "y" and "Y" with number of prop. (e.g. y1, y2, Y1, ...) -small letters will mean requirement in final state, caps along trajectory
 %example of formula: 'Y1&(y2|!y3)&(!Y3|!Y4)&(!y1)'   ( old version was with 'A&(b|!c)&(!C|!D)&(!a)' )
 
-% fprintf('\nInput Boolean formula in Conjunctive Normal Form;\n\tUse & , | , ! for conjunction, disjunction and negation, respectively;\n');
-% fprintf('\tUse letters for atomic propositions; upper case letter means restriction along trajectory, lower case restriction in final state.\n');
-% 
-% F = input('Formula: \n', 's');
-
 F=strrep(F,' ',''); %remove spaces
 F=strrep(F,'''',''); %remove apostrophes (if there are at beginning/end)
 
@@ -47,8 +42,6 @@ if ~isempty(setdiff(unique(F),'!&|()Yy0123456789'))
     uiwait(errordlg(sprintf('Boolean formula should contain y1, y2, ..., Y1, ... as atomic propositions, and characters !, &, |, (, )'), 'Robot Motion Toolbox','modal'));
     return;
 end
-
-% [D,F]=strtok(F,'&');    %D is current disjunction, F is remainder (F now begins with "&")
 
 D=textscan(F,'%s','delimiter','&');  %separate disjunctions in cell D
 D=D{1}; %D{i} will be a char string for i^th disj.
@@ -65,7 +58,6 @@ for i=1:length(D)   %current disjunction is string D{i}
     prop=textscan(D{i},'%s','delimiter','|');  %elements/propositions of currrent disjunction (each is literal or negated literal, because F is in CNF)
     prop=prop{1};
     %find restrictions in current disjunction:
-%     fprintf('\nDisjunction %d:\n',i);
     %in restrictions we will modify A_r(i,:) and b_r(i)
     for j=1:length(prop)    %current atomic prop is disj{j}
         %prop should be of kind "[!]yi" ([!] - ! appears or not)
@@ -83,14 +75,12 @@ for i=1:length(D)   %current disjunction is string D{i}
         if (atom_pr(1)~='!')   %same as isempty(strfind(atom_pr,'!')) %current atomic prop is not negated
             if isstrprop(atom_pr(1),'lower')    %lower case letter -> final state restriction
                 prop_ind=str2double(atom_pr(2:end));  %index of proposition
-%                 fprintf('\tAtomic prop. %d should be TRUE in final state\n',prop_ind);
                 %modify constraint (last nr_props columns are for final state restrictions):
                 A_r(i,nr_props+prop_ind)=-1;    %-1*x_i ... <=-1
                 %no modification in b for non-negated prop.
                 
             elseif isstrprop(atom_pr(1),'upper')    %upper case letter -> restriction along trajectory
                 prop_ind=str2double(atom_pr(2:end));  %index of proposition
-%                 fprintf('\tAtomic prop. %d should be TRUE along traj.\n',prop_ind);
                 %modify constraint (first nr_props columns are for trajectory restrictions):
                 A_r(i,prop_ind)=-1;    %-1*X_i ... <=-1
                 %no modification in b for non-negated prop.
@@ -103,14 +93,12 @@ for i=1:length(D)   %current disjunction is string D{i}
         else  %negation
             if isstrprop(atom_pr(2),'lower')    %lower case letter -> final state restriction
                 prop_ind=str2double(atom_pr(3:end));  %index of proposition
-%                 fprintf('\tAtomic prop. %d should be FALSE in final state\n',prop_ind);
                 %modify constraint (final state restrictions):
                 A_r(i,nr_props+prop_ind)=1;    %1*x_i ... <=-1 +1
                 b_r(i)=b_r(i)+1;    %add 1 to b for each negation
                 
             elseif isstrprop(atom_pr(2),'upper')    %upper case letter -> restriction along trajectory
                 prop_ind=str2double(atom_pr(3:end));  %index of proposition
-%                 fprintf('\tAtomic prop. %d should be FALSE along traj.\n',prop_ind);
                 %modify constraint (trajectory restrictions):
                 A_r(i,prop_ind)=1;    %1*x_i ... <=-1 +1
                 b_r(i)=b_r(i)+1;    %add 1 to b for each negation
