@@ -44,11 +44,8 @@ thisfile='rmt';
 addpath(genpath('aux_toolboxes'));
 addpath(genpath('environment'));
 
-%CAMBIO: añadidas carpetas cplex y functions
-addpath(genpath('cplex'));
-addpath(genpath('functions'));
-
 switch action
+    
     %================
     % INITIALIZATION
     %================
@@ -62,8 +59,7 @@ switch action
             'Visible','off',...
             'InvertHardcopy','off',...
             'MenuBar', 'none',...%figure
-            'Color',[.8 .8 .8],...
-            'Tag','figpriRMT'...
+            'Color',[.8 .8 .8]...
             );
         ret = figpri;
         set(figpri, 'Visible','on');
@@ -83,31 +79,159 @@ switch action
         data.obstacles=[];
         data.Nobstacles=0;
         data.formula='(F y1) & G !(y2 | y3)';
-        data.Bool_formula='!y1 & y2';
-        data.rob_plot.line={'-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.'};
-        data.rob_plot.line_color={'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k'};
-        data.rob_plot.line_width={2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
-        data.rob_plot.marker={'s','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p'};
-        data.rob_plot.face_color={'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r'};
-        data.reg_plot.color = ['r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k','r','b','g','c','m','k'];
-        data.reg_plot.color_full = {'red','blue','green','cyan','magenta','black',...
-            'red','blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red','blue',...
-            'green','cyan','magenta','black','red','blue','green','cyan','magenta','black',...
-            'red','blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black','red',...
-            'blue','green','cyan','magenta','black','red','blue','green','cyan',...
-            'magenta','black','red','blue','green','cyan','magenta','black'};
+        data.Bool_formula='!Y1 & y2';
+        data.rob_plot.line={'-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.',...
+            '-','--',':','-.','-','--',':','-.','-','--',':','-.','-','--',':','-.'};
+        data.rob_plot.line_color={'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k',...
+            'k','k','k','k','k','k','k','k','k','k','k','k','k','k','k','k'};
+        data.rob_plot.line_width={2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,...
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
+        data.rob_plot.marker={'s','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p'...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p'...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p',...
+            's','o','x','p','s','o','x','p','s','o','x','p','s','o','x','p'};
+        data.rob_plot.face_color={'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r',...
+            'c','m','y','r','c','m','y','r','c','m','y','r','c','m','y','r'};
+        data.reg_plot.color = ['r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w',...
+            'r','b','g','c','m','k','y','w','w'];
+        data.reg_plot.color_full = {'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E',...
+            'red','blue','green','cyan','magenta','black','yellow','#D95319','#7E2F8E'};
         data.waypointsMPC.N = 2;
         data.waypointsMPC.safe_dist = 0.5;
         data.waypointsMPC.intermPoints = 1;
@@ -121,9 +245,6 @@ switch action
         data.control.robot = 'Car-like';
         data.control.motion = 'Pure-Pursuit';
         data.reg_plot.text_cells_h = [];
-        
-        data.unknownEnvCreated = 0;
-        
         set(gcf,'UserData',data);
         
         
@@ -190,6 +311,8 @@ switch action
             'Separator','on');
         uimenu(a,'Label','&Add a Robot','Callback','rmt_add_robot');
         uimenu(a,'Label','Re&move Robots','Callback','rmt_remove_robot');
+        uimenu(a,'Label','&Select size and name for cell''s label',...
+            'Callback',strcat(thisfile,'(''size_label_cells'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
             'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
@@ -199,18 +322,10 @@ switch action
         uimenu(a,'Label','E&psilon Voronoi','Callback',strcat(thisfile,'(''EpsilonVoronoi'')'), 'Separator','on');
         uimenu(a,'Label','P&I tuning parameters','Callback',strcat(thisfile,'(''PI_tuning'')'));
         uimenu(a,'Label','&Motion Control Parameters','Callback',strcat(thisfile,'(''motion_control_parameters'')'), 'Separator','on');
-        
-        a_aux = a;
-        a = uimenu(a_aux,'Label','&MILP solver', 'Separator','on');
+        a = uimenu(a,'Label','&MILP solver', 'Separator','on');
         data.optim.menuCplex = uimenu(a,'Label','&CPLEX','Callback',strcat(thisfile,'(''menu_cplex'')'));
         data.optim.menuGlpk = uimenu(a,'Label','&GLPK','Callback',strcat(thisfile,'(''menu_glpk'')'),'Separator','on','Checked','on');
         data.optim.menuIntlinprog = uimenu(a,'Label','&Intlinprog','Callback',strcat(thisfile,'(''menu_intlinprog'')'),'Separator','on','Checked','off');
-        
-
-        a = uimenu(a_aux,'Label','Window view', 'Separator','on');
-        data.viewWindow.informationBox = uimenu(a,'Label','View information box','Callback',strcat(thisfile,'(''menu_infBox'')'),'Checked','on');
-        data.viewWindow.beliefMaps = uimenu(a,'Label','View belief maps','Callback',strcat(thisfile,'(''menu_beliefMaps'')'),'Separator','on','Checked','off');
-        data.viewWindow.motionControl = uimenu(a,'Label','View motion control','Callback',strcat(thisfile,'(''menu_motionControl'')'),'Separator','on','Checked','off');
         
         a = uimenu('Label','Environment');
         uimenu(a,'Label','&Load environment','Callback',strcat(thisfile,'(''load_env'')'));
@@ -300,7 +415,7 @@ switch action
             'Units','normalized', ...
             'BackgroundColor',[1 1 1], ...
             'ListboxTop',0, ...
-            'Position',[0.05    0.318    0.22    0.045], ...
+            'Position',[0.05    0.32    0.22    0.045], ...
             'CallBack',strcat(thisfile,'(''boolean_formula_changed'')'), ...
             'Tag', 'booleanformula', ...
             'String',data.Bool_formula,...
@@ -311,7 +426,7 @@ switch action
             'Units','normalized', ...
             'BackgroundColor',[0.7 0.7 0.7], ...
             'ListboxTop',0, ...
-            'Position',[0.033    0.278    0.099    0.0416], ...
+            'Position',[0.033    0.28    0.099    0.0416], ...
             'Tag', 'ltl', ...
             'CallBack',strcat(thisfile,'(''ltl_task'')'), ...
             'Value',0,...
@@ -360,18 +475,6 @@ switch action
             'CallBack',strcat(thisfile,'(''run_control'')'), ...
             'String','Motion Control');
         
-        
-        %CAMBIO
-        %unknown environment checkbox
-        data.checkboxUnknownEnv = uicontrol( ...
-            'Style','checkbox', ...
-            'Units','normalized', ...
-            'BackgroundColor',[0.7 0.7 0.7], ...
-            'ListboxTop',0, ...
-            'Position',[0.15    0.36    0.12    0.0416], ...
-            'Tag', 'checkboxUnknownEnv', ...
-            'Value',0,...
-            'String','Unknown environment');
         
         %radiobutton triangular cell
         uicontrol( ...
@@ -524,6 +627,10 @@ switch action
             'Position',[0.87    0.005   0.1349    0.0235], ...
             'String','Time [s]');
         set(gcf,'UserData',data);
+        
+        data.label_cells.size = 8;
+        data.label_cells.name = 'p';
+        
         data.optim.cplex_variable='true';
         set(data.optim.menuGlpk,'Checked','off');
         set(data.optim.menuCplex,'Checked','on');
@@ -537,6 +644,7 @@ switch action
         data.optim.param_boolean.lambda = 1;
         data.optim.param_boolean.mu = 1000;
         data.optim.param_boolean.kappa = 10;
+        data.optim.param_boolean.UserCount = 4; % for replanning robots trajectories
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
         data.optim.paramWith.interM = 10;
@@ -652,11 +760,6 @@ switch action
         set(findobj(gcf,'Tag','poly'),'Enable','on');
         set(findobj(gcf,'Tag','trapez'),'Enable','on');
         set(findobj(gcf,'Tag','waypoints'),'Enable','on');
-        
-        data = get(gcf,'UserData');
-        data.unknownEnvCreated = 0;
-        set(gcf,'UserData',data);
-        
     case 'ltl_task'
         previous_ltl = ~get(findobj(gcf,'Tag','reach'),'Value') && ~get(findobj(gcf,'Tag','ltl'),'Value') ...
             && ~get(findobj(gcf,'Tag','boolean'),'Value');
@@ -697,23 +800,7 @@ switch action
                 set(findobj(gcf,'Tag','ltl'),'Value',1);
             end
         end
-        data = get(gcf,'UserData');
-        data.unknownEnvCreated = 0;
-        set(gcf,'UserData',data);
     case 'boolean_task'
-        %CAMBIO
-        %Ahora cambia el comportamiento de este botón dependiendo del
-        %estado del checkbox
-        figure(1);
-        data = get(gcf,'UserData');
-        checkboxActivo = data.checkboxUnknownEnv.Value;
-        set(gcf,'UserData', data);
-
-        %Deseleccionar otros botones (reach y ltl)
-        set(findobj(gcf,'Tag','reach'),'Value',0);
-        set(findobj(gcf,'Tag','ltl'),'Value',0);
-        
-        %Ver si el botón ya se encontraba activado o no de antes
         previous_bool = ~get(findobj(gcf,'Tag','reach'),'Value') && ~get(findobj(gcf,'Tag','ltl'),'Value') ...
             && ~get(findobj(gcf,'Tag','boolean'),'Value');
         if (get(findobj(gcf,'Tag','ltl'),'Value') || previous_bool)
@@ -722,50 +809,37 @@ switch action
             set(findobj(gcf,'Tag','boolean'),'Value',1);
             return;
         end
-            
-        if (checkboxActivo)
-            rmt_create_unknown_environment();
-            set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-        else
-            disp('Checkbox desactivado');
-            % Este comportamiento ya estaba implementado de antes
-            
-            button = questdlg('What to do with obstacles?','Robot Motion Toolbox',...
-                'Relabel as regions', 'Delete', 'Cancel','Relabel as regions');
-            if strcmpi(button,'Delete')
-                data = get(gcf,'UserData');
-                rmt_delete_axes(data,2);
-                data.initial={};
-                data.final={};
-                data.trajectory = {};
-                data.obstacles = {};
-                data.Nobstacles = 0;
-                set(gcf,'UserData',data);
-                rmt('run_environment');
-            elseif strcmpi(button,'Relabel as regions')
-                data = get(gcf,'UserData');
-                if (length(data.obstacles)<1)
-                    return;
-                end
-                rmt_delete_axes(data,1);
-                pause(0.001);
-                rmt_generate_partitions(data.obstacles,data.initial);%generate the partitions and initialize the transition system and the PN
-                set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-                set(findobj(gcf,'Tag','reach'),'Value',0);
-                set(findobj(gcf,'Tag','ltl'),'Value',0);
-                set(findobj(gcf,'Tag','boolean'),'Value',1);
-            else
-                if ((get(findobj(gcf,'Tag','reach'),'Value')==1) || (get(findobj(gcf,'Tag','ltl'),'Value')==1))
-                    set(findobj(gcf,'Tag','boolean'),'Value',0);
-                else
-                    set(findobj(gcf,'Tag','boolean'),'Value',1);
-                end
-            end
+        button = questdlg('What to do with obstacles?','Robot Motion Toolbox',...
+            'Relabel as regions', 'Delete', 'Cancel','Relabel as regions');
+        if strcmpi(button,'Delete')
             data = get(gcf,'UserData');
-            data.unknownEnvCreated = 0;
+            rmt_delete_axes(data,2);
+            data.initial={};
+            data.final={};
+            data.trajectory = {};
+            data.obstacles = {};
+            data.Nobstacles = 0;
             set(gcf,'UserData',data);
+            rmt('run_environment');
+        elseif strcmpi(button,'Relabel as regions')
+            data = get(gcf,'UserData');
+            if (length(data.obstacles)<1)
+                return;
+            end
+            rmt_delete_axes(data,1);
+            pause(0.001);
+            rmt_generate_partitions(data.obstacles,data.initial);%generate the partitions and initialize the transition system and the PN
+            set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
+            set(findobj(gcf,'Tag','reach'),'Value',0);
+            set(findobj(gcf,'Tag','ltl'),'Value',0);
+            set(findobj(gcf,'Tag','boolean'),'Value',1);
+        else
+            if ((get(findobj(gcf,'Tag','reach'),'Value')==1) || (get(findobj(gcf,'Tag','ltl'),'Value')==1))
+                set(findobj(gcf,'Tag','boolean'),'Value',0);
+            else
+                set(findobj(gcf,'Tag','boolean'),'Value',1);
+            end
         end
-        midata = get(gcf,'UserData');
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         %               RUN ENVIRONMENT
@@ -778,10 +852,8 @@ switch action
             mission_task = 0;
         elseif get(findobj(gcf,'Tag','ltl'),'Value')
             mission_task = 1;
-        elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1 && get(findobj(gcf,'Tag','checkboxUnknownEnv'),'Value') == 0)
+        elseif get(findobj(gcf,'Tag','boolean'),'Value')
             mission_task = 2;
-        elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1 && get(findobj(gcf,'Tag','checkboxUnknownEnv'),'Value') == 1)
-            mission_task = 3;
         end
         %mission_task=1 - reachability tasks; 0 - ltl tasks or boolean
         
@@ -795,13 +867,6 @@ switch action
             end
             rmt_generate_partitions(objects,initial_points,random_grid);%generate the partitions and initialize the transition system and the PN
             set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-            data = get(gcf,'UserData');
-            data.unknownEnvCreated = 0;
-            set(gcf,'UserData',data);
-        elseif ((mission_task == 3))
-            rmt_create_unknown_environment();
-            set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-            
         else %mission_task == 0 ---> reachability tasks
             planning_approach = get(findobj(gcf,'Tag','pathpoints'),'Value');
             %planning_approach= 1 - cell descomposition; 2 - visibility graph; 3 - Voronoi;
@@ -868,10 +933,7 @@ switch action
                     data.orientation= data.orientation(1);
                     set(gcf,'UserData',data);
                     set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-
             end%switch
-            data = get(gcf,'UserData');
-            data.unknownEnvCreated = 0;
             set(gcf,'UserData',data);%to save data
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -888,10 +950,8 @@ switch action
             mission_task = 1;
         elseif (get(findobj(gcf,'Tag','ltl'),'Value') == 1)
             mission_task = 2;
-        elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1 && get(findobj(gcf,'Tag','checkboxUnknownEnv'),'Value') == 0)
+        elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1)
             mission_task = 3;
-        elseif (get(findobj(gcf,'Tag','boolean'),'Value') == 1 && get(findobj(gcf,'Tag','checkboxUnknownEnv'),'Value') == 1)
-            mission_task = 4;
         else
             error('Unknown mission type!');
         end
@@ -926,7 +986,6 @@ switch action
                     end
                 end
             case 3 %Boolean formulas on Petri net models
-                % Por defecto, ya se encontraba implementado
                 data=get(gcf,'UserData');
                 Bool_formula = get(findobj(gcf,'Tag','booleanformula'),'String');
                 [A,~,negated_trajectory_alone] = rmt_formula2constraints(Bool_formula, [],[],length(data.T.props));
@@ -964,11 +1023,6 @@ switch action
                     end
                 end
                 rmt_path_planning_boolean;%%approach without collision avoidance (it is only soft constraint) TAC 2018
-            case 4
-                % CAMBIO
-                % Version unknownEnvironment
-                rmt_path_planning_unknownEnv();               
-                
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
@@ -1088,7 +1142,6 @@ switch action
             set(data.handle_ang,'Visible','on','xlim',[0 xmax],'ylim',[ymin ymax],'XGrid','on','YGrid','on');
             %set(data.handle_ang,'XGrid','on','YGrid','on');
         end %%%for corresponding to each trajectory
-        
     case 'motion_control_parameters'
         data = get(gcf,'UserData');
         data.control = rmt_control_setup(data.control);
@@ -1221,10 +1274,10 @@ switch action
         end
         %%check if inside any region of interest /obstacles
         for i=1:length(data.obstacles)
-            if inpolygon(initial(1),initial(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
-                uiwait(errordlg('Initial point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
-                return;
-            end
+%             if inpolygon(initial(1),initial(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
+%                 uiwait(errordlg('Initial point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
+%                 return;
+%             end
             if (mission_task == 1)
                 if inpolygon(final(1),final(2),data.obstacles{i}(1,:),data.obstacles{i}(2,:))
                     uiwait(errordlg('Final point inside a region of interest/obstacle! Robot not moved!','Robot Motion Toolbox','modal'));
@@ -1344,311 +1397,58 @@ switch action
             end
             data2 = get(gcf,'UserData');
             %%%%
-            if isfield(data,'randomEnv')
-                %Se trata del caso del entorno desconocido
-                % ya que la variable randomEnv solo existe para este caso
-                figure(1);
+            data2.initial = data.initial;
+            data2.final = data.final;
+            data2.obstacles = data.obstacles;
+            data2.Nobstacles = data.Nobstacles;
+            if isfield(data,'RO')
+                data2.RO = data.RO;
+            else
+                data2.RO = length(data2.initial);
+            end
+            data2.T = data.T;
+            if isfield(data,'Tr')
+                data2.Tr = data.Tr;
+            else
+                data2.Tr = rmt_quotient_T_new(data.T);
+            end
+            data2.propositions = data.propositions;
+            mission_task = get(findobj(gcf,'Tag','reach'),'Value'); %mission_task=1 - reachability tasks; 0 - ltl tasks
+            if (mission_task == 0)
+                limits = data2.frame_limits;
+                %we clean the workspace figure
                 cla(data2.handle_env);
-                hold(data2.handle_env,'on')
-                set(data2.handle_env,'xlim',[data.frame_limits(1) data.frame_limits(2)],'ylim',[data.frame_limits(3) data.frame_limits(4)],'XGrid','on','YGrid','on');
-                set(gcf,'UserData',data);
-                %Fin del case para limitar los ejes
-
-                %% General constants
-                N_r = data.N_r; % Number of robots (necesita ser igual o superior a la funcion booleana, ej a & b & c & d, 4 o mas robots)
-
-                Planner_Type.Deterministic = 0;
-                Planner_Type.tau = 0.75;
-                Planner_Type.Pcost = 1;
-                Planner_Type.ObsC = 1;
-                Planner_Type.tau_obs = 0.25;
-                Planner_Type.Obscost = 1;
-                Planner_Type.b = 1;
-
-
-                Width = data.Width;
-                Height = data.Height;
-
-                C = Width*Height;
-                 % Initial robot positions
-                nlabels = data.PN.nlabels; %Types of regions
-
-                %Colores de las regiones
-                RegionColors = rand(nlabels,3); % Los colores de las regiones se inicializan aleatoriamente (luego se cambian las regiones 1 a 4, obstaculos y celdas vacias por unos colores concretos)
-                RegionColors(1,:) = [1 1 0];
-                RegionColors(2,:) = [0 0.5 0.75];
-                RegionColors(3,:) = [1 0 0.5];
-                RegionColors(4,:) = [0 0.5 0];
-                RegionColors(nlabels-1,:) = [0 0 0]; % Pintar obstaculos de color negro
-                RegionColors(nlabels,:) = [1 1 1];   % Pintar celdas vacias de color blanco
-
-                RegionColors = RegionColors(1:nlabels,:);
-
-                %Colores de los robots
-                RobotColors = rand(N_r,3); % Los colores de los robots se inicializan aleatoriamente (luego se cambian los de los robots 1 a 5 por unos colores concretos)
-                RobotColors(1,:) = [0.8,0,0];
-                RobotColors(2,:) = [0,1,0];
-                RobotColors(3,:) = [0,0,1];
-                RobotColors(4,:) = [1,0,1];
-                RobotColors(5,:) = [1,0.5,0];
-
-
-
-                %% Petri Net generation
-                set(gcf,'UserData',data);
-                PN = data.PN;
-
-                %compute the Petri net model (Pre and Post matrices)
-                nplaces=length (PN.T.Q); %number of places
-                Pre = zeros(nplaces,sum(sum(full(PN.T.adj))));
-                Post = zeros(nplaces,sum(sum(full(PN.T.adj))));
-                ntrans=0;
-                %construct matrices Pre and Post
-                for i=1:nplaces-1
-                    for j=i+1:nplaces
-                        if PN.T.adj(i,j)==1
-                            ntrans=ntrans+2;
-                            Pre(i,ntrans-1)=1;
-                            Pre(j,ntrans)=1;
-                            Post(i,ntrans)=1;
-                            Post(j,ntrans-1)=1;
-                        end
-                    end
-                end
-                PN.Pre = Pre;
-                PN.Post = Post;
-                PN.C_incidence=Post-Pre;
-                PN.nplaces = nplaces;
-                PN.ntrans = ntrans;
-                PN.nlabels = nlabels;
-
-                %% Initialize the map structure
-                Map = cell(length(PN.T.Q),1);
-                for x=1:length(Map)
-                    Map{x}.Region = PN.T.obs(x); % inicializa mapa con los tipos de region, numeros del 1 al 6
-                end
-
-                %% Initialize robotic structure
-                Robots = cell(N_r,1);
-                for i=1:N_r
-                    Robots{i}.reg = PN.T.R0(i); %numero de celda en la que esta el robot, ej 27
-                    Robots{i}.pos = PN.T.mid{PN.T.R0(i)}; % posicion concreta del robot, ej [6.5, 2.5] = [7 - 0.5, 2 - 0.5]
-                    Robots{i}.Path = Robots{i}.reg;
-                    Robots{i}.Beliefs = cell(length(PN.T.Q),1); %inicializa mapa de lo que cree ver el robot con ningun valor, []
-                    for x=1:length(PN.T.Q)
-                        Robots{i}.Beliefs{x}.Prob = 1/(length(PN.T.props)+1)*ones(length(PN.T.props)+1,1);
-                    end
-                    Robots{i}.TeamEstimatedPoses = PN.T.R0; % celdas iniciales de todos los robots
-                    Robots{i}.PlannedTrajectories = cell(N_r,1); % inicializa trayectorias para todos los robots con ningun valor, []
-                    for j=1:N_r
-                        Robots{i}.PlannedTrajectories{j}.tray = [];
-                    end
-                    Robots{i}.W = zeros(length(PN.T.props),length(PN.T.Q));
-                end
-
-                %% Initial Plots
-                for x=1:length(Map)
-                    Map{x}.filledRegion = fill(PN.T.Vert{x}(1,:),PN.T.Vert{x}(2,:),RegionColors(Map{x}.Region,:));
-                end
-
-                % Draw the map in handle_env
-                cla(data2.handle_env);
-                hold(data2.handle_env,'on')
-                for x=1:Width
-                    for y = 1:Height
-                        xreg = [x-1,x-1,x,x,x-1];
-                        yreg = [y-1,y,y,y-1,y-1];
-                        indice = (y-1) * Width + x;
-                        %Fill rellena del color de la region una celda
-                        fill(data2.handle_env, xreg,yreg,RegionColors(Map{indice}.Region,:));
-                    end
-                end
-                for x=0:Width
-                    %handle_env
-                    plot(data2.handle_env, [x,x],[0,Width],'k-');
-                    plot(data2.handle_env, [0,Width],[x,x],'k-');
-                end
-
-                %Draw the initial robot positions in handle_env
-                %handle_env
-                for i=1:N_r
-                    txt = sprintf('%d',i);
-                    x = Robots{i}.pos(1) + 0.5;
-                    y = Robots{i}.pos(2) + 0.5;
-                    Robots{i}.plotText = text(data2.handle_env, x-0.7,y-0.7,txt);
-                    Robots{i}.filledPose = plot(data2.handle_env, x-0.5,y-0.5, '.', 'MarkerSize',30,'Color',RobotColors(i,:));
-                end
-
-                cla(data2.handle_ori);
-                cla(data2.handle_vel);
-                cla(data2.handle_ang);
-                hold(data2.handle_ori,'on')
-                hold(data2.handle_vel,'on')
-                hold(data2.handle_ang,'on')
-                set(data2.handle_ori,'xlim',[0 Width],'ylim',[0 Height],'XGrid','on','YGrid','on');
-                set(data2.handle_vel,'xlim',[0 Width],'ylim',[0 Height],'XGrid','on','YGrid','on');
-                set(data2.handle_ang,'xlim',[0 Width],'ylim',[0 Height],'XGrid','on','YGrid','on');
-                set(data2.handle_text,'Visible','off')
-
-                text(data2.handle_ori, Width/3.5,Height+0.7,'Belief Map: R1');
-                if N_r > 1
-                    text(data2.handle_vel, Width/3.5,Height+0.7,'Belief Map: R2');
-                end
-                if N_r > 2
-                    text(data2.handle_ang, Width/3.5,Height+0.7,'Belief Map: R3');
-                end
-
-                if data.DrawEstimations
-                    % Draw the initial belief maps
-                    for i=1:length(Robots)
-                        for x=1:length(PN.T.Q)
-                            if (max(Robots{i}.Beliefs{x}.Prob) == Robots{i}.Beliefs{x}.Prob(length(PN.T.props)+1))%if more regions have the same probability including the empty observation (free space), consider the free space
-                                Region = length(PN.T.props)+1;
-                            else
-                                [~,Region]= max(Robots{i}.Beliefs{x}.Prob);
-                            end
-                            Robots{i}.Beliefs{x}.Region = Region;
-                            if (i == 1)
-                                Robots{i}.plotBeliefs{x} = fill(data2.handle_ori,PN.T.Vert{x}(1,:),PN.T.Vert{x}(2,:),RegionColors(Region(1),:));
-                            elseif (i == 2)
-                                Robots{i}.plotBeliefs{x} = fill(data2.handle_vel,PN.T.Vert{x}(1,:),PN.T.Vert{x}(2,:),RegionColors(Region(1),:));
-                            elseif (i == 3)
-                                Robots{i}.plotBeliefs{x} = fill(data2.handle_ang,PN.T.Vert{x}(1,:),PN.T.Vert{x}(2,:),RegionColors(Region(1),:));
-                            end
-                        end
-                        for j=1:length(Robots)
-                            Robots{i}.plotTrajectories{j} = [];
-                            Robots{i}.plotGoal{j} = [];
-                            if (i == 1)
-                                Robots{i}.plotStart{j} = plot(data2.handle_ori,PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(1),PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',RobotColors(j,:));
-                            elseif (i == 2)
-                                Robots{i}.plotStart{j} = plot(data2.handle_vel,PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(1),PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',RobotColors(j,:));
-                            elseif (i == 3)
-                                Robots{i}.plotStart{j} = plot(data2.handle_ang,PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(1),PN.T.mid{Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',RobotColors(j,:));
-                            end
-                        end
-                        Robots{i}.plotStart{i}.MarkerFaceColor=RobotColors(i,:);
-
-                    end
-                end
-
+                set(data2.handle_env,'xlim',[limits(1) limits(2)],'ylim',[limits(3) limits(4)],'XGrid','on','YGrid','on');
                 %we clean the orientation figure
                 cla(data2.handle_ori);
+                set(data2.handle_ori,'XGrid','on','YGrid','on','Visible','off');
                 %we clean the velocities figure
                 cla(data2.handle_vel);
+                set(data2.handle_vel,'XGrid','on','YGrid','on','Visible','off');
                 %we clean the steering angle figure
                 cla(data2.handle_ang);
-                %enable the text information box
-                set(data2.handle_text,'Visible','on','String','');
-
-                data2.windowView = 1;
-                set(data2.viewWindow.informationBox,'Checked','on');
-                set(data2.viewWindow.beliefMaps,'Checked','off');
-                set(data2.viewWindow.motionControl,'Checked','off');
-
-
-                %Escribe sobre handle_text la información de las regiones (celdas)
-                message = sprintf('REGIONS OF INTEREST:');
-                for i=1:nlabels-1
-                    if (i == nlabels-1) %obstaculos
-                        temp = sprintf('- Output y_{%d} (black) is for O_{%d} = \\{',i,i);
-                    else
-                        temp = sprintf('- Output y_{%d} is for O_{%d} = \\{',i,i);
-                    end
-                    for j=1:length(PN.T.props{i})-1
-                        temp = sprintf('%sc_{%d}, ',temp,PN.T.props{i}(j));
-                    end
-                    temp = sprintf('%sc_{%d}\\}',temp,PN.T.props{i}(length(PN.T.props{i})));       
-                    message = sprintf('%s\n%s',message,temp);
+                set(data2.handle_ang,'XGrid','on','YGrid','on','Visible','off');
+                axes(data2.handle_env);
+                rmt_plot_environment(data2.obstacles,data2.frame_limits,data2.T.Vert);
+                rmt_represent_atomic_props(data2.T.Vert,data2.propositions);    %represent all atomic props
+                rob_plot = data2.rob_plot;
+                %%Execution monitoring strategy starts from here:
+                robot_no = length(data2.RO);
+                current_pos=cell(1,robot_no);
+                for r=1:robot_no
+                    current_pos{r}=data2.initial{r};%R_trajs{r}(:,1); %current_pos - initial (current) position of robots (cell, current_pos{i} is a column vector with 2 rows)
                 end
-
-                set(data2.handle_text,'String',message,'Position',[0.35    0.054    0.63    0.2477]);
-                data2.messageInfBox = message;
-
-
-                data2.PN = PN;
-                data2.N_r = N_r;
-                data2.Robots = Robots;
-                data2.Map = Map;
-                data2.Planner_Type = Planner_Type;
-                data2.Width = Width;
-                data2.Height = Height;
-                data2.C = C;
-                data2.RobotColors = RobotColors;
-                data2.RegionColors = RegionColors;
-
-                data2.EstimationType = data.EstimationType;
-                data2.Planner_Type = data.Planner_Type;
-                data2.DrawEstimations = data.DrawEstimations;
-
-                %Indicamos que se puede realizar el path planning
-                data2.unknownEnvCreated = 1;
-
-                figure(1);
-                %Hacer el set con el data sobre el que hayamos dibujado, en
-                %este caso el 2
+                for r=1:robot_no
+                    plot(current_pos{r}(1),current_pos{r}(2),'Color',rob_plot.line_color{r},'LineStyle',rob_plot.line{r},'LineWidth',rob_plot.line_width{r},'Marker',rob_plot.marker{r},'MarkerFaceColor',rob_plot.face_color{r});
+                end
                 set(gcf,'UserData',data2);
-
-
-
-                %Deseleccionar los botones reach y ltl
-                set(findobj(gcf,'Tag','reach'),'Value',0);
-                set(findobj(gcf,'Tag','ltl'),'Value',0);
-                %Seleccionar los botones boolean y checkboxUnknownEnv
-                set(findobj(gcf,'Tag','boolean'),'Value',1);
-                set(findobj(gcf,'Tag','checkboxUnknownEnv'),'Value',1);
-                %Ponemos activo el botón de path planning
-                set(findobj(gcf,'Tag','path_planning_button'),'Enable','on');
-            else
-                data2.initial = data.initial;
-                data2.final = data.final;
-                data2.obstacles = data.obstacles;
-                data2.Nobstacles = data.Nobstacles;
-                if isfield(data,'RO')
-                    data2.RO = data.RO;
-                else
-                    data2.RO = length(data2.initial);
-                end
-                data2.T = data.T;
-                if isfield(data,'Tr')
-                    data2.Tr = data.Tr;
-                else
-                    data2.Tr = rmt_quotient_T_new(data.T);
-                end
-                data2.propositions = data.propositions;
-                mission_task = get(findobj(gcf,'Tag','reach'),'Value'); %mission_task=1 - reachability tasks; 0 - ltl tasks
-                if (mission_task == 0)
-                    limits = data2.frame_limits;
-                    %we clean the workspace figure
-                    cla(data2.handle_env);
-                    set(data2.handle_env,'xlim',[limits(1) limits(2)],'ylim',[limits(3) limits(4)],'XGrid','on','YGrid','on');
-                    %we clean the orientation figure
-                    cla(data2.handle_ori);
-                    set(data2.handle_ori,'XGrid','on','YGrid','on','Visible','off');
-                    %we clean the velocities figure
-                    cla(data2.handle_vel);
-                    set(data2.handle_vel,'XGrid','on','YGrid','on','Visible','off');
-                    %we clean the steering angle figure
-                    cla(data2.handle_ang);
-                    set(data2.handle_ang,'XGrid','on','YGrid','on','Visible','off');
-                    axes(data2.handle_env);
-                    rmt_plot_environment(data2.obstacles,data2.frame_limits,data2.T.Vert);
-                    rmt_represent_atomic_props(data2.T.Vert,data2.propositions);    %represent all atomic props
-                    rob_plot = data2.rob_plot;
-                    %%Execution monitoring strategy starts from here:
-                    robot_no = length(data2.RO);
-                    current_pos=cell(1,robot_no);
-                    for r=1:robot_no
-                        current_pos{r}=data2.initial{r};%R_trajs{r}(:,1); %current_pos - initial (current) position of robots (cell, current_pos{i} is a column vector with 2 rows)
-                    end
-                    for r=1:robot_no
-                        plot(current_pos{r}(1),current_pos{r}(2),'Color',rob_plot.line_color{r},'LineStyle',rob_plot.line{r},'LineWidth',rob_plot.line_width{r},'Marker',rob_plot.marker{r},'MarkerFaceColor',rob_plot.face_color{r});
-                    end
-                    set(gcf,'UserData',data2);
-                end
             end
         end
-      
+    %% Choose size and label for cells    
+    case 'size_label_cells'
+        data = get(gcf,'UserData');
+        data.label_cells = rmt_label_cells_setup(data.label_cells);
+        set(gcf,'UserData',data);
         %% Part of Menu 'Setup' CPLEX
     case 'menu_cplex'
         data = get(gcf,'UserData');
@@ -1675,102 +1475,9 @@ switch action
         set(data.optim.menuIntlinprog,'Checked','on');
         set(data.optim.menuCplex,'Checked','off');
         set(gcf,'UserData',data);%to save data
-        %% Part of Menu 'Setup' Information box
-    case 'menu_infBox'
-        data = get(gcf,'UserData');
-        
-        cla(data.handle_ori);
-        cla(data.handle_vel);
-        cla(data.handle_ang);
-        if (isfield(data,'messageInfBox'))
-            set(data.handle_text,'Visible','on','String',data.messageInfBox);
-        else
-            set(data.handle_text,'Visible','on','String','');
-        end
-        data.windowView = 1;
-        set(data.viewWindow.informationBox,'Checked','on');
-        set(data.viewWindow.beliefMaps,'Checked','off');
-        set(data.viewWindow.motionControl,'Checked','off');
-        
-        set(gcf,'UserData',data);%to save data
-        %% Part of Menu 'Setup' Belief Maps
-    case 'menu_beliefMaps'
-        data = get(gcf,'UserData');
-
-        if (isfield(data, 'Robots') && data.windowView ~= 2)
-            data.windowView = 2;
-            set(data.viewWindow.informationBox,'Checked','off');
-            set(data.viewWindow.beliefMaps,'Checked','on');
-            set(data.viewWindow.motionControl,'Checked','off');
-            
-            set(data.handle_text,'Visible','off','String',data.messageInfBox);
-
-            for i=1:length(data.Robots)
-
-                for x=1:length(data.PN.T.Q)
-                    if (max(data.Robots{i}.Beliefs{x}.Prob) == data.Robots{i}.Beliefs{x}.Prob(length(data.PN.T.props)+1))%if more regions have the same probability including the empty observation (free space), consider the free space
-                        Region = length(data.PN.T.props)+1;
-                    else
-                        [~,Region]= max(data.Robots{i}.Beliefs{x}.Prob);
-                    end
-                    data.Robots{i}.Beliefs{x}.Region = Region;
-                    if (i == 1)
-                        data.Robots{i}.plotBeliefs{x} = fill(data.handle_ori,data.PN.T.Vert{x}(1,:),data.PN.T.Vert{x}(2,:),data.RegionColors(Region(1),:));
-                    elseif (i == 2)
-                        data.Robots{i}.plotBeliefs{x} = fill(data.handle_vel,data.PN.T.Vert{x}(1,:),data.PN.T.Vert{x}(2,:),data.RegionColors(Region(1),:));
-                    elseif (i == 3)
-                        data.Robots{i}.plotBeliefs{x} = fill(data.handle_ang,data.PN.T.Vert{x}(1,:),data.PN.T.Vert{x}(2,:),data.RegionColors(Region(1),:));
-                    end
-                end
-                for j=1:length(data.Robots)
-                    data.Robots{i}.plotTrajectories{j} = [];
-                    data.Robots{i}.plotGoal{j} = [];
-                    if (i == 1)
-                        data.Robots{i}.plotStart{j} = plot(data.handle_ori,data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(1),data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',data.RobotColors(j,:));
-                    elseif (i == 2)
-                        data.Robots{i}.plotStart{j} = plot(data.handle_vel,data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(1),data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',data.RobotColors(j,:));
-                    elseif (i == 3)
-                        data.Robots{i}.plotStart{j} = plot(data.handle_ang,data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(1),data.PN.T.mid{data.Robots{i}.TeamEstimatedPoses(j)}(2),'o', 'LineWidth',2,'MarkerSize',10,'Color',data.RobotColors(j,:));
-                    end
-                end
-                data.Robots{i}.plotStart{i}.MarkerFaceColor=data.RobotColors(i,:);
-            end
-
-
-            %Se escribe el texto 'Belief Map:R{i}'
-            text(data.handle_ori, data.Width/3.5,data.Height+0.7,'Belief Map: R1');
-            if data.N_r > 1
-                text(data.handle_vel, data.Width/3.5,data.Height+0.7,'Belief Map: R2');
-            end
-            if data.N_r > 2
-                text(data.handle_ang, data.Width/3.5,data.Height+0.7,'Belief Map: R3');
-            end
-        
-        end
-
-        set(gcf,'UserData',data);%to save data
-        %% Part of Menu 'Setup' Motion Control
-    case 'menu_motionControl'
-        data = get(gcf,'UserData');
-        
-        if (isfield(data, 'Robots') && data.windowView ~= 3)
-            data.windowView = 3;
-            set(data.viewWindow.informationBox,'Checked','off');
-            set(data.viewWindow.beliefMaps,'Checked','off');
-            set(data.viewWindow.motionControl,'Checked','on');
-
-            cla(data.handle_ori);
-            cla(data.handle_vel);
-            cla(data.handle_ang);
-
-            set(data.handle_text,'Visible','off','String',data.messageInfBox);
-        end
-        
-        set(gcf,'UserData',data);%to save data
-
     case 'parameter_MILP_pn_boolean'
         data = get(gcf,'UserData');
-        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data.optim.param_boolean);
+        data.optim.param_boolean = rmt_milp_pn_boolean_setup(data);
         set(gcf,'UserData',data);
     case 'parameter_MILP_pn_following_buchi'
         data = get(gcf,'UserData');
