@@ -78,7 +78,7 @@ function rmt_create_unknown_environment()
     Width = data.frame_limits(2);
     Height = data.frame_limits(4);
     % Generate transitions for a square grid
-    PN.T = generateTransitionPN(Height,Width);
+    PN.T = rmt_generateTransitionPN(Height,Width);
     C = Width*Height;
     nlabels = numTiposRegiones + 2; %Types of regions (+2 debido a los obstaculos y las celdas vacias)
     
@@ -388,7 +388,7 @@ function rmt_create_unknown_environment()
 
     %% Initial Plots
     % Draw the initial GT map
-    Map = draw_MapGT(PN.T,Map,RegionColors);
+    Map = rmt_draw_MapGT(PN.T,Map,RegionColors);
 
     % Draw the map in handle_env
     cla(data.handle_env);
@@ -492,7 +492,10 @@ function rmt_create_unknown_environment()
         for j=1:numRegionsPerType(i)-1
             temp = sprintf('%sc_{%d}, ',temp,PN.T.props{i}(j));
         end
-        temp = sprintf('%sc_{%d}\\}',temp,PN.T.props{i}(numRegionsPerType(i)));       
+        if (numRegionsPerType(i) ~= 0)
+            temp = sprintf('%sc_{%d}',temp,PN.T.props{i}(numRegionsPerType(i)));       
+        end
+        temp = sprintf('%s\\}',temp);
         message = sprintf('%s\n%s',message,temp);
     end
 

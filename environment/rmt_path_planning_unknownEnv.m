@@ -151,8 +151,8 @@ function rmt_path_planning_unknownEnv()
         end
         
         %% Compute the communication graph based on the positions of the data.Robots
-        G = computeCommGraph(data.Robots,data.CommRadius);
-        W = WeightedMatrix(G,1);
+        G = rmt_computeCommGraph(data.Robots,data.CommRadius);
+        W = rmt_WeightedMatrix(G,1);
         %% Update estimated positions for neighbor data.Robots
         for i=1:data.N_r
             data.Robots{i}.TeamEstimatedPoses(i) = data.Robots{i}.reg;
@@ -166,12 +166,12 @@ function rmt_path_planning_unknownEnv()
         %% Each robot acquires a measurement of each cell of the data.Map
         data.Robots = rmt_getObservations_unknownEnv(data.Robots,data.PN.T,data.Map, 1);
         %% Estimation (BAYES RULE)
-        data.Robots = updateBeliefs(data.Robots,data.PN.T,W,EstimationType);                    
+        data.Robots = rmt_updateBeliefs(data.Robots,data.PN.T,W,EstimationType);                    
 
         %% Update the belief data.Maps (Plots)
         if data.DrawEstimations
-            data.Robots = draw_BeliefMapsUpdate(data.Robots,data.PN.T,data.RegionColors); % Cambia FaceColor: data.Robots{i}.plotBeliefs{x}.FaceColor
-            data.Robots = draw_Trajectories(data.Robots,data.PN.T,data.RobotColors);
+            data.Robots = rmt_draw_BeliefMapsUpdate(data.Robots,data.PN.T,data.RegionColors); % Cambia FaceColor: data.Robots{i}.plotBeliefs{x}.FaceColor
+            data.Robots = rmt_draw_Trajectories(data.Robots,data.PN.T,data.RobotColors);
         end
 
         %% Path planning
@@ -188,7 +188,7 @@ function rmt_path_planning_unknownEnv()
                 MILP_data.lb,MILP_data.ub,[],options);
             if (exitflag == 1) %solution found
                 sigma=xmin(data.PN.nplaces+1:data.PN.nplaces+data.PN.ntrans,1); %the firing vector of the solution
-                trajectories = extract_trajectories3(data.Robots{i}.TeamEstimatedPoses, sigma, data.PN.Pre, data.PN.Post);
+                trajectories = rmt_extract_trajectories3(data.Robots{i}.TeamEstimatedPoses, sigma, data.PN.Pre, data.PN.Post);
 
                 % Evitar que se mueva a un obstaculo
                 % Si su tray es ilegal o un obstaculo entonces
@@ -348,8 +348,8 @@ function rmt_path_planning_unknownEnv()
 
         %% Update the belief data.Maps (Plots)
         if data.DrawEstimations
-            data.Robots = draw_BeliefMapsUpdate(data.Robots,data.PN.T,data.RegionColors); % Cambia FaceColor: data.Robots{i}.plotBeliefs{x}.FaceColor
-            data.Robots = draw_Trajectories(data.Robots,data.PN.T,data.RobotColors);
+            data.Robots = rmt_draw_BeliefMapsUpdate(data.Robots,data.PN.T,data.RegionColors); % Cambia FaceColor: data.Robots{i}.plotBeliefs{x}.FaceColor
+            data.Robots = rmt_draw_Trajectories(data.Robots,data.PN.T,data.RobotColors);
         end
 
         %% End condition
@@ -370,7 +370,7 @@ function rmt_path_planning_unknownEnv()
     end
 
     %% Update the Real data.Map with the data.Robots (Plots)
-    data.Robots = draw_FinalTrajectories(data.Robots,data.PN.T,data.RobotColors);
+    data.Robots = rmt_draw_FinalTrajectories(data.Robots,data.PN.T);
 
     for i=1:length(data.Robots)    
         Tray=data.Robots{i}.Path;
