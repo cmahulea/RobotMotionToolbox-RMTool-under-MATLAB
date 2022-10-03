@@ -44,9 +44,8 @@ thisfile='rmt';
 addpath(genpath('aux_toolboxes'));
 addpath(genpath('environment'));
 
-%CAMBIO: añadidas carpetas cplex y functions
+%CAMBIO: añadida carpeta cplex
 addpath(genpath('cplex'));
-addpath(genpath('functions'));
 
 switch action
     %================
@@ -1558,7 +1557,10 @@ switch action
                     for j=1:length(PN.T.props{i})-1
                         temp = sprintf('%sc_{%d}, ',temp,PN.T.props{i}(j));
                     end
-                    temp = sprintf('%sc_{%d}\\}',temp,PN.T.props{i}(length(PN.T.props{i})));       
+                    if (~isempty(PN.T.props{i}))
+                        temp = sprintf('%sc_{%d}',temp,PN.T.props{i}(length(PN.T.props{i})));       
+                    end
+                    temp = sprintf('%s\\}',temp);
                     message = sprintf('%s\n%s',message,temp);
                 end
 
