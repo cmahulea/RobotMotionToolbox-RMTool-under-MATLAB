@@ -35,7 +35,6 @@ marking_final(final)=1;
 nplaces = size(Pre,1); %number of places
 ntrans = size(Pre,2); % number of transitions
 
-% a), b)
 %add the state equation: m_{i+1} = m_i + (Post-Pre)*sigma_{i+1}
 Aeq = [eye(nplaces) -(Post-Pre)];
 beq = m0;
@@ -49,13 +48,11 @@ for i = 2 : k
     Aeq = [Aeq zeros(size(Aeq,1),nplaces+ntrans)]; %add nplaces+ntrans columns to Aeq
     Aeq = [Aeq; zeros(nplaces,(i-2)*(nplaces+ntrans)) -eye(nplaces) zeros(nplaces,ntrans) eye(nplaces) -(Post-Pre)]; %add the state equation
     beq = [beq;zeros(nplaces,1)];
-    % c), d)
     if (i/2 == round(i/2)) %fire only transitions of the Buchi automaton
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_model]; %not fire transition of the model
         beq = [beq;0];
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi]; %fire one transition of Buchi
         beq = [beq;1];
-    % f)     
     else %fire only transitions of the robot model
         Aeq = [Aeq; zeros(1,(i-1)*(nplaces+ntrans)) trans_Buchi];
         beq = [beq;0];
@@ -65,7 +62,6 @@ for i = 2 : k
     b = [b ; zeros(nplaces,1)];
 end
 
-% this should not be used 
 %put that an intermediate marking of Buchi is equal with a final one in the final
 interm = round(k/2);
 % m(interm) == m_final
@@ -77,11 +73,10 @@ Aeq=[Aeq; zeros(nplaces_buchi,(interm-1)*(nplaces+ntrans)) zeros(nplaces_buchi,n
     -eye(nplaces_buchi) zeros(nplaces_buchi,ntrans)];
 beq = [beq ; zeros(nplaces_buchi,1)];
 
-% g) new f*mB = 1
 % -m_final * 1 <=-1
-% final marking in Buchi needs to be equal with 1
-Aeq = [Aeq; zeros(1,(k-1)*(nplaces+ntrans)) -marking_final zeros(1,ntrans)];
-beq = [beq;-1];
+
+A = [A; zeros(1,(k-1)*(nplaces+ntrans)) -marking_final zeros(1,ntrans)];
+b = [b;-1];
 
 %move at least one robot in the first step
 % A = [A; zeros(1,nplaces) -trans_model zeros(1,(k-1)*(nplaces+ntrans))];

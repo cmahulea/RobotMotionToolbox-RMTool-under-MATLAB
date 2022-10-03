@@ -248,19 +248,11 @@ end
 
 %%***create cost function (column vector), other data for running glpk or intlinprog
 if (strcmp(obs_type,'intermediate') || strcmp(obs_type,'trajectory'))   %2*N_p binary vars
-%    cost = [ repmat([zeros(1,nplaces),alpha*ones(1,ntrans)] , 1,k) , zeros(1,2*N_p), beta*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; 2*N_p binary
-    cost = [];
-    for i = 1 : k
-        cost = [ cost, [zeros(1,nplaces),alpha*i*ones(1,ntrans)] , zeros(1,2*N_p), beta*i*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; 2*N_p binary
-    end
+    cost = [ repmat([zeros(1,nplaces),alpha*ones(1,ntrans)] , 1,k) , zeros(1,2*N_p), beta*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; 2*N_p binary
     lb=zeros( k*(nplaces+ntrans) + 2*N_p + k*(nplaces+1), 1);   %lower bounds
     %upper bounds used only for Matlab's intlinprog: only for binary vars
 else %case 'final' is default
-%    cost = [ repmat([zeros(1,nplaces),alpha*ones(1,ntrans)] , 1,k) , zeros(1,N_p), beta*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; N_p binary
-    cost = [];
-    for i = 1 : k
-        cost = [ cost, [zeros(1,nplaces),alpha*i*ones(1,ntrans)] , zeros(1,N_p), beta*i*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; N_p binary
-    end
+    cost = [ repmat([zeros(1,nplaces),alpha*ones(1,ntrans)] , 1,k) , zeros(1,N_p), beta*ones(1,nplaces) gamma]';    %variables: k*(nplaces+ntrans) integer; N_p binary
     lb=zeros( k*(nplaces+ntrans) + N_p  + k*(nplaces+1), 1);   %lower bounds
 end
 
