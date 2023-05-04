@@ -26,7 +26,7 @@
 
 function rmt_path_planning_ltl_pn_with_buchi
 %Path-planning with LTL specificaion and Petri net models (mathematical programming approach)
-
+% this script was implemented for TAC paper 2022
 data = get(gcf,'UserData');
 if (length(unique(data.RO)) ~= length(data.RO))
     rmt_plot_robots;
