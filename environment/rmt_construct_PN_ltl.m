@@ -69,14 +69,7 @@ idxV = [];
 for i = 1 : size(B.new_trans,1)
     for j = 1 : size(B.new_trans,2)
         temp = B.new_trans{i,j};
-        % add virtual transitions for all final states
-        if find(i == B.F) == find(j == B.F) %& isempty(find(Inf == B.new_trans{i,j})) % add virtual self-loop for final states which doesn't have true, with True
-            PreV = [PreV zeros(size(PreV,1),1)];
-            PostV = [PostV zeros(size(PostV,1),1)];
-            PreV(nplaces+2*length(props)+i,size(PreV,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
-            PostV(nplaces+2*length(props)+j,size(PostV,2)) = 1; %add an arc from the new transition to state j of the Buchi automaton
-            idxV = [idxV size(PreV,2)]; % memorize index for virtual transitions of final states
-        end
+        
         if temp == Inf % add only one bidirectional transition for the transitionss_i -> s_j which are always True (enabled)
             Pre = [Pre zeros(size(Pre,1),1)];
             Post = [Post zeros(size(Post,1),1)];
@@ -113,7 +106,14 @@ for i = 1 : size(B.new_trans,1)
                 end
             end
         end
-        
+        % add virtual transitions for all final states
+        if find(i == B.F) == find(j == B.F) %& isempty(find(Inf == B.new_trans{i,j})) % add virtual self-loop for final states which doesn't have true, with True
+            PreV = [PreV zeros(size(PreV,1),1)];
+            PostV = [PostV zeros(size(PostV,1),1)];
+            PreV(nplaces+2*length(props)+i,size(PreV,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
+            PostV(nplaces+2*length(props)+j,size(PostV,2)) = 1; %add an arc from the new transition to state j of the Buchi automaton
+            idxV = [idxV size(PreV,2)]; % memorize index for virtual transitions of final states
+        end
     end
 end
 return

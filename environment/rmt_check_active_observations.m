@@ -50,7 +50,7 @@ number_of_robots{1} = marking_temp;
 flagF = 0; % flag to mark when the final state in Buchi was reached
 sum_transB = 0; %count the real fired transition in Buchi PN
 
-for i = 1 : data.optim.paramWith.interM
+for i = 1 : 2*data.optim.paramWith.interM
     if (i/2 == round(i/2))
         if flagF == 0 % compute the active observations and the possible regions until the final state in Buchi is reached
             trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
