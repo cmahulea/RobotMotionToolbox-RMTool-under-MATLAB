@@ -118,7 +118,7 @@ Upp = (size(Pre,1)-1)*(length(B.S) - 1); %Upp is the upper bound of parameter da
 % upper bound
 if (data.optim.paramWith.interM > Upp)
     choiceMenu = questdlg(sprintf('The number of intermedate markings %d is greater than the upper bound (PM - 1) x  (PB - 1) --> (number of places in Quotient PN - 1) x (number of states in Buchi - 1). The number of intermediate markings will be reduced to it''s upper bound!',...
-        data.optim.paramWith.interM,Upp),'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes');
+        data.optim.paramWith.interM,Upp),'Robot Motion Toolbox - Path planning with PN models and Buchi included','Yes','Yes');
     if strcmpi(choiceMenu,'Yes')
         data.optim.paramWith.interM = Upp;
     end
