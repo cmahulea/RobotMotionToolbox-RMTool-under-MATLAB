@@ -28,7 +28,7 @@ function [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_wBuchi(Pre,Post,m0, 
 
 % U = 2*k intermediate markings (in the even/odd steps, the transitions are
 % fired in Quotient/Buchi PN models
-
+flag_sisf = 0;
 flag_suf = 0; % flag_suf = 1 only when the suffix is computed, otherwise is 0;
 bad_sol = []; % (teta in paper) --> matrix containing all the bad solutions (markings) from previous iterations on each column, as a result of MILP based on the reduced PN model, which could not be projected
 if nargin == 8

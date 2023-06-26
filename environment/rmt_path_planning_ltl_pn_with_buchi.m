@@ -228,22 +228,8 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         time = toc;
         
         if ~isempty(fp)
-            xmin_pref_prev = xmin_pref; % memorize the previous xmin solution of the prefix, in case there is no otehr solution of the prefix, such that only the solution of the suffix to be modified.
-            counter = counter + 1; % counter used for the first iteration in the while loop, to memorize the previous solution xmin_pref
-            
-        elseif isempty(fp) && counter > 1 %no solution
-            uiwait(errordlg('Error solving the ILP on quotient PN: a solution different than the previous one could not be found. The algorithm will consider the previous solution of the PREFIX.',...
-                'Robot Motion Toolbox','modal'));
-            xmin_pref = xmin_pref_prev;
-        else
-            uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution!',...
-                'Robot Motion Toolbox','modal'));
-            return;
-            
-        end
-        
-        
-        message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
+           
+             message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
         message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, fp);
         message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
         total_time = total_time + time;
@@ -321,6 +307,19 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         
         m0_fs(final_places(idx_fs)) = 1;
         m0_fs(end - length(B.S) + 1) = 0;
+            
+        elseif isempty(fp) && data.optim.paramWith.interM <= Upp 
+            uiwait(errordlg('Error solving the ILP on quotient PN: a solution different than the previous one could not be found. The algorithm will consider the previous solution of the PREFIX.',...
+                'Robot Motion Toolbox','modal'));
+        elseif isempty(fp) && data.optim.paramWith.interM > Upp %no solution
+            uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution!',...
+                'Robot Motion Toolbox','modal'));
+            return;
+            
+        end
+        
+        
+       
         
         %% compute suffix
         
@@ -359,7 +358,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
                 
             end
             
-            for i = 1:2*size(bad_sol_pr,2)*(size(PreV,2) - length(idxV)) % number of binary unknown variables
+            for i = 1:2*size(bad_sol_suf,2)*(size(PreV,2) - length(idxV)) % number of binary unknown variables
                 vartype = sprintf('%sB', vartype);
                 ub = [ub 1];%upper bound with value 1 for the binary unknown variables
             end
@@ -374,7 +373,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             tic;
             switch solver
                 case 'cplex'
-                    [xmin_suff,f_suff,~] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
+                    [xmin_suff,f_suff,fls] = cplexmilp(cost,A,b,Aeq,beq,[],[],[],zeros(1,size(A,2)),[],vartype);
                 case 'glpk'
                     [xmin_suff,f_suff,~] = glpk(cost,[Aeq; A],[beq; b],zeros(1,size(A,2)),[],ctype,vartype);
                     % if it's no solution, f_suff == 0
@@ -400,7 +399,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             
             % truncate the solution of MILP based of the unknown variables (z,w)
             % which appear for every bad solution
-            xmin_suff = xmin_suff(1:size(A,2) - 2*(size(PreV,2) - length(idxV))*size(bad_sol_pr,2));
+            xmin_suff = xmin_suff(1:size(A,2) - 2*(size(PreV,2) - length(idxV))*size(bad_sol_suf,2));
             
             % extract sum of all sigma_i in case the solution could not be
             % projected, and add it to bad_sol_pr
