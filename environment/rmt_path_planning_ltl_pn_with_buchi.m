@@ -183,7 +183,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         
         % umber of variables m_i sigma_i, for all i = 1:U (2k), without
         % considering the binary unknown variables
-        no_var_msig = (size(Aeq,2) - 2*size(bad_sol_pr,2)*(size(PreV,2) - length(idxV)));
+        no_var_msig = (size(Aeq,2) - 2*size(bad_sol_pr,2)*ntrans_orig);
         
         ctype='';
         for i = 1 : size(Aeq,1)
@@ -206,7 +206,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             
         end
         
-        for i = 1:2*size(bad_sol_pr,2)*(size(PreV,2) - length(idxV)) % number of binary unknown variables
+        for i = 1:2*size(bad_sol_pr,2)*ntrans_orig % number of binary unknown variables
             vartype = sprintf('%sB', vartype);
             ub = [ub 1];%upper bound with value 1 for the binary unknown variables
         end
@@ -228,87 +228,86 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         time = toc;
         
         if ~isempty(fp)
-           
-             message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
-        message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, fp);
-        message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
-        total_time = total_time + time;
-        total_time_MILP = total_time_MILP + time;
-        message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - prefix: %g secs\n',message_c,time);
-        time_c = time_c + time;
-        message = sprintf('%s\n=======================================================',message);
-        message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
-        message = sprintf('%s\n=======================================================\n',message);
-        
-        % truncate the solution of MILP based of the unknown variables (z,w)
-        % which appear for every bad solution
-        xmin_pref = xmin_pref(1:size(A,2) - 2*(size(PreV,2) - length(idxV))*size(bad_sol_pr,2));
-        
-        % extract sum of all sigma_i in case the solution could not be
-        % projected, and add it to bad_sol_pr
-        ntrans_real = size(PreV,2) - length(idxV);
-        aux_pref = zeros(ntrans_real,1);
-        for i = 1:2*data.optim.paramWith.interM
-            index1 = i*size(Pre,1) + (i-1)*(ntrans_real + length(idxV)) + 1;
-            index2 = index1 + ntrans_real-1;
-            aux_pref = aux_pref + xmin_pref(index1:index2);
-        end
-        
-        % After the optimization problem was solved, an
-        % initial solution was obtained on the reduced system
-        % check the active observations after prefix
-        [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
-        % [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
-        
-        % modify the last active observations to combinations from temp_obs
-        idx_act_temp = [];
-        for idx_tempobs = 1:size(temp_obs,1)
-            if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
-                    length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
-                %         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
-                idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
-            end
-        end
-        
-        % check if the last active observations are a subset of observations in the
-        % self-loop of the final state
-        flag_act_obs = 0;
-        temp_fs = B.F(idx_fs);
-        
-        for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
-            if B.new_trans{temp_fs,temp_fs} == Inf | ~isempty(intersect(idx_act_temp, B.trans{temp_fs,temp_fs}))
-                flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
-            end
-        end
-        
-        % update initial marking for MILP 1.2
-        No_obstacles = data.Nobstacles;
-        
-        m0_fs = m0;
-        m0_fs(1:length(data.Tr.Cells)) = marking_new; %put the final marking for the Q_PN places
-        
-        %put the final active observations on 1
-        idx_obs = data.Tr.obs(find(marking_new));
-        temp_m0_fs = m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles);
-        temp_ao = [];
-        % idx_obs(idx_ao) = index from data.Tr.OBS_set with regards to the
-        % combination for one robot
-        for idx_ao = 1:length(idx_obs)
-            temp_ao = [temp_ao data.Tr.OBS_set(idx_obs(idx_ao),find(data.Tr.OBS_set(idx_obs(idx_ao),:)))];
-        end
-        real_temp_ao = temp_ao(find(temp_ao <= No_obstacles)); % the active observation need to be represented by ROI and not the free space (the free space = No_obstacles + 1)
-        temp_m0_fs(real_temp_ao) = 1;
-        m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles) = temp_m0_fs;
-        
-        %put the negated observations = number of robots
-        temp_m0_fs = m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles);
-        temp_m0_fs(real_temp_ao) = 0;
-        m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles) = temp_m0_fs;
-        
-        m0_fs(final_places(idx_fs)) = 1;
-        m0_fs(end - length(B.S) + 1) = 0;
             
-        elseif isempty(fp) && data.optim.paramWith.interM <= Upp 
+            message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
+            message = sprintf('%s\nFunction value for first MILP - prefix: %g \n', message, fp);
+            message = sprintf('%s\nTime of solving the MILP - prefix (trajectory on quotient PN): %g secs\n', message, time);
+            total_time = total_time + time;
+            total_time_MILP = total_time_MILP + time;
+            message_c = sprintf('%sTime of finding a path in the quotient PN with Buchi - prefix: %g secs\n',message_c,time);
+            time_c = time_c + time;
+            message = sprintf('%s\n=======================================================',message);
+            message = sprintf('%s\nInitial solution on the reduced Petri net system',message);
+            message = sprintf('%s\n=======================================================\n',message);
+            
+            % truncate the solution of MILP based of the unknown variables (z,w)
+            % which appear for every bad solution
+            xmin_pref = xmin_pref(1:size(A,2) - 2*size(bad_sol_pr,2)*ntrans_orig);
+            
+            % extract sum of all sigma_i in case the solution could not be
+            % projected, and add it to bad_sol_pr
+            aux_pref = zeros(ntrans_orig,1);
+            for i = 1:2*data.optim.paramWith.interM
+                index1 = i*size(PreV,1) + (i-1)*size(PreV,2) + 1;
+                index2 = index1 + ntrans_orig-1;
+                aux_pref = aux_pref + xmin_pref(index1:index2);
+            end
+            
+            % After the optimization problem was solved, an
+            % initial solution was obtained on the reduced system
+            % check the active observations after prefix
+            [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+            % [active_observations, possible_regions, number_of_robots, marking_new, message] = rmt_check_active_observations(xmin_pref,PreV,PostV,m0,data,nplaces_orig,ntrans_orig,message);
+            
+            % modify the last active observations to combinations from temp_obs
+            idx_act_temp = [];
+            for idx_tempobs = 1:size(temp_obs,1)
+                if length(intersect(active_observations{end},temp_obs(idx_tempobs,:))) == length(active_observations{end}) && ...
+                        length(find(temp_obs(idx_tempobs,:))) == length(active_observations{end})
+                    %         act_temp = [act_temp; temp_obs(idx_tempobs,:)]; % save observations which include active observations
+                    idx_act_temp = idx_tempobs; % save index coresponding to temp_obs
+                end
+            end
+            
+            % check if the last active observations are a subset of observations in the
+            % self-loop of the final state
+            flag_act_obs = 0;
+            temp_fs = B.F(idx_fs);
+            
+            for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
+                if B.new_trans{temp_fs,temp_fs} == Inf | ~isempty(intersect(idx_act_temp, B.trans{temp_fs,temp_fs}))
+                    flag_act_obs = 1; % final state has self-loop on True or the active observations are included in the self-loop
+                end
+            end
+            
+            % update initial marking for MILP 1.2
+            No_obstacles = data.Nobstacles;
+            
+            m0_fs = m0;
+            m0_fs(1:length(data.Tr.Cells)) = marking_new; %put the final marking for the Q_PN places
+            
+            %put the final active observations on 1
+            idx_obs = data.Tr.obs(find(marking_new));
+            temp_m0_fs = m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles);
+            temp_ao = [];
+            % idx_obs(idx_ao) = index from data.Tr.OBS_set with regards to the
+            % combination for one robot
+            for idx_ao = 1:length(idx_obs)
+                temp_ao = [temp_ao data.Tr.OBS_set(idx_obs(idx_ao),find(data.Tr.OBS_set(idx_obs(idx_ao),:)))];
+            end
+            real_temp_ao = temp_ao(find(temp_ao <= No_obstacles)); % the active observation need to be represented by ROI and not the free space (the free space = No_obstacles + 1)
+            temp_m0_fs(real_temp_ao) = 1;
+            m0_fs(length(data.Tr.Cells)+1:length(data.Tr.Cells) + No_obstacles) = temp_m0_fs;
+            
+            %put the negated observations = number of robots
+            temp_m0_fs = m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles);
+            temp_m0_fs(real_temp_ao) = 0;
+            m0_fs(length(data.Tr.Cells)+No_obstacles+1:length(data.Tr.Cells) + 2*No_obstacles) = temp_m0_fs;
+            
+            m0_fs(final_places(idx_fs)) = 1;
+            m0_fs(end - length(B.S) + 1) = 0;
+            
+        elseif isempty(fp) && data.optim.paramWith.interM <= Upp
             uiwait(errordlg('Error solving the ILP on quotient PN: a solution different than the previous one could not be found. The algorithm will consider the previous solution of the PREFIX.',...
                 'Robot Motion Toolbox','modal'));
         elseif isempty(fp) && data.optim.paramWith.interM > Upp %no solution
@@ -319,7 +318,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         end
         
         
-       
+        
         
         %% compute suffix
         
@@ -358,7 +357,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
                 
             end
             
-            for i = 1:2*size(bad_sol_suf,2)*(size(PreV,2) - length(idxV)) % number of binary unknown variables
+            for i = 1:2*size(bad_sol_pr,2)*ntrans_orig % number of binary unknown variables
                 vartype = sprintf('%sB', vartype);
                 ub = [ub 1];%upper bound with value 1 for the binary unknown variables
             end
@@ -399,14 +398,16 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             
             % truncate the solution of MILP based of the unknown variables (z,w)
             % which appear for every bad solution
-            xmin_suff = xmin_suff(1:size(A,2) - 2*(size(PreV,2) - length(idxV))*size(bad_sol_suf,2));
+            xmin_suff = xmin_suff(1:size(A,2) - 2*size(bad_sol_pr,2)*ntrans_orig);
             
             % extract sum of all sigma_i in case the solution could not be
             % projected, and add it to bad_sol_pr
-            aux_suff = zeros(ntrans_real,1);
+            
+            
+            aux_suff = zeros(ntrans_orig,1);
             for i = 1:2*data.optim.paramWith.interM
-                index1 = i*size(Pre,1) + (i-1)*(ntrans_real + length(idxV)) + 1;
-                index2 = index1 + ntrans_real-1;
+                index1 = i*size(PreV,1) + (i-1)*size(PreV,2) + 1;
+                index2 = index1 + ntrans_orig-1;
                 aux_suff = aux_suff + xmin_suff(index1:index2);
             end
             

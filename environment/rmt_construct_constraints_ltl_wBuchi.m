@@ -41,6 +41,9 @@ else
 end
 
 
+nplaces = size(Pre,1); %number of places
+ntrans = size(Pre,2); % number of transitions
+
 trans_model = [zeros(1,length(m0)) ones(1,ntrans_orig) zeros(1,size(Pre,2)-ntrans_orig)];
 idxV_Buchi = idxV - ntrans_orig;
 trans_for_Buchi = ones(1,size(Pre,2)-ntrans_orig);
@@ -50,19 +53,23 @@ aux_for_Buchi = trans_for_Buchi;
 aux_for_Buchi(idxV_Buchi) = 0;
 temp_vect_it = [zeros(1,length(m0) + ntrans_orig + length(trans_for_Buchi))];  % dummy temp vector used in the constraints of the binary variables
 real_trans = [ones(1,size(Pre,2) - length(idxV))]'; % all the real transitions in the model, without the virtual ones
+q_trans = temp_vect_it;
+q_trans(length(m0)+1:length(m0) + ntrans_orig) = 1; % only the transitions from quotient PN
+q_trans_matrix = [eye(ntrans_orig) zeros(ntrans_orig, ntrans-ntrans_orig - length(idxV))]; 
 marking_final = zeros(1,length(m0));
 marking_final(final)=1;
+
+ntrans_real = size(real_trans,1);
+
 
 %the variables are: [m_i sigma_i z w], i = 1,...,U, z, w are binary vectors
 %for the decision variables necessary, where z and v each have the size
 %(ntrans_real,1) and ensure that the new solution is different than the old
 %ones. The pair (z,w) is added for each old solution.
 
-%size of unknown variables z,w 
-ntrans_real = size(real_trans,1);
+%size of unknown variables z,w depend on the number of transitions in
+%Quotient PN
 
-nplaces = size(Pre,1); %number of places
-ntrans = size(Pre,2); % number of transitions
 
 % a), b)
 %add the state equation: m_{i+1} = m_i + (Post-Pre)*sigma_{i+1}
@@ -113,18 +120,6 @@ for i = 2 : U
     b = [b ; zeros(nplaces,1)];
 end
 
-% this should not be used 
-% % %put that an intermediate marking of Buchi is equal with a final one in the final
-% % interm = round(k/2);
-% % % m(interm) == m_final
-% % 
-% % nplaces_buchi = nplaces-nplaces_orig-nplaces_observ;
-% % 
-% % Aeq=[Aeq; zeros(nplaces_buchi,(interm-1)*(nplaces+ntrans)) zeros(nplaces_buchi,nplaces_orig+nplaces_observ) eye(nplaces_buchi) ...
-% %     zeros(nplaces_buchi,ntrans) zeros(nplaces_buchi,(k-interm-1)*(nplaces+ntrans)) zeros(nplaces_buchi,nplaces_orig+nplaces_observ) ...
-% %     -eye(nplaces_buchi) zeros(nplaces_buchi,ntrans)];
-% % beq = [beq ; zeros(nplaces_buchi,1)];
-
 % g) new f*mB = 1
 % -m_final * 1 <=-1
 % final marking in Buchi needs to be equal with 1
@@ -132,8 +127,8 @@ Aeq = [Aeq; zeros(1,(U-1)*(nplaces+ntrans)) marking_final zeros(1,ntrans)];
 beq = [beq;1];
 
 % extend matrice A, Aeq, with the new unknown variables z, w
-A = [A zeros(size(A,1),2*ntrans_real*size(bad_sol,2))];
-Aeq = [Aeq zeros(size(Aeq,1),2*ntrans_real*size(bad_sol,2))];
+A = [A zeros(size(A,1),2*ntrans_orig*size(bad_sol,2))];
+Aeq = [Aeq zeros(size(Aeq,1),2*ntrans_orig*size(bad_sol,2))];
 
 
 % add constraints for the binary variables to ensure that the new solution
@@ -146,38 +141,38 @@ if ~isempty(bad_sol)
             % z[l] = 1 if old solution teta[l] (in position l) is different (<0 = <= -1) than the
             % current solution sum(real_trans)[l], 0 otherwise
             
-            A = [A; zeros(ntrans_real,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
-                eye(ntrans_real) zeros(ntrans_real,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, i-1]) M*eye(ntrans_real) zeros(ntrans_real)...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, size(bad_sol,2)-i])];
-            b = [b; (M-1)*ones(ntrans_real,1)+bad_sol(:,i)];
+            A = [A; zeros(ntrans_orig,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
+                q_trans_matrix zeros(ntrans_orig,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, i-1]) M*eye(ntrans_orig) zeros(ntrans_orig)...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, size(bad_sol,2)-i])];
+            b = [b; (M-1)*ones(ntrans_orig,1)+bad_sol(:,i)];
             
-            A = [A; zeros(ntrans_real,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
-                -eye(ntrans_real) zeros(ntrans_real,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, i-1]) -M*eye(ntrans_real) zeros(ntrans_real)...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, size(bad_sol,2)-i])];
-            b = [b; (1-eps*10^5)*ones(ntrans_real,1)-bad_sol(:,i)];
+            A = [A; zeros(ntrans_orig,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
+                -q_trans_matrix zeros(ntrans_orig,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
+                repmat(zeros(ntrans_orig,2*ntrans_real),[1, i-1]) -M*eye(ntrans_orig) zeros(ntrans_orig)...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, size(bad_sol,2)-i])];
+            b = [b; (1-eps*10^5)*ones(ntrans_orig,1)-bad_sol(:,i)];
             
             
             % w[l] = 1 if old solution teta[l] (in position l) is different (>0 = >= 1) than the
             % current solution sum(real_trans)[l], 0 otherwise
             
-            A = [A; zeros(ntrans_real,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
-                -eye(ntrans_real) zeros(ntrans_real,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, i-1]) zeros(ntrans_real) M*eye(ntrans_real)...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, size(bad_sol,2)-i])];
-            b = [b; (M-1)*ones(ntrans_real,1)-bad_sol(:,i)];
+            A = [A; zeros(ntrans_orig,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
+                -q_trans_matrix zeros(ntrans_orig,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, i-1]) zeros(ntrans_orig) M*eye(ntrans_orig)...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, size(bad_sol,2)-i])];
+            b = [b; (M-1)*ones(ntrans_orig,1)-bad_sol(:,i)];
             
-            A = [A; zeros(ntrans_real,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
-                eye(ntrans_real) zeros(ntrans_real,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, i-1]) zeros(ntrans_real) -M*eye(ntrans_real)...
-                repmat(zeros(ntrans_real,2*ntrans_real),[1, size(bad_sol,2)-i])];
-            b = [b; (1-eps*10^5)*ones(ntrans_real,1)+bad_sol(:,i)];
+            A = [A; zeros(ntrans_orig,j*nplaces + (j-1)*(length(idxV)+ntrans_real))...
+                q_trans_matrix zeros(ntrans_orig,(U-j)*(nplaces + ntrans_real) + (U-j+1)*length(idxV))...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, i-1]) zeros(ntrans_orig) -M*eye(ntrans_orig)...
+                repmat(zeros(ntrans_orig,2*ntrans_orig),[1, size(bad_sol,2)-i])];
+            b = [b; (1-eps*10^5)*ones(ntrans_orig,1)+bad_sol(:,i)];
         end
         
         % sum(z) + sum(w) >= 1
-        A = [A; zeros(1,aux_size*U) repmat(zeros(1,2*ntrans_real),[1,i-1]) -ones(1,2*ntrans_real)...
-            repmat(zeros(1,2*ntrans_real),[1,size(bad_sol,2)-i])];
+        A = [A; zeros(1,aux_size*U) repmat(zeros(1,2*ntrans_orig),[1,i-1]) -ones(1,2*ntrans_orig)...
+            repmat(zeros(1,2*ntrans_orig),[1,size(bad_sol,2)-i])];
         b = [b;-1];
         
     end
@@ -201,7 +196,7 @@ for i = 1 : U
     cost = [cost zeros(1,nplaces) i*trans_QB];
 end
 
-cost = [cost zeros(1,2*ntrans_real*size(bad_sol,2))];
+cost = [cost zeros(1,2*ntrans_orig*size(bad_sol,2))];
 
 
 
