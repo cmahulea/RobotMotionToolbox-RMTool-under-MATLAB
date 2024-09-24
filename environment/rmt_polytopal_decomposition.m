@@ -1,3 +1,5 @@
+function [C,adj,varargout]=rmt_polytopal_decomposition(obstacles,env_bounds)
+
 %    This is part of RMTool - Robot Motion Toolbox, for Matlab 2010b or newer.
 %
 %    Copyright (C) 2016 RMTool developing team. For people, details and citing 
@@ -20,30 +22,19 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on September, 2014. 
-%   Last modification December 29, 2015.
+%   Second version released on September, 2024. 
+%   Last modification September 24, 2024.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function [C,adj,varargout]=rmt_polytopal_decomposition(objects,env_bounds)
-%polytopal decompositon, by splitting with respect to supporting lines of obstacles
-%env_bounds has the form [x_min,x_max,y_min,y_max]
-
-env_bounds(1) = env_bounds(1);
-env_bounds(2) = env_bounds(2);
-env_bounds(3) = env_bounds(3); 
-env_bounds(4) = env_bounds(4);
-
-warning('off', 'MATLAB:mex:deprecatedExtension');
-
 %convert obstacles (all are convex hulls) in H-representation, and world - boundaries
-n_ob=length(objects);
+n_ob=length(obstacles);
 A=cell(1,n_ob+1);
 b=cell(1,n_ob+1);
-for i=1:length(objects)
-    M=objects{i}';
-    H=cddmex('hull',struct('V',M)); %H-representation
-    A{i}=H.A;
-    b{i}=-H.B;  %object i: Ax+b<=0;
+for i=1:length(obstacles)
+    [A_i,b_i] = V2H_conversion(obstacles{i}); %H-representation
+    A{i}=A_i;
+    b{i}=-b_i;  %object i: Ax+b<=0;
 end
 
 A{end}=[0 -1;-1 0;0 1;1 0];    %H-repres for world (boundaries)
@@ -73,7 +64,7 @@ while 1 %x>0 || isempty(who('new_ind'))    %iterate while Nh is not reached (for
             signs=(-1).^s';   %column vector with signs (-/+) for inequality corresponding to each row (-1 means Ax+b>0, 1: Ax+b<0)
             H.A=[diag(signs)*Ain( (end+1-(n_h+x)):end ,:) ; A{end}];    %change signs of rows of Ain, Bin according to values in signs (for -1 change sign)
             H.B=-[signs.*Bin((end+1-(n_h+x)):end) ; b{end}]; %change sign for B (in cdd+, Ax<=B); H is a structure to call cdd+
-            Spol=cddmex('extreme',H);    %create vertex representation of sub-polytope (if such polytope exists)
+            Spol.V=H2V_conversion(H.A,H.B)';    %create vertex representation of sub-polytope (if such polytope exists)
             if (size(Spol.V,1) > n) && (rank([Spol.V , ones( size(Spol.V,1), 1)]) == (n+1)) %first condition is much faster to evaluate, so use short-circuit operator (evaluate second only when first is true)
                 new_ind=[new_ind, index];   %store indices of feasible polytopes
             end
@@ -98,7 +89,7 @@ for i=1:sp_no   %feasibility was already checked for the binary combinations cor
     signs=(-1).^s';   %column vector with signs (-/+) for inequality corresponding to each row (-1 means Ax+b>0, 1: Ax+b<0)
     H.A=[diag(signs)*Ain ; A{end}];    %change signs of rows of Ain, Bin according to values in signs (for -1 change sign)
     H.B=-[signs.*Bin ; b{end}]; %change sign for B (in cdd+, Ax<=B); H is a structure to call cdd+
-    Spol=cddmex('extreme',H);    %create vertex representation of sub-polytope (test for feasability is redundant, because feasible combinations were already found)
+    Spol.V=H2V_conversion(H.A,H.B)';    %create vertex representation of sub-polytope (test for feasability is redundant, because feasible combinations were already found)
     
     C{i}=Spol.V';  %put vertices of new sub-pol in cell C (vertices on columns)
     Signs(i,:)=s; %retain s (giving signs) of each state (as rows of a matrix) - will be useful in finding adjacency
@@ -147,7 +138,7 @@ for i=1:(sp_no-1)
                 s_j=(-1).^(Signs(j,:)');
                 H.A=[diag(s_i)*Ain ; diag(s_j)*Ain ; A{end}]; %intersection of polytopes corresponding to states i and j
                 H.B=-[s_i.*Bin ; s_j.*Bin ; b{end}];
-                V=cddmex('extreme',H);    %create vertex representation of sub-polytope (test for feasability is redundant, because feasible combinations were already found)
+                V.V=H2V_conversion(H.A,H.B)';    %create vertex representation of sub-polytope (test for feasability is redundant, because feasible combinations were already found)
                 if size(V.V,1)==2
                     middle_temp=mean(V.V);
                     middle_X(i,j)=middle_temp(1);
@@ -182,5 +173,3 @@ if nargout>2
         varargout(3)={com_F};
     end
 end
-
-warning('on', 'MATLAB:mex:deprecatedExtension');
