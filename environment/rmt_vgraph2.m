@@ -29,10 +29,6 @@
 
 function [trajectory] = rmt_vgraph2(handle,input_variables,seq_obstacles)
 
-%addpath('.\cdd');
-
-disp('Visibility graph algorithm is running...');
-
 Nxi = input_variables(1);
 Nx = input_variables(2);
 Nyi = input_variables(3);
@@ -47,9 +43,6 @@ xgoal = input_variables(9);%X-AXIS (0..20)
 ygoal = input_variables(10);%Y-AXIS (0..10)
 env_bounds=[Nxi,Nx,Nyi,Ny];
 
-%uiwait(msgbox(sprintf('\nFor defining a region:\n\t - left-click = pick a vertex\n\t - right-click = pick last vertex\n\nRegions should be convex and non-overlapping\n'),...
-%    'Robot Motion Toolbox','modal'));
-
 axes(handle);
 axis(env_bounds);
 hold on
@@ -62,10 +55,9 @@ y_max = Ny;
 
 reg = seq_obstacles;
 poly2 = seq_obstacles;
-[aa ba] = size(reg{1});
+[aa,ba] = size(reg{1});
 
 for i=1:Nobstacles
-    %h(i)=fill(reg{i}(1,:),reg{i}(2,:),'c');
     if(aa>ba)
         aux = reg{i}';
         aux_poly = expandPolygon(aux',0.3);
@@ -81,171 +73,122 @@ for i=1:Nobstacles
 end
 
 reg = poly2;
+pols_reg = cell(1,length(reg));
+for i = 1 : length(reg)
+    pols_reg{i} = polyshape(reg{i}');
+end
 
-
-%fprintf('Give start and goal point...\n');
 x_start = xini;
 y_start = yini;
-%[x_start,y_start]=ginput(1);
-%plot(x_start, y_start, 'pw','Markersize',13, 'Color', 'g');
-%[x_goal,y_goal]=ginput(1);
 x_goal = xgoal;
 y_goal = ygoal;
-%plot(x_goal, y_goal,'pw','Markersize',13, 'Color', 'r');
-
 no_of_edges=0;
+edges = {};
 %find the trajectories from start point to the vertices of the regions
 start_point= [x_start,y_start];
-n = Nobstacles;
-for i=1:n
-    %for each region
-    l = length(reg{i});
-    for j = 1:l
-        %for each vertice of that region
-        point2=reg{i}(:,j)';% point[x y]
-        [exist_flag dist intersction_point] = intersection( start_point, point2 , reg{i});
-        if(dist < eps*1e10)
-            %exista intersectie doar cu varful regiunii
-                %dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta
-                %regiune
-                flag_inters_regiuni=0; % nu exista intersectii
-                point2= intersction_point';
-                for k=1:n
-                    if(i~=k)%celelalte regiuni
-                        [ef d ip] = intersection( start_point, point2 , reg{k});
-                        if(ef == 1)
-                             flag_inters_regiuni = 1;
-                        end
-                    end
-                end
-                if(flag_inters_regiuni ~= 1) 
-                    no_of_edges= no_of_edges + 1;
-                    edges{no_of_edges}= [start_point' point2'];
-                end
-           
+%n = Nobstacles;
+for i=1:Nobstacles      %for each region
+    for j = 1:length(reg{i})  %for each vertice of that region
+        point2=reg{i}(:,j)';  % point[x y]
+        flag_inters_regiuni=0; % nu exista intersectii
+        for k=1:Nobstacles
+            [in,~] = intersect(pols_reg{k},[start_point;point2]);%exista intersectie doar cu varful regiunii dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta regiune
+            if ~isempty(in)
+                flag_inters_regiuni = 1;
+                break;
+            end
+        end
+        if(flag_inters_regiuni ~= 1)
+            edges{end+1}= [start_point' point2'];
         end
     end
 end
 
 %find the trajectories from stop point to the vertices of the regions
 stop_point= [x_goal,y_goal];
-for i=1:n
-    %for each region
-    l = length(reg{i});
-    for j = 1:l
-        %for each vertice of that region
-        point2=reg{i}(:,j)';% point[x y]
-        [exist_flag dist intersction_point] = intersection( stop_point, point2 , reg{i});
-        if(dist < eps*1e10)
-            %exista intersectie doar cu varful regiunii
-                %dreapta stop-point -> intersectio-point nu trebuie sa intersecteze oricare alta
-                %regiune
-                flag_inters_regiuni=0; % nu exista intersectii
-                point2= intersction_point';
-                for k=1:n
-                    if(i~=k)%celelalte regiuni
-                        [ef d ip] = intersection( stop_point, point2 , reg{k});
-                        if(ef == 1)
-                             flag_inters_regiuni = 1;
-                        end
-                    end
-                end
-                if(flag_inters_regiuni ~= 1) 
-                    no_of_edges= no_of_edges + 1;
-                    edges{no_of_edges}= [stop_point' point2'];
-                end
-           
+for i=1:Nobstacles      %for each region
+    for j = 1:length(reg{i})  %for each vertice of that region
+        point2=reg{i}(:,j)';  % point[x y]
+        flag_inters_regiuni=0; % nu exista intersectii
+        for k=1:Nobstacles
+            [in,~] = intersect(pols_reg{k},[stop_point;point2]);%exista intersectie doar cu varful regiunii dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta regiune
+            if ~isempty(in)
+                flag_inters_regiuni = 1;
+                break;
+            end
+        end
+        if(flag_inters_regiuni ~= 1)
+            edges{end+1}= [stop_point' point2'];
         end
     end
 end
 
 
 % edges for every region
-for i=1:n
-    l = length(reg{i});
-    for j = 1:l-1
-        no_of_edges = no_of_edges + 1;
-        edges{no_of_edges}= [reg{i}(:,j) reg{i}(:,j+1)];
+for i=1:Nobstacles
+    for j = 1:length(reg{i})
+        if j < length(reg{i})
+            edge_to_check = [reg{i}(:,j)'; reg{i}(:,j+1)'];
+        else
+            edge_to_check = [reg{i}(:,j)'; reg{i}(:,1)'];
+        end
+        flag_inside_regiuni=0; % is not insede any region
+        for k=1:Nobstacles
+            if (k ~= i)
+                [~,edge_to_check] = intersect(pols_reg{k},edge_to_check);%exista intersectie doar cu varful regiunii dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta regiune
+                if size(edge_to_check,1) >2
+                    flag_inside_regiuni = 1;
+                    break;
+                end
+                if isempty(edge_to_check)
+                    flag_inside_regiuni = 1;
+                    break;
+                end
+            else
+                continue;
+            end
+        end
+        if (flag_inside_regiuni == 0)
+            edges{end+1}= edge_to_check';
+        end
     end
-    no_of_edges = no_of_edges + 1;
-    edges{no_of_edges}= [reg{i}(:,1) reg{i}(:,l)];
 end
 
 %supporting  edge 
-for i=1:n
-    for j=1:n
-        if (i~=j)
-            
-            temp_edge = supporting_edges(reg{i}, reg{j});
-            
-            %-----------------------------------------
-           
-            for nr_temp_edge=1:length(temp_edge)
-                point1 = temp_edge{nr_temp_edge}(:,1);
-                point2 = temp_edge{nr_temp_edge}(:,2);
-                flag_inters_regiuni=0; % nu exista intersectii
-                for k=1:n
-                    if((i~=k) && (j~=k))%celelalte regiuni
-                        [ef d ip] = intersection(point1', point2' , reg{k});
-                        if(ef == 1)
-                             flag_inters_regiuni = 1;
-                        end
+for i=1:Nobstacles-1
+    for j = 1 : size(reg{i},2)
+        first_point = reg{i}(:,j)';
+        for k= i+1:Nobstacles
+            for l = 1 : size(reg{k},2)
+                second_point = reg{k}(:,l)';
+                flag_inters_regiuni = 0;
+                for m = 1 : Nobstacles
+                    [in,~] = intersect(pols_reg{m},[first_point;second_point]);%exista intersectie doar cu varful regiunii dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta regiune
+                    if ~isempty(in)
+                        flag_inters_regiuni = 1;
+                        break;
                     end
-                end 
+                end
                 if (flag_inters_regiuni ~= 1)
-                    edges = [edges temp_edge(nr_temp_edge)];
+                    edges{end+1} = [first_point' second_point'];
                 end
             end
-               
-                
             %-----------------------------------------
         end
     end
 end
-
-%sepparating  edge 
-for i=1:n
-    for j=1:n
-        if (i~=j)
-            temp_edge = sepparating_edges(reg{i}, reg{j});
-             %-----------------------------------------
-           
-            for nr_temp_edge=1:length(temp_edge)
-                point1 = temp_edge{nr_temp_edge}(:,1);
-                point2 = temp_edge{nr_temp_edge}(:,2);
-                flag_inters_regiuni=0; % nu exista intersectii
-                for k=1:n
-                    if((i~=k) && (j~=k))%celelalte regiuni
-                        [ef d ip] = intersection(point1', point2' , reg{k});
-                        if(ef == 1)
-                             flag_inters_regiuni = 1;
-                        end
-                    end
-                end 
-                if (flag_inters_regiuni ~= 1)
-                    edges = [edges temp_edge(nr_temp_edge)];
-                end
-            end
-               
-                
-            %----------------------------------------- 
-        end
-    end
-end
-
 
 %from start to goal
 flag_inters_regiuni=0; % nu exista intersectii
-for i=1:n
-     [ef d ip] = intersection([x_start y_start], [x_goal y_goal] , reg{i});
-     if(ef == 1)
-         flag_inters_regiuni = 1;
-     end
-
+for i=1:Nobstacles
+    [in,~] = intersect(pols_reg{i},[start_point;stop_point]);%exista intersectie doar cu varful regiunii dreapta start-point -> intersectio-point nu trebuie sa intersecteze oricare alta regiune
+    if ~isempty(in)
+        flag_inters_regiuni = 1;
+        break;
+    end
 end
 if (flag_inters_regiuni ~= 1) % exista drum intre start si stop
-    start_goal{1}=[[x_start,y_start]'  [x_goal,y_goal]'];
-    edges =[ edges  start_goal{1}];
+    edges{end+1} = [[x_start,y_start]'  [x_goal,y_goal]'];
 end
 
 for i=1:length(edges)
@@ -329,7 +272,7 @@ end
 
 %clc
 [path, cost_path] = find_path(cost,indexStart,indexStop);
-disp('VfGraphs:');
+%disp('VfGraphs:');
 VfGraphs{path};
 %figure(1)
 %figure;hold on;
@@ -356,4 +299,4 @@ end
 trajectory(lon,1) = VfGraphs{path(lon)}(1,:);
 trajectory(lon,2) = VfGraphs{path(lon)}(2,:);
 
-disp('V-graph ends.');
+%disp('V-graph ends.');

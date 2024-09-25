@@ -229,7 +229,7 @@ switch planning_approach
         plot(temp2(1),temp2(2),'pw','Markersize',13, 'Color', 'b');
         grid on;
         limits = data.frame_limits;
-        whe = eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
+        whe = 1;%eval(get(findobj(gcf,'Tag','wheelbase'),'String'));
         [X_Total_points,Y_Total_points, ...
             All_cells_Number, Cell_start, X1] = rmt_voronoi_epsi(data.handle_env,data.Nobstacles,limits,whe*0.5,...
             data.epsilonvoronoi,data.obstacles);

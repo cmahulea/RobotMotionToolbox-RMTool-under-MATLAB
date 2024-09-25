@@ -41,7 +41,7 @@ while sum(visited)~=n
     x=x(1); %if there are more nodes at the same distance (they will be considered at following iterations)
     visited(x)=1;
     neigh=find(adj(x,:)~=0 & visited==0); %unvisited neighbors of the current node x (is adj was not sparse, with "inf" instead of 0, use isfinite(adj(x,:))
-    if length(neigh)==0
+    if isempty(neigh)
        continue %current node has no more unvisited neighbors, go on with next iterations (other "branches")
     end
     for i=neigh %for each unvisited neighbor, check if the distance by going through x to it is smaller than the one until now
@@ -55,7 +55,7 @@ end
 %we have minimum distances from s to all nodes in graph
 %find the desired path (s -> d) by starting from d and following predecessors
 if dist(d)~=Inf %there exists a path s -> d
-    path=[d]; %put destination node in path and start going through predecessors ("backward" search), until s is reached
+    path=d; %put destination node in path and start going through predecessors ("backward" search), until s is reached
     while path(1)~=s    %find all nodes between s and d(i), until s is reached (because we know that there is a path s->d)
         path=[predec(path(1)) path];  %add a predecesor in path, in front of the others; s will be on first position in path
     end
