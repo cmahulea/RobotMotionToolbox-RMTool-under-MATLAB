@@ -44,8 +44,8 @@ Tg.Q=1:st_no;   %states of Tg
 %construct possible set of observations (dummy proposition will be the last one) - part similar to the one in function "tr_sys_prob_obs" (for 1 robot)
 temp_obs=1:length(propositions);   %atomic propositions, for constructing possible observations (without dummy prop)
 ind_dummy=length(propositions)+1;   %index of dummy proposition
-N_p=length(propositions);   %number of propositions (excepting the dummy one-environment) that can be simultaneously satisfied (take maximum - assume all props. can overlap)
-% N_p = min(N_r,length(propositions)); %this can be used only for non-overlapping regs
+% N_p=length(propositions);   %number of propositions (excepting the dummy one-environment) that can be simultaneously satisfied (take maximum - assume all props. can overlap)
+ N_p = min(N_r,length(propositions)); %this can be used only for non-overlapping regs
 temp_cell=mat2cell( repmat(temp_obs,N_p,1) , ones(1,N_p) , length(temp_obs) );  %duplicate observables of transition systems
 temp_obs=rmt_cartesian_product(temp_cell{:});  %possible observables, on rows (more robots can have the same observables, that's why we use carth product); observables will be labeled with indices of rows (in T.obs)
 temp_obs=unique(sort(temp_obs,2),'rows');   %sort rows and remove identical ones (they would have the same observable)

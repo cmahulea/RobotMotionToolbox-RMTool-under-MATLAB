@@ -96,7 +96,18 @@ message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi
     message,length(B.S),tiempo);
 message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
 time_c = time_c + tiempo;
+
+% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\Buchi_ComplexMission.mat','B');
+% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_sofia_1402.mat');
+
+% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v1.mat", "B");
+% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v2.mat", "B");
+% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v3.mat", "B");
+% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_6rob_complexMission.mat','B');
+
+
 data.B=B;
+
 set(gcf,'UserData',data);
 
 % check if the self-loop of the initial state (when is equal with on final
@@ -160,12 +171,14 @@ aux_suff = []; % idem as aux_pref
 count_sol_not_proj = 0;
 flag_bad_sol = 0; % flag which express if the solution could be projected (=0) or couldn't be projected (=1)
 
-while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.paramWith.interM > Upp && flag_bad_sol == 1))
+no_interMark = data.optim.paramWith.interM;
+
+while flag_sol == 0 && ((no_interMark <= Upp) || (no_interMark > Upp && flag_bad_sol == 1))
     for idx_fs = 1:length(final_places)
         %% compute prefix for final state idx_fs
         tic;
         [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_wBuchi(PreV,PostV,m0, ntrans_orig, ...
-            2*data.optim.paramWith.interM, final_places(idx_fs), idxV, bad_sol_pr, flag_sisf_actobs);
+            2*no_interMark, final_places(idx_fs), idxV, bad_sol_pr, flag_sisf_actobs);
         tiempo = toc;
         
         message = sprintf('%s\n*****************************************************************',message);
@@ -212,7 +225,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         end
         
         message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
-            message,size(Aeq,2),data.optim.paramWith.interM);
+            message,size(Aeq,2),no_interMark);
         message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
             message, size(Aeq,1), size(A,1));
         
@@ -227,6 +240,8 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         end
         time = toc;
         
+        flag_act_obs = 0;
+
         if ~isempty(fp)
             
             message = sprintf('%s\n\n---------------------- PREFIX -------------------',message);
@@ -247,7 +262,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             % extract sum of all sigma_i in case the solution could not be
             % projected, and add it to bad_sol_pr
             aux_pref = zeros(ntrans_orig,1);
-            for i = 1:2*data.optim.paramWith.interM
+            for i = 1:2*no_interMark
                 index1 = i*size(PreV,1) + (i-1)*size(PreV,2) + 1;
                 index2 = index1 + ntrans_orig-1;
                 aux_pref = aux_pref + xmin_pref(index1:index2);
@@ -271,7 +286,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             
             % check if the last active observations are a subset of observations in the
             % self-loop of the final state
-            flag_act_obs = 0;
+%             flag_act_obs = 0;
             temp_fs = B.F(idx_fs);
             
             for idx_obs = 1:size(B.new_trans{temp_fs,temp_fs},1)
@@ -307,19 +322,16 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             m0_fs(final_places(idx_fs)) = 1;
             m0_fs(end - length(B.S) + 1) = 0;
             
-        elseif isempty(fp) && data.optim.paramWith.interM <= Upp
+        elseif isempty(fp) && no_interMark <= Upp
             uiwait(errordlg('Error solving the ILP on quotient PN: a solution different than the previous one could not be found. The algorithm will consider the previous solution of the PREFIX.',...
                 'Robot Motion Toolbox','modal'));
-        elseif isempty(fp) && data.optim.paramWith.interM > Upp %no solution
+        elseif isempty(fp) && no_interMark > Upp %no solution
             uiwait(errordlg('Error solving the ILP on quotient PN. The problem may have no feasible solution!',...
                 'Robot Motion Toolbox','modal'));
             return;
             
         end
-        
-        
-        
-        
+
         %% compute suffix
         
         % if flag_act_obs == 0 OR if the prefix could not be computed such
@@ -329,7 +341,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         
         if flag_act_obs == 0 || (flp < 1 || ~isempty(find(bad_flag_gplk == flp)))
             [A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl_wBuchi(PreV,PostV,m0_fs, ntrans_orig, ...
-                2*data.optim.paramWith.interM, final_places(idx_fs),idxV,bad_sol_suf);
+                2*no_interMark, final_places(idx_fs),idxV,bad_sol_suf);
             
             %             data = get(gcf,'UserData');
             % Part about analysis with Buchi Automaton
@@ -362,10 +374,9 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
                 ub = [ub 1];%upper bound with value 1 for the binary unknown variables
             end
             
-            
-            
+
             message = sprintf('%s\nTotal number of variables in the MILP problem (quotient PN): %d for %d intermediate markings',...
-                message,size(Aeq,2),data.optim.paramWith.interM);
+                message,size(Aeq,2),no_interMark);
             message = sprintf('%s\nThe optimization problem has %d equality contraints and %d inequality constraints (quotient PN).',...
                 message, size(Aeq,1), size(A,1));
             
@@ -405,7 +416,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
             
             
             aux_suff = zeros(ntrans_orig,1);
-            for i = 1:2*data.optim.paramWith.interM
+            for i = 1:2*no_interMark
                 index1 = i*size(PreV,1) + (i-1)*size(PreV,2) + 1;
                 index2 = index1 + ntrans_orig-1;
                 aux_suff = aux_suff + xmin_suff(index1:index2);
@@ -522,7 +533,7 @@ while flag_sol == 0 && ((data.optim.paramWith.interM <= Upp) || (data.optim.para
         
     end
     %%%% Check interM value!!!!!! (k or 2k)???
-    data.optim.paramWith.interM = data.optim.paramWith.interM + 1
+    no_interMark = no_interMark + 1
     
 end
 

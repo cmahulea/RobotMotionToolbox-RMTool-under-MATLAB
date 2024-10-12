@@ -189,7 +189,8 @@ end
 %b = [b ; -1];
 
 %fprintf(1,'\nIntermediate states %d',interm);
-%%%%%%%%%%% cost function
+%%%%%%%%%%% cost function considering the transitions in Quotient and Buchi,
+%%%%%%%%%%% without considering virtual transition in Buchi
 cost = [];
 trans_QB = [ones(1,ntrans_orig) trans_for_Buchi]; % the cost function will consider only the real transitions
 for i = 1 : U
@@ -197,6 +198,15 @@ for i = 1 : U
 end
 
 cost = [cost zeros(1,2*ntrans_orig*size(bad_sol,2))];
+
+%%%%%%%%%%% cost function considering only the transitions in Quotient
+% cost = [];
+% trans_QB = [ones(1,ntrans_orig) zeros(size(trans_for_Buchi))]; % the cost function will consider only the real transitions
+% for i = 1 : U
+%     cost = [cost zeros(1,nplaces) i*trans_QB];
+% end
+% 
+% cost = [cost zeros(1,2*ntrans_orig*size(bad_sol,2))];
 
 
 

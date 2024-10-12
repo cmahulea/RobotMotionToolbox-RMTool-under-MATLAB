@@ -24,7 +24,7 @@
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function rmt_path_planning_ltl_pn_following_buchi
+function rmt_path_planning_ltl_pn_following_buchi_Quotient
 
 %Path-planning with LTL specifications and Petri net models following paths
 %in Buchi automaton
@@ -53,6 +53,22 @@ else
     error('Unknown MILP solver');
 end
 
+%% Quotient PN
+
+data.Tr = rmt_quotient_T_new(data.T); %quotient of partition T, with fewer states (based on collapsing states with same observables in same connected component with same obs)
+[PreQ,PostQ] = rmt_construct_PN(data.Tr.adj);
+m0_Q=data.Tr.m0;
+propsQ = data.Tr.props;
+
+% save Quotient PN
+% matmat = load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\Quotient_Env.mat');
+% kk = find(matmat.m0);
+% m0_Q = zeros(size(matmat.m0));
+% m0_Q(kk) = N_r; 
+% PreQ = matmat.Pre;
+% PostQ = matmat.Post;
+% propsQ = matmat.data.Tr.props;
+
 tic;
 [Pre,Post] = rmt_construct_PN(data.T.adj);
 m0 = data.T.m0;
@@ -76,12 +92,12 @@ time_c = time_c + tiempo;
 
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\Buchi_ComplexMission.mat','B');
 % load ("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\2020_TAC\docMatlab\TAC_Buchi.mat")
-load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_2rob_complexMission.mat','B');
+% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_2rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_4rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_5rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_6rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_7rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_8rob_complexMission.mat','B');
+load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_8rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_9rob_complexMission.mat','B');
 % load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_10rob_complexMission.mat','B');
 
@@ -180,7 +196,7 @@ else
     message = sprintf('%s y%d\n',message,active_obs(length(active_obs)));
 end
 
-
+aux_m0_Q = m0_Q;
 for p_B=1:length(paths_B)
     message = sprintf('%s\nTrying to follow path %d in Buchi',message,p_B);
     path_B = paths_B{p_B};  %chosen path in Buchi
@@ -188,8 +204,16 @@ for p_B=1:length(paths_B)
     message = sprintf('%s\n\n PATH_%d in Buchi is: %s\n',message,p_B,num2str(path_B));
     %initialization
     feasible_path_B=1;  %assume current path in Buchi is feasible
-    Rob_positions = data.RO;   %initial (current) robot positions for testing optimization solutions
-    PN_marking = m0;    %initial (current) PN marking
+    % Rob_positions = data.RO;   %initial (current) robot positions for testing optimization solutions
+    Rob_positions = repmat(find(aux_m0_Q),1,N_r);
+    % idx_m0 = find(m0_Q);
+    % jj = 1; %first index for Rob_positions
+    % for ii = 1:length(idx_m0)
+    %     if m0_Q(idx_m0(ii)) > 1
+    %         Rob_positions(jj + m0_Q(idx_m0(ii))) = repmat()
+    %     end
+    % end
+    PN_marking = aux_m0_Q;    %initial (current) PN marking
     Rob_places = cell(1,N_r);
     Rob_trans = cell(1,N_r);
     Rob_synchronize = cell(1,N_r);
@@ -199,6 +223,7 @@ for p_B=1:length(paths_B)
         Rob_synchronize{j}=[];
     end
     tic;
+    cost_Q = 0;
     for i=1:(length(path_B)-1)  %find traj in PN s.t. Buchi goes from state path_B(i) to path_B(i+1), without getting another observation that leaves path_B(i) to other state
         message = sprintf('%s\n  Try to ENABLE the current transition of Buchi: %g -> %g.\n',...
             message,path_B(i),path_B(i+1));
@@ -212,9 +237,13 @@ for p_B=1:length(paths_B)
         switch solver
             case 'glpk'
                 % using function based on Obs
-                [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+               [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk');
+                
+%                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+%                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+%                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk');
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 [xmin, fmin, status, extra] = glpk(cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense,data.optim.options_glpk);   %optimization with glpk
@@ -227,14 +256,16 @@ for p_B=1:length(paths_B)
                 % 
             case 'intlinprog'
                 % using function based on Obs
-                [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                % [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+                %     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                %     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog');
+                [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog');
-
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
-
+                
                 % using function based on B.new_trans
                 % [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs_new(Pre, Post, PN_marking, ...
                 %     data.T.props, {B.new_trans{path_B(i),path_B(i+1)},[]}, 'final', data.optim.param.intMarkings, ...%B.new_trans,
@@ -248,8 +279,13 @@ for p_B=1:length(paths_B)
             case 'cplex'
                 % using function based on Obs for Quotient PN for
                 % environment
-                [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                %                 [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+                %                     data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                %                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex');
+                
+                
+                [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex');
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -265,7 +301,10 @@ for p_B=1:length(paths_B)
                 % [xmin, fmin, status, extra] = cplexmilp(cost, A, b, Aeq, beq, [],[],[], lb, ub, ...
                 %     vartype, [], []);   %optimization with cplexmilp
         end
-       
+        
+        % compute cost function based on Quotient PN model assigned to the
+        % robots
+        cost_Q = cost_Q + length(find(xmin(size(PreQ,1)+1:size(PreQ,1)+size(PreQ,2))));
 
         prec=0.5e-5;    %additional tests for solution feasibility
         switch solver
@@ -293,8 +332,8 @@ for p_B=1:length(paths_B)
         
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
         [message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
-            Rob_synchronize_temp, min_k1] = rmt_test_solution_feasibility(message2,Pre, Post, PN_marking, ...
-            data.T.props, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, solver, xmin, ...
+            Rob_synchronize_temp, min_k1] = rmt_test_solution_feasibility(message2,PreQ, PostQ, PN_marking, ...
+            propsQ, Obs, 'final', obs_fin, obs_feasible, data.optim.param.intMarkings, solver, xmin, ...
             status, Rob_positions);
         message = [message message2];
         if (feasible_sol == 0)
@@ -303,6 +342,7 @@ for p_B=1:length(paths_B)
         end
         if (feasible_sol==1) %ILP1 gives good result, go to next transition in Buchi
             Rob_positions = Rob_positions_final;
+            % PN_marking = marking_final;
             PN_marking = marking_final;
             for j=1:N_r
                 Rob_synchronize{j}=[Rob_synchronize{j} , Rob_synchronize_temp{j} + length(Rob_places{j})-1]; %when to synchronize (number of visited place)
@@ -321,8 +361,12 @@ for p_B=1:length(paths_B)
         switch solver
             case 'glpk'
                 % using function based on Obs
-                [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+%                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+%                     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+%                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk');
+                
+                 [cost, matrix_A, vector_b, lb, ub, ctype, vartype, sense] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'glpk');
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -336,9 +380,13 @@ for p_B=1:length(paths_B)
                 % 
             case 'intlinprog'
                 % using function based on Obs
-                [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog');
+                
+                % [cost, intcon, A, b, Aeq, beq, lb, ub] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+                %     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+                %     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'intlinprog');
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
                 [xmin, fmin, status, extra] = intlinprog(cost, intcon, A_sparse, b, Aeq_sparse, beq, lb, ub, data.optim.options_milp);   %optimization with intlinprog
@@ -355,8 +403,12 @@ for p_B=1:length(paths_B)
                 % end
             case 'cplex'
                 % using function based on Obs
-                [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
-                    data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+%                 [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(Pre, Post, PN_marking, ...
+%                     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+%                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex');
+                
+                [cost, A, b, Aeq, beq, lb, ub, vartype] = rmt_constraints_PN_obs(PreQ, PostQ, PN_marking, ...
+                    propsQ, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
                     data.optim.param.alpha, data.optim.param.beta, data.optim.param.gamma, 'cplex');
                 A_sparse=sparse(A); %can use sparse for large matrices
                 Aeq_sparse=sparse(Aeq);
@@ -397,10 +449,15 @@ for p_B=1:length(paths_B)
         message = [message message2];
         
         %test solution feasibility (non-spurious sigma and generated observables do not leave current transition in Buchi)
-        [message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
-            Rob_synchronize_temp, min_k2] = rmt_test_solution_feasibility(message2,Pre, Post, PN_marking, ...
-            data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
-            solver, xmin, status, Rob_positions);
+        % [message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
+        %     Rob_synchronize_temp, min_k2] = rmt_test_solution_feasibility(message2,Pre, Post, PN_marking, ...
+        %     data.T.props, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, ...
+        %     solver, xmin, status, Rob_positions);
+[message2,feasible_sol , marking_final, Rob_positions_final, Rob_places_temp, Rob_trans_temp, ...
+            Rob_synchronize_temp, min_k1] = rmt_test_solution_feasibility(message2,PreQ, PostQ, PN_marking, ...
+            propsQ, Obs, 'trajectory', obs_fin, obs_feasible, data.optim.param.intMarkings, solver, xmin, ...
+            status, Rob_positions);
+
         message = [message message2];
         if feasible_sol == 0
             %                 message2 = sprintf('%s\nUnfeasible solution with ILP2 \n \n IMPOSSIBLE to take current transition (s%g -> s%g) in Buchi automaton!\n',...
@@ -410,6 +467,7 @@ for p_B=1:length(paths_B)
         end
         if feasible_sol==1 %ILP2 gives good result, go to next transition in Buchi
             Rob_positions = Rob_positions_final;
+            % PN_marking = marking_final;
             PN_marking = marking_final;
             for j=1:N_r
                 Rob_synchronize{j}=[Rob_synchronize{j} , Rob_synchronize_temp{j} + length(Rob_places{j})-1]; %when to synchronize (number of visited place)

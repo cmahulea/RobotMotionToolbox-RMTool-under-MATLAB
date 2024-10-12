@@ -49,8 +49,14 @@ possible_regions{1} = pos_regions;
 number_of_robots{1} = marking_temp;
 flagF = 0; % flag to mark when the final state in Buchi was reached
 sum_transB = 0; %count the real fired transition in Buchi PN
+sum_transQ = 0; %count the fired transitions in Quotient PN
+
+% ntransB = size(Pre,2) - ntrans_orig - 1; % for one virtual transition in Buchi for the final state
 
 for i = 1 : 2*data.optim.paramWith.interM
+    trans_QuotientPN = find(xmin(i*size(Pre,1) + (i-1)*(size(Pre,2)) + 1:...
+        i*size(Pre,1) + (i-1)*(size(Pre,2)) + ntrans_orig));
+    sum_transQ = sum_transQ + length(trans_QuotientPN);
     if (i/2 == round(i/2))
         if flagF == 0 % compute the active observations and the possible regions until the final state in Buchi is reached
             trans_buchi=find([xmin((i-1)*(size(Pre,1)+size(Pre,2))+size(Pre,1)+ntrans_orig+1:i*(size(Pre,1)+size(Pre,2)))] > eps*1e9);
@@ -94,6 +100,7 @@ for i = 1 : 2*data.optim.paramWith.interM
 end
 
 message = sprintf('\n ****** %s ****** \n The sum of all the fired transitions in Buchi PN is: %d',message,sum_transB);
+message = sprintf('\n ****** %s ****** \n The sum of all the fired transitions in Quotient PN is: %d',message,sum_transQ);
 
 %remove eventually identical observations
 for j = length(active_observations):-1:2

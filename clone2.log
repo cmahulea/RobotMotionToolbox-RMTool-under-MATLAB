@@ -13,3 +13,634 @@ Log for '' Clone_2 (V12.6.2.0) Fri May 07 19:31:48 2021
 
 Log for '' Clone_2 (V12.6.2.0) Fri May 07 19:43:21 2021
 
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 07:50:58 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:50:59 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:51:02 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 533 rows and 1619 columns.
+Aggregator did 353 substitutions.
+Reduced LP has 1171 rows, 2428 columns, and 7665 nonzeros.
+Presolve time = 0.02 sec. (4.26 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            51.999997
+Iteration:   156    Infeasibility =             7.999935
+Iteration:   290    Infeasibility =             5.999932
+Iteration:   425    Infeasibility =             4.999930
+Iteration:   541    Infeasibility =             3.999998
+Iteration:   667    Infeasibility =             2.999998
+Iteration:   787    Infeasibility =             2.999998
+Iteration:   905    Infeasibility =             1.999997
+Switched to devex.
+Iteration:   968    Objective     =            50.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 07:51:41 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:51:42 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:51:44 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 533 rows and 1619 columns.
+Aggregator did 353 substitutions.
+Reduced LP has 1171 rows, 2428 columns, and 7665 nonzeros.
+Presolve time = 0.00 sec. (4.26 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            51.999997
+Iteration:   156    Infeasibility =             7.999935
+Iteration:   290    Infeasibility =             5.999932
+Iteration:   425    Infeasibility =             4.999930
+Iteration:   541    Infeasibility =             3.999998
+Iteration:   667    Infeasibility =             2.999998
+Iteration:   787    Infeasibility =             2.999998
+Iteration:   905    Infeasibility =             1.999997
+Switched to devex.
+Iteration:   968    Objective     =            50.000000
+Iteration:  1135    Objective     =            44.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 07:52:41 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:52:42 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 07:52:45 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 533 rows and 1619 columns.
+Aggregator did 352 substitutions.
+Reduced LP has 1172 rows, 2429 columns, and 7664 nonzeros.
+Presolve time = 0.00 sec. (4.22 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            51.000000
+Iteration:   142    Infeasibility =            11.999969
+Iteration:   275    Infeasibility =             3.999958
+Iteration:   400    Infeasibility =             2.999955
+Iteration:   531    Infeasibility =             1.000000
+Switched to devex.
+Iteration:   661    Objective     =            42.000000
+Iteration:   818    Objective     =            38.000000
+Iteration:   928    Objective     =            34.000000
+Iteration:  1058    Objective     =            30.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 13:20:06 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 13:20:18 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 13:20:18 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 13:20:20 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 486 rows and 1514 columns.
+Aggregator did 362 substitutions.
+Reduced LP has 1297 rows, 2744 columns, and 8748 nonzeros.
+Presolve time = 0.01 sec. (4.55 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            45.000000
+Iteration:   154    Infeasibility =            22.999978
+Iteration:   292    Infeasibility =            16.499969
+Iteration:   407    Infeasibility =            12.999962
+Iteration:   518    Infeasibility =             9.999989
+Iteration:   641    Infeasibility =             3.999972
+Iteration:   766    Infeasibility =             3.999972
+Iteration:   886    Infeasibility =             2.999972
+Iteration:  1010    Infeasibility =             1.000000
+Iteration:  1132    Infeasibility =             1.000000
+Switched to devex.
+Iteration:  1140    Objective     =            54.000000
+Iteration:  1303    Objective     =            40.000000
+Iteration:  1448    Objective     =            36.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 13:23:02 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Dec 14 13:46:42 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 13:46:42 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Thu Dec 14 13:46:44 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 485 rows and 1515 columns.
+Aggregator did 362 substitutions.
+Reduced LP has 1298 rows, 2743 columns, and 8783 nonzeros.
+Presolve time = 0.03 sec. (4.55 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            50.999994
+Iteration:   185    Infeasibility =            12.999932
+Iteration:   310    Infeasibility =             8.999929
+Iteration:   447    Infeasibility =             6.999928
+Iteration:   578    Infeasibility =             7.000000
+Iteration:   710    Infeasibility =             7.000000
+Iteration:   825    Infeasibility =             5.999995
+Iteration:   938    Infeasibility =             2.857134
+Iteration:  1068    Infeasibility =             2.000000
+Iteration:  1178    Infeasibility =             1.000000
+Iteration:  1295    Infeasibility =             1.000000
+Switched to devex.
+Iteration:  1335    Objective     =            52.000000
+Iteration:  1498    Objective     =            42.000000
+Iteration:  1650    Objective     =            38.000000
+Advanced basis not built.
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 15:57:00 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 15:57:02 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 485 rows and 1515 columns.
+Aggregator did 361 substitutions.
+Reduced LP has 1299 rows, 2744 columns, and 8785 nonzeros.
+Presolve time = 0.02 sec. (4.56 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            40.000000
+Iteration:   170    Infeasibility =            12.999946
+Iteration:   302    Infeasibility =             8.999938
+Iteration:   419    Infeasibility =             6.999931
+Iteration:   523    Infeasibility =             7.000000
+Iteration:   650    Infeasibility =             4.999995
+Iteration:   776    Infeasibility =             4.999995
+Iteration:   900    Infeasibility =             3.999991
+Iteration:  1028    Infeasibility =             2.000000
+Switched to devex.
+Iteration:  1086    Objective     =            58.000000
+Iteration:  1228    Objective     =            44.000000
+Iteration:  1358    Objective     =            40.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 16:18:21 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 16:18:21 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 16:22:14 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 16:22:14 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 16:42:34 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 16:42:34 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 16:42:39 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 485 rows and 1515 columns.
+Aggregator did 362 substitutions.
+Reduced LP has 1298 rows, 2743 columns, and 8783 nonzeros.
+Presolve time = 0.00 sec. (4.55 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            50.999994
+Iteration:   185    Infeasibility =            12.999932
+Iteration:   310    Infeasibility =             8.999929
+Iteration:   447    Infeasibility =             6.999928
+Iteration:   578    Infeasibility =             7.000000
+Iteration:   710    Infeasibility =             7.000000
+Iteration:   825    Infeasibility =             5.999995
+Iteration:   938    Infeasibility =             2.857134
+Iteration:  1068    Infeasibility =             2.000000
+Iteration:  1178    Infeasibility =             1.000000
+Iteration:  1295    Infeasibility =             1.000000
+Switched to devex.
+Iteration:  1335    Objective     =            52.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 16:45:27 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 16:45:27 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:08:48 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:08:49 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:08:50 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 532 rows and 1617 columns.
+Aggregator did 353 substitutions.
+Reduced LP has 1172 rows, 2430 columns, and 7712 nonzeros.
+Presolve time = 0.02 sec. (4.22 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            57.999993
+Iteration:   149    Infeasibility =            14.999921
+Iteration:   287    Infeasibility =             5.999914
+Iteration:   406    Infeasibility =             3.999912
+Iteration:   519    Infeasibility =             2.000000
+Iteration:   666    Infeasibility =             2.000000
+Switched to devex.
+Iteration:   751    Objective     =            53.000000
+Iteration:   876    Objective     =            45.000000
+Iteration:  1009    Objective     =            41.000000
+Iteration:  1130    Objective     =            37.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:10:12 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:10:13 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:10:13 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 418 rows and 1277 columns.
+Aggregator did 231 substitutions.
+Reduced LP has 896 rows, 1792 columns, and 5723 nonzeros.
+Presolve time = 0.00 sec. (3.28 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            55.000000
+Iteration:   131    Infeasibility =            12.999943
+Iteration:   255    Infeasibility =             6.999935
+Iteration:   349    Infeasibility =             2.999933
+Switched to devex.
+Iteration:   415    Objective     =            42.000000
+Iteration:   539    Objective     =            26.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:11:48 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:11:48 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:11:49 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 552 rows and 1627 columns.
+Aggregator did 275 substitutions.
+Reduced LP has 1046 rows, 2058 columns, and 6502 nonzeros.
+Presolve time = 0.00 sec. (3.84 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            49.999995
+Iteration:   158    Infeasibility =             6.999939
+Iteration:   278    Infeasibility =             4.999933
+Iteration:   389    Infeasibility =             0.999927
+Switched to devex.
+Iteration:   474    Objective     =            45.000000
+Iteration:   603    Objective     =            33.000000
+Iteration:   722    Objective     =            31.000000
+Iteration:   852    Objective     =            29.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:12:30 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:12:30 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:12:32 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 696 rows and 1991 columns.
+Aggregator did 314 substitutions.
+Reduced LP has 1197 rows, 2315 columns, and 7359 nonzeros.
+Presolve time = 0.00 sec. (4.45 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            31.000000
+Iteration:   154    Infeasibility =             7.999971
+Iteration:   302    Infeasibility =             0.999966
+Switched to devex.
+Iteration:   320    Objective     =            39.000000
+Iteration:   456    Objective     =            33.000000
+Iteration:   596    Objective     =            29.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:13:17 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:13:17 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 17:13:20 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 855 rows and 2373 columns.
+Aggregator did 343 substitutions.
+Reduced LP has 1349 rows, 2564 columns, and 7992 nonzeros.
+Presolve time = 0.01 sec. (4.91 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            29.999998
+Iteration:   198    Infeasibility =             2.999969
+Iteration:   348    Infeasibility =             0.999969
+Switched to devex.
+Iteration:   380    Objective     =            48.000000
+Iteration:   525    Objective     =            36.000000
+Iteration:   671    Objective     =            34.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 17:15:47 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:00:22 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:00:22 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:02:49 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:02:49 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:30:03 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:30:04 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:33:19 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:33:20 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:36:37 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:36:38 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 18:45:10 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 18:45:11 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 19:05:57 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Dec 15 19:07:36 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Dec 15 19:07:36 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Sat Dec 16 10:48:28 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Sat Dec 16 10:48:28 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Sat Dec 16 10:48:31 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 486 rows and 1516 columns.
+Aggregator did 361 substitutions.
+Reduced LP has 1298 rows, 2743 columns, and 8744 nonzeros.
+Presolve time = 0.02 sec. (4.54 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            41.000000
+Iteration:   144    Infeasibility =            13.666616
+Iteration:   256    Infeasibility =             8.999938
+Iteration:   378    Infeasibility =             8.499933
+Iteration:   514    Infeasibility =             8.000000
+Iteration:   643    Infeasibility =             5.999997
+Iteration:   765    Infeasibility =             5.999997
+Iteration:   891    Infeasibility =             0.999994
+Switched to devex.
+Iteration:   966    Objective     =            52.000000
+Iteration:  1124    Objective     =            44.000000
+Iteration:  1231    Objective     =            36.000000
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Sat Dec 16 11:01:25 2023
+
+
+Log for '' Clone_2 (V12.10.0.0) Sat Dec 16 11:48:35 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Sat Dec 16 11:48:36 2023
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Sat Dec 16 11:48:37 2023
+
+Tried aggregator 1 time.
+LP Presolve eliminated 553 rows and 1629 columns.
+Aggregator did 275 substitutions.
+Reduced LP has 1045 rows, 2056 columns, and 6420 nonzeros.
+Presolve time = 0.00 sec. (3.89 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            47.999997
+Iteration:   151    Infeasibility =             5.999956
+Iteration:   266    Infeasibility =             2.999956
+Switched to devex.
+Iteration:   307    Objective     =            42.000000
+Iteration:   435    Objective     =            26.000000
+Iteration:   547    Objective     =            24.000000
+Advanced basis not built.
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Fri Jan  5 11:20:06 2024
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Jan  5 11:20:06 2024
+
+
+Log for 'CPLEX' Clone_2 (V12.10.0.0) Fri Jan  5 11:20:10 2024
+
+Tried aggregator 1 time.
+LP Presolve eliminated 854 rows and 2375 columns.
+Aggregator did 347 substitutions.
+Reduced LP has 1346 rows, 2558 columns, and 8060 nonzeros.
+Presolve time = 0.01 sec. (4.92 ticks)
+
+Iteration log . . .
+Iteration:     1    Infeasibility =            32.999996
+Iteration:   192    Infeasibility =             3.999966
+Iteration:   336    Infeasibility =             1.999965
+Switched to devex.
+Iteration:   417    Objective     =            55.000000
+Iteration:   573    Objective     =            45.000000
+Iteration:   704    Objective     =            43.000000
+Iteration:   835    Objective     =            39.000000
+Advanced basis not built.
+
+Dual simplex solved model.
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Aug 22 09:19:01 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Aug 22 09:19:36 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Thu Aug 22 09:20:14 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:20 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:25 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:28 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:31 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:31 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:33 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:35 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:38 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:40 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:43 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:45 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:49:47 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:24 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:30 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:33 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:35 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:35 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:37 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:40 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:42 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:44 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:46 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:48 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:50:50 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:52:54 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:52:59 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:01 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:04 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:04 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:07 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:09 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:11 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:13 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:15 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:17 2024
+
+
+Log for '' Clone_2 (V12.10.0.0) Wed Sep 25 16:53:20 2024
+
