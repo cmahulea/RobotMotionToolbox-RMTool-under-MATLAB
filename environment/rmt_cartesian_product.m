@@ -39,9 +39,11 @@ for i=1:nargin
     N(i)=length(varargin{i});   %vector N will contain the number of elements of each subset
 end
 
-N=[1 N 1];  %add 2 elements of 1 in order to execute the "for"-loop for the last and first subset
-            %(otherwise we would have got error because of index i)
-set=zeros(prod(N),nargin);  %size of a matrix that will contain on each row a element of the cartesian product
+N=[1 N 1];  %add 2 elements of 1 in order to execute the "for"-loop for the last...
+% and first subset
+%(otherwise we would have got error because of index i)
+set=zeros(prod(N),nargin);  %size of a matrix that will contain on each row...
+% a element of the cartesian product
 
 for i = nargin:-1:1 %go backward through inputs (add columns starting with the last one)
     % col=[]; %will be the column (of the final set) corresponding to the i-th subset from input

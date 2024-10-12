@@ -61,10 +61,16 @@ m0 = [m0 ; zeros(length(B.S),1)];
 m0(temp+B.S0) = 1; %add one token to the initial state of the Buchi
 final_states = B.F + temp;
 
-for i = 1 : size(B.trans,1)
-    for j = 1 : size(B.trans,2)
-        temp = B.trans{i,j};
-        for k = 1 : length(temp) %add a transition for each disjunctive term
+PreV = Pre; % virtual Pre and Post matrices with virtual self loop on True for final states
+PostV = Post;
+idxV = [];
+
+% e.g.,for formula !y1 | (!y2 & !y3), B.new_trans = [-1 0; -2 -3]
+for i = 1 : size(B.new_trans,1)
+    for j = 1 : size(B.new_trans,2)
+        temp = B.new_trans{i,j};
+        
+        if temp == Inf % add only one bidirectional transition for the transitionss_i -> s_j which are always True (enabled)
             Pre = [Pre zeros(size(Pre,1),1)];
             Post = [Post zeros(size(Post,1),1)];
             Pre(nplaces+2*length(props)+i,size(Pre,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
@@ -84,6 +90,14 @@ for i = 1 : size(B.trans,1)
                     Pre(nplaces + length(props) + not_observed(l),size(Pre,2)) = N_r; %add a double arc from observation place to the new transition
                     Post(nplaces + length(props) + not_observed(l),size(Post,2)) = N_r;
             end
+        end
+        % add virtual transitions for all final states
+        if find(i == B.F) == find(j == B.F) %& isempty(find(Inf == B.new_trans{i,j})) % add virtual self-loop for final states which doesn't have true, with True
+            PreV = [PreV zeros(size(PreV,1),1)];
+            PostV = [PostV zeros(size(PostV,1),1)];
+            PreV(nplaces+2*length(props)+i,size(PreV,2)) = 1; %add an arc from place/state i of the Buchi automaton to the new transition
+            PostV(nplaces+2*length(props)+j,size(PostV,2)) = 1; %add an arc from the new transition to state j of the Buchi automaton
+            idxV = [idxV size(PreV,2)]; % memorize index for virtual transitions of final states
         end
     end
 end

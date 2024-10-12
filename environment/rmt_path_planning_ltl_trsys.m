@@ -87,25 +87,31 @@ end
 data.Tg=Tg;
 set(gcf,'UserData',data);
 
-% Control of regions of interest in the LTL Formula
-regionFormula=strfind(data.formula, 'u');
-if(data.Nobstacles < size(regionFormula,2))
-    uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
-    prompt = {'New LTL Formula:'};
-    dlg_title = 'Robot Motion Toolbox';
-    num_lines = 1;
-    defaultans = {''};
-    %defaultans = {'(F u1) & G !(u2 | u3)'};
-    input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
-    data.formula= char(input_user(1));   % Reading of region's numbers from input interface
-    tic;
-    B = rmt_create_buchi(data.formula, Tg.Obs);
-    data.B=B;
-else
-    tic;
-    B = rmt_create_buchi(data.formula, Tg.Obs);
-    data.B=B;
-end
+load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_2rob_complexMission.mat','B');
+
+
+% % Control of regions of interest in the LTL Formula
+% regionFormula=strfind(data.formula, 'u');
+% if(data.Nobstacles < size(regionFormula,2))
+%     uiwait(msgbox('LTL Formula is not correct. The number of proposition and region of interest is not equal. Please re-insert!','Robot Motion Toolbox','modal'));
+%     prompt = {'New LTL Formula:'};
+%     dlg_title = 'Robot Motion Toolbox';
+%     num_lines = 1;
+%     defaultans = {''};
+%     %defaultans = {'(F u1) & G !(u2 | u3)'};
+%     input_user = inputdlg(prompt,dlg_title,num_lines,defaultans);
+%     data.formula= char(input_user(1));   % Reading of region's numbers from input interface
+%     tic;
+%     B = rmt_create_buchi(data.formula, Tg.Obs);
+%     data.B=B;
+% else
+%     tic;
+%     B = rmt_create_buchi(data.formula, Tg.Obs);
+%     data.B=B;
+% end
+
+data.B = B;
+
 tiempo = toc;
 time_c = time_c + tiempo;
 message_c = sprintf('%sTime of generating the Buchi automata: %g secs\n',message_c,tiempo);
