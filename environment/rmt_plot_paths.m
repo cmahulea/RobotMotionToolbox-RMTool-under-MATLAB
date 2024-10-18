@@ -116,10 +116,15 @@ for uu = 1:length(new_rob_traj{1})-1
         % position of the robot
         current_cell_traj = Run_cells(rr,uu);
         if 1:length(new_rob_traj) <= 10
-            x1im1 = max(data.T.Vert{current_cell_traj}(1,:));
-            x2im1 = min(data.T.Vert{current_cell_traj}(1,:));
-            y1im1 = max(data.T.Vert{current_cell_traj}(2,:));
-            y2im1 = min(data.T.Vert{current_cell_traj}(2,:));
+%             x1im1 = max(data.T.Vert{current_cell_traj}(1,:));
+%             x2im1 = min(data.T.Vert{current_cell_traj}(1,:));
+%             y1im1 = max(data.T.Vert{current_cell_traj}(2,:));
+%             y2im1 = min(data.T.Vert{current_cell_traj}(2,:));
+
+            x1im1 = new_rob_traj{rr}(1,uu) + 0.5; %if the order is - +, - +, then the image appears upside down
+            x2im1 = new_rob_traj{rr}(1,uu) - 0.5;
+            y1im1 = new_rob_traj{rr}(2,uu) + 0.5;
+            y2im1 = new_rob_traj{rr}(2,uu) - 0.5;
 
             hh = image('CData',Images{rr},'XData',[x1im1 x2im1],'YData',[y1im1 y2im1]);
 
@@ -127,9 +132,9 @@ for uu = 1:length(new_rob_traj{1})-1
             hh = fill(data.T.Vert{current_cell_traj}(1,:),data.T.Vert{current_cell_traj}(2,:),data.rob_plot.line_color{rr},'FaceAlpha',0.2,'EdgeColor',data.rob_plot.line_color{rr},'LineWidth',2);
             set(hh,'XData', data.T.Vert{current_cell_traj}(1,:), 'YData',data.T.Vert{current_cell_traj}(2,:), 'FaceAlpha', 0.2);
         end
-        hh_marker = plot(mean(data.T.Vert{current_cell_traj}(1,:)),mean( data.T.Vert{current_cell_traj}(2,:)),'Color',data.rob_plot.line_color{rr},...
+        hh_marker = plot(new_rob_traj{rr}(1,uu),new_rob_traj{rr}(2,uu),'Color',data.rob_plot.line_color{rr},...
             'Marker',data.rob_plot.marker{rr},'LineWidth',data.rob_plot.line_width{rr});
-        set(hh_marker,'XData', mean(data.T.Vert{current_cell_traj}(1,:)), 'YData',mean( data.T.Vert{current_cell_traj}(2,:)),'Marker',data.rob_plot.marker{rr});
+        set(hh_marker,'XData', new_rob_traj{rr}(1,uu), 'YData',new_rob_traj{rr}(1,uu),'Marker',data.rob_plot.marker{rr});
         hh_v{rr} = hh;
         hh_m{rr} = hh_marker;
         if uu == 1 % mark the start point

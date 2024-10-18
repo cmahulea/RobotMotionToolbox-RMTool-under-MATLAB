@@ -20,7 +20,7 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on November, 2018.
-%   Last modification November 10, 2018.
+%   Last modification October, 2024.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
@@ -48,6 +48,7 @@ else
     error('Unknown MILP solver');
 end
 time_c = 0;
+total_time_MILP = 0;
 message_c = sprintf('--------------------------------------------------------------\n');
 message_c = sprintf('%s---Path planning using Petri net models with Buchi included---\n',message_c);
 message_c = sprintf('%s--------------------------------------------------------------\n',message_c);
@@ -65,10 +66,13 @@ time_c = time_c + tiempo;
 nplaces_orig = size(Pre,1);
 ntrans_orig = size(Pre,2);
 
+%clean OBS_set based on the regions of interest included in LTL formula
+% data.T.OBS_set = rmt_clean_OBS_set(data.Nobstacles, data.formula, data.T.OBS_set);
+
 %create the observation set
 N_r = length(data.RO); %In RO there is a region that contains a token (robot)
 N_p = data.Nobstacles;%number of regions of interest
-temp_obs = rmt_observation_set_new(data.T.OBS_set,N_p,N_r);
+[temp_obs] = rmt_observation_set_new(data.T.OBS_set,N_p,N_r);
 
 % Creating the automaton Buchi to be included in the global Petri Net
 % Control on the number of region of interest
@@ -92,15 +96,6 @@ message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi
     message,length(B.S),tiempo);
 message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
 time_c = time_c + tiempo;
-
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\Buchi_ComplexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_sofia_1402.mat');
-
-% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v1.mat", "B");
-% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v2.mat", "B");
-% load("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_3rob_complexMission_v3.mat", "B");
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_6rob_complexMission.mat','B');
-
 
 data.B=B;
 
@@ -134,7 +129,8 @@ end
 
 % use new function to reduce transitions in Quontient Buchi PN
 tic;
-[Pre,Post,m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, data.B,temp_obs);%final places - places corresponding to the final states in the Buchi automaton
+[Pre,Post,PreV, PostV, idxV, m0,final_places] = rmt_construct_PN_ltl(Pre,Post,m0,data.Tr.props, B);%final places - places corresponding to the final states in the Buchi automaton
+
 tiempo = toc;
 message = sprintf('%s\nPetri net system including Buchi and observations has %d places and %d transitions\nTime spent for creating it: %g secs',...
     message,size(Pre,1),size(Pre,2),tiempo);
@@ -144,12 +140,8 @@ data.Pre_full = Pre;
 data.Post_full = Post;
 set(gcf,'UserData',data);%to save data
 
-tic;
-[A,b,Aeq,beq,cost] = rmt_construct_constraints_ltl(Pre,Post,m0, nplaces_orig, ntrans_orig,...
-    length(data.Tr.props) , 2*data.optim.paramWith.interM, final_places);
-tiempo = toc;
-message_c = sprintf('%sTime of creating the optimization problem on quotient PN: %g secs\n',message_c,tiempo);
-time_c = time_c + tiempo;
+vect_fmin = []; % this vector stores all the cost function values for all final states
+cell_X = {}; % store solution X for all final states
 
 idx_fs = 1; % take the first final state and search for a solution
 flag_sol = 0; % solution is not projected

@@ -189,6 +189,8 @@ switch action
             'Separator','on');
         uimenu(a,'Label','&Add a Robot','Callback','rmt_add_robot');
         uimenu(a,'Label','Re&move Robots','Callback','rmt_remove_robot');
+        uimenu(a,'Label','&Select size and name for cell''s label',...
+            'Callback',strcat(thisfile,'(''size_label_cells'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning Boolean specifications',...
             'Callback',strcat(thisfile,'(''parameter_MILP_pn_boolean'')'), 'Separator','on');
         uimenu(a,'Label','&Parameters for MILP PN planning following runs in Buchi',...
@@ -523,6 +525,9 @@ switch action
             'Position',[0.87    0.005   0.1349    0.0235], ...
             'String','Time [s]');
         set(gcf,'UserData',data);
+        data.label_cells.size = 8;
+        data.label_cells.name = 'c';
+        
         data.optim.cplex_variable='true';
         set(data.optim.menuGlpk,'Checked','off');
         set(data.optim.menuCplex,'Checked','on');
@@ -536,6 +541,7 @@ switch action
         data.optim.param_boolean.lambda = 1;
         data.optim.param_boolean.mu = 1000;
         data.optim.param_boolean.kappa = 10;
+        data.optim.param_boolean.UserCount = 4; % for replanning robots trajectories
         data.optim.options_glpk.round=1; %Replace tiny primal and dual values by exact zero
         data.optim.options_glpk.tmlim=10; %Searching time limit, in seconds
         data.optim.paramWith.interM = 10;
@@ -1650,7 +1656,12 @@ switch action
                 end
             end
         end
-      
+      %% Choose size and label for cells    
+    case 'size_label_cells'
+        data = get(gcf,'UserData');
+        data.label_cells = rmt_label_cells_setup(data.label_cells);
+        set(gcf,'UserData',data);
+        
         %% Part of Menu 'Setup' CPLEX
     case 'menu_cplex'
         data = get(gcf,'UserData');

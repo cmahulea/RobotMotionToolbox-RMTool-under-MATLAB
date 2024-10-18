@@ -30,6 +30,8 @@ function [message] = rmt_check_initial_active_obs(data,B,Obs,m0,Pre)
 
 not_null_obs = [];
 temp_act_obst_cellsm0 = [];
+message = '';
+
 for i = 1:length(data.T.props)
     not_null_obs = [not_null_obs data.T.props{i}];
     obs_m0 = intersect(find(m0),data.T.props{i});

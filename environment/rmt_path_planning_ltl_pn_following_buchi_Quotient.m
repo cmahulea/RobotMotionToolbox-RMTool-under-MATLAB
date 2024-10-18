@@ -82,24 +82,15 @@ time_c = time_c + tiempo;
 %ntrans = size(Pre,2);
 
 %***Buchi automaton for formula, with elements of power set of \Pi (Obs) on transitions***%
-% tic;
-% B = rmt_create_buchi(data.formula, Obs);
-% tiempo = toc;
-% message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi: %g secs',...
-%     message,length(B.S),tiempo);
-% message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
-% time_c = time_c + tiempo;
+tic;
+B = rmt_create_buchi(data.formula, Obs);
+tiempo = toc;
+message = sprintf('%s\nBuchi automaton has %d states\nTime spent to create Buchi: %g secs',...
+    message,length(B.S),tiempo);
+message_c = sprintf('%sTime of generating the Buchi automaton: %g secs\n',message_c,tiempo);
+time_c = time_c + tiempo;
 
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\Buchi_ComplexMission.mat','B');
-% load ("C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\2020_TAC\docMatlab\TAC_Buchi.mat")
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_2rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_4rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_5rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_6rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_7rob_complexMission.mat','B');
-load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_8rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_9rob_complexMission.mat','B');
-% load('C:\Users\sofia\Work_H\Facultate\Doctorat\Articles\NwN_2022\MatlabWork\workspace_10rob_complexMission.mat','B');
+
 
 data.B=B; 
 

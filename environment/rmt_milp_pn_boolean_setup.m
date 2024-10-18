@@ -20,22 +20,25 @@
 %   MOBILE ROBOT TOOLBOX
 %   Graphical User Interface
 %   First version released on May, 2021.
-%   Last modification May 07, 2021.
+%   Last modification October, 2024.
 %   More information: http://webdiis.unizar.es/RMTool
 % ============================================================================
 
-function param=rmt_milp_pn_boolean_setup(param)
+function param=rmt_milp_pn_boolean_setup(data)
+param = data.optim.param_boolean;
 
 answer = inputdlg({...
     sprintf('Weight in cost function on number of fired transitions:'),...
     sprintf('Weight in cost function on soft contraints (of var. b) (for collision avoidance):'),...
     sprintf('Number of PN intermediate markings'),...    
+    sprintf('Number of robots which waits to enter a common cell'),...
     },...
     'Robot Motion Toolbox',...
-    [1;1;1],{num2str(param.lambda,3),num2str(param.mu,3),num2str(param.kappa,3)});
+    [1;1;1;1],{num2str(param.lambda,3),num2str(param.mu,3),num2str(param.kappa,3),num2str(param.UserCount,3)});
 if (isempty(answer))
     return;
 end
+
 %lambda
 input_val = char(answer{1});
 todoOK = rmt_detect_error(input_val,0,1000);
@@ -64,6 +67,16 @@ if (todoOK == 0)
     error('Valid range for kappa is betweeen 1 and 50!');
 else
     param.kappa = eval(input_val);
+end
+
+%UserCount
+input_val = char(answer{4});
+todoOK = rmt_detect_error(input_val,0,length(data.RO));
+if (todoOK == 0)
+    uiwait(errordlg(sprintf('\nValid range for UserCount is between 1 and the number of robots!'),'Robot Motion Toolbox','modal'));
+    error('Valid range for UserCount is betweeen 1 and the number of robots!');
+else
+    param.UserCount = eval(input_val);
 end
 
 return;
